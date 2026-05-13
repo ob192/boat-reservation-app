@@ -10,7 +10,7 @@ export const contactSchema = z.object({
   firstName: z.string().min(1, "Введіть ім'я").max(50),
   lastName: z.string().min(1, 'Введіть прізвище').max(50),
   email: z.string().email('Невірна адреса електронної пошти'),
-  phone: z.string().optional(),
+  phone: z.string().min(1), // required by backend; no custom message (soft)
 });
 
 export const bookingSchema = z.object({

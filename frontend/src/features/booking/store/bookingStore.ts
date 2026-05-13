@@ -78,7 +78,6 @@ export const useBookingStore = create<BookingState>()(
     }),
     {
       name: 'harbour-wave-booking',
-      // Only persist UI selections, not IDs (those are transient)
       partialize: (state) => ({
         selectedDate: state.selectedDate,
         selectedTime: state.selectedTime,

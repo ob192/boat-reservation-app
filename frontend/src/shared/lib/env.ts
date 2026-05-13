@@ -26,7 +26,6 @@ function validateClientEnv() {
 }
 
 function validateServerEnv() {
-  // Only run on the server
   if (typeof window !== 'undefined') return {} as z.infer<typeof serverEnvSchema>;
 
   const result = serverEnvSchema.safeParse({

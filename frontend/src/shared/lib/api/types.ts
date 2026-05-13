@@ -1,30 +1,33 @@
-// ─── Availability ────────────────────────────────────────────────────────────
-
+// Availability
 export interface DayAvailability {
-  date: string; // YYYY-MM-DD
+  date: string;
   availableSlots: number;
+  blocked: boolean;
 }
 
 export interface AvailabilityResponse {
-  month: string; // YYYY-MM
+  month: string;
   days: DayAvailability[];
 }
 
-// ─── Slots ───────────────────────────────────────────────────────────────────
-
+// Slots
 export interface TimeSlot {
-  time: string; // HH:MM
-  available: number;
-  total: number;
+  time: string;
+  availableBig: number;
+  availableMedium: number;
+  totalBig: number;
+  totalMedium: number;
+  blocked: boolean;
 }
 
 export interface SlotsResponse {
   date: string;
+  dateBlocked: boolean;
+  bookingsEnabled: boolean;
   slots: TimeSlot[];
 }
 
-// ─── Booking ─────────────────────────────────────────────────────────────────
-
+// Booking
 export interface BookingQuantities {
   big: number;
   medium: number;
@@ -35,12 +38,12 @@ export interface BookingContact {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string; // required by backend
 }
 
 export interface CreateBookingBody {
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
+  date: string;
+  time: string;
   quantities: BookingQuantities;
   contact: BookingContact;
 }
@@ -51,8 +54,7 @@ export interface CreateBookingResponse {
   expiresAt: string;
 }
 
-// ─── Checkout ────────────────────────────────────────────────────────────────
-
+// Checkout
 export interface CheckoutBody {
   bookingId: string;
 }
@@ -62,8 +64,7 @@ export interface CheckoutResponse {
   sessionId: string;
 }
 
-// ─── Booking Status ──────────────────────────────────────────────────────────
-
+// Booking Status
 export type BookingStatus = 'pending' | 'confirmed' | 'failed' | 'expired';
 
 export interface BookingDetail {
