@@ -101,9 +101,9 @@ export const MESSAGES = {
     bookingExpired: 'Час бронювання вийшов.',
   },
   header: {
-    title: 'Harbour & Wave',
-    subtitle: 'Бронювання човнів',
-    season: 'Сезон 2025',
+    title: 'SUP Chernihiv',
+    subtitle: 'Оренда SUP-бордів',
+    season: 'Сезон 2026',
   },
 };
 

@@ -53,7 +53,13 @@ export function DetailsForm() {
 
       setBookingId(booking.bookingId);
 
-      const checkout = await createCheckout.mutateAsync({ bookingId: booking.bookingId });
+      // Build absolute redirect URLs so the payment provider can redirect back
+      const origin = window.location.origin;
+      const checkout = await createCheckout.mutateAsync({
+        bookingId: booking.bookingId,
+        resultUrl: `${origin}/book/success?session_id=${booking.bookingId}`,
+      });
+
       setSessionId(checkout.sessionId);
 
       // Redirect to payment provider checkout page
@@ -113,7 +119,6 @@ export function DetailsForm() {
           {errors.email && <p className="form-error">{errors.email.message}</p>}
         </div>
 
-        {/* Phone — required by backend, soft UX (no asterisk, no harsh label) */}
         <div className="form-group">
           <label className="form-label" htmlFor="phone">
             {MESSAGES.details.phone}
@@ -126,7 +131,6 @@ export function DetailsForm() {
               {...register('phone')}
               autoComplete="tel"
           />
-          {/* errors.phone is only shown if form tries to submit empty — no custom message */}
         </div>
 
         {error && (

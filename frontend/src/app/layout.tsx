@@ -28,8 +28,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Harbour & Wave — Бронювання човнів',
-  description: 'Забронюйте човен і насолоджуйтесь водною прогулянкою у власному ритмі.',
+  title: 'SUP Chernihiv — Оренда SUP-бордів',
+  description: 'Орендуй SUP-борд у Чернігові та насолодись водною прогулянкою у власному темпі.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

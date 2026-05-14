@@ -38,7 +38,7 @@ export interface BookingContact {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string; // required by backend
+  phone: string;
 }
 
 export interface CreateBookingBody {
@@ -54,9 +54,9 @@ export interface CreateBookingResponse {
   expiresAt: string;
 }
 
-// Checkout
 export interface CheckoutBody {
   bookingId: string;
+  resultUrl: string;
 }
 
 export interface CheckoutResponse {

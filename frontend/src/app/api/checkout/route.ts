@@ -3,6 +3,7 @@ import { env } from '@/shared/lib/env';
 
 const checkoutBodySchema = z.object({
   bookingId: z.string().min(1),
+  resultUrl: z.string().url(),
 });
 
 export async function POST(req: Request) {

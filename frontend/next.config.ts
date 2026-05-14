@@ -10,12 +10,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed for Next.js dev; tighten in prod
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' http://www.instagram.com https://www.instagram.com https://connect.facebook.net",              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https:",
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com",
-              "frame-src https://js.stripe.com",
+              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://www.instagram.com https://graph.instagram.com",
+              "frame-src https://js.stripe.com https://www.instagram.com https://www.facebook.com",
               "object-src 'none'",
               "base-uri 'self'",
             ].join('; '),
