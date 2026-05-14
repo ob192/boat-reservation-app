@@ -58,7 +58,7 @@ func (h *CheckoutHandler) CreateCheckout(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.checkout.CreateCheckout(c.Request.Context(), bookingID, user.ID, req.SuccessURL, req.CancelURL)
+	resp, err := h.checkout.CreateCheckout(c.Request.Context(), bookingID, user.ID, req.ResultURL)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrBookingNotFound):

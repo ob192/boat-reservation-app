@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,11 +36,11 @@ type Booking struct {
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index;uniqueIndex:idx_bookings_idem_user,priority:1" json:"userId"`
 	UserEmail string    `gorm:"type:varchar(255);not null" json:"userEmail"`
 
-	Date      string `gorm:"type:date;not null;index:idx_bookings_date_time" json:"date"`       // YYYY-MM-DD
-	Time      string `gorm:"type:varchar(5);not null;index:idx_bookings_date_time" json:"time"` // HH:MM
-	QtyBig    int    `gorm:"not null;default:0" json:"qtyBig"`
-	QtyMedium int    `gorm:"not null;default:0" json:"qtyMedium"`
-	QtyChild  int    `gorm:"not null;default:0" json:"qtyChild"`
+	Date      pgtype.Date `gorm:"type:date;not null;index:idx_bookings_date_time" json:"-"`          // YYYY-MM-DD
+	Time      string      `gorm:"type:varchar(5);not null;index:idx_bookings_date_time" json:"time"` // HH:MM
+	QtyBig    int         `gorm:"not null;default:0" json:"qtyBig"`
+	QtyMedium int         `gorm:"not null;default:0" json:"qtyMedium"`
+	QtyChild  int         `gorm:"not null;default:0" json:"qtyChild"`
 
 	FirstName string  `gorm:"type:varchar(50);not null" json:"firstName"`
 	LastName  string  `gorm:"type:varchar(50);not null" json:"lastName"`
@@ -81,4 +82,8 @@ func (b *Booking) EffectiveAmount() float64 {
 		return *b.PriceOverride
 	}
 	return b.TotalAmount
+}
+
+func (b *Booking) DateFormatted() string {
+	return b.Date.Time.UTC().Format("2006-01-02")
 }

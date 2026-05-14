@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgtype"
 	"time"
 
 	"github.com/google/uuid"
@@ -164,11 +165,13 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 			phone = &p
 		}
 
+		t, _ := time.Parse("2006-01-02", in.Date)
+
 		b := &model.Booking{
 			ID:             uuid.New(),
 			UserID:         in.UserID,
 			UserEmail:      in.UserEmail,
-			Date:           in.Date,
+			Date:           pgtype.Date{Time: t, Valid: true},
 			Time:           in.Time,
 			QtyBig:         in.Quantities.Big,
 			QtyMedium:      in.Quantities.Medium,

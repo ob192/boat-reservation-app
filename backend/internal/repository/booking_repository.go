@@ -15,6 +15,12 @@ import (
 // ErrNotFound is returned when a row lookup yields zero rows.
 var ErrNotFound = errors.New("not found")
 
+// BookedQty is the per-(date,time) aggregate of active booked quantities.
+type BookedQty struct {
+	Big    int
+	Medium int
+}
+
 // BookingRepository is the persistence boundary for bookings.
 type BookingRepository interface {
 	Create(ctx context.Context, b *model.Booking) error
@@ -32,8 +38,16 @@ type BookingRepository interface {
 	SumActiveQuantitiesForSlot(ctx context.Context, date, time string) (bookedBig, bookedMedium int, err error)
 
 	// SumActiveQuantitiesForDate returns total booked counts grouped by time
-	// across an entire date — used by the calendar availability endpoint.
+	// across an entire date — used by the per-date availability endpoint.
 	SumActiveQuantitiesForDate(ctx context.Context, date string) (map[string]struct{ Big, Medium int }, error)
+
+	// SumActiveQuantitiesForRange aggregates booked quantities for every (date, time)
+	// in the half-open interval [startDate, endDate) — used by the monthly availability
+	// endpoint to avoid the N+1 of one query per day.
+	//
+	// Returns a nested map: out[date][time] = {Big, Medium}. Dates / times with no
+	// active bookings are simply absent from the map (caller must treat as zero).
+	SumActiveQuantitiesForRange(ctx context.Context, startDate, endDate string) (map[string]map[string]BookedQty, error)
 
 	// ExpirePending sets all stale pending bookings to expired and returns how many rows changed.
 	ExpirePending(ctx context.Context, now time.Time) (int64, error)
@@ -190,6 +204,48 @@ func (r *bookingRepo) SumActiveQuantitiesForDate(
 	out := make(map[string]struct{ Big, Medium int }, len(rows))
 	for _, r := range rows {
 		out[r.Time] = struct{ Big, Medium int }{r.BookedBig, r.BookedMedium}
+	}
+	return out, nil
+}
+
+// SumActiveQuantitiesForRange aggregates booked qty for every (date, time) in
+// the half-open interval [startDate, endDate). One query, grouped on the DB side.
+// Indexes used: idx_bookings_date_time and idx_bookings_status_expires.
+func (r *bookingRepo) SumActiveQuantitiesForRange(
+	ctx context.Context,
+	startDate, endDate string,
+) (map[string]map[string]BookedQty, error) {
+	type row struct {
+		Date         time.Time // DATE column -> driver returns time.Time
+		Time         string
+		BookedBig    int
+		BookedMedium int
+	}
+	var rows []row
+	err := r.tx(ctx).
+		Table("bookings").
+		Select(`date,
+		        time,
+		        COALESCE(SUM(qty_big), 0)    AS booked_big,
+		        COALESCE(SUM(qty_medium), 0) AS booked_medium`).
+		Where("date >= ? AND date < ?", startDate, endDate).
+		Where("status = ? OR (status = ? AND expires_at > NOW())",
+			model.StatusConfirmed, model.StatusPending).
+		Group("date, time").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[string]map[string]BookedQty, len(rows))
+	for _, rw := range rows {
+		dateStr := rw.Date.UTC().Format("2006-01-02")
+		inner, ok := out[dateStr]
+		if !ok {
+			inner = make(map[string]BookedQty, 4) // typically 4 slot times per day
+			out[dateStr] = inner
+		}
+		inner[rw.Time] = BookedQty{Big: rw.BookedBig, Medium: rw.BookedMedium}
 	}
 	return out, nil
 }

@@ -45,9 +45,8 @@ type CreateBookingResponse struct {
 // ============================================================================
 
 type CreateCheckoutRequest struct {
-	BookingID  string `json:"bookingId"  binding:"required"`
-	SuccessURL string `json:"successUrl" binding:"required,url"`
-	CancelURL  string `json:"cancelUrl"  binding:"required,url"`
+	BookingID string `json:"bookingId"  binding:"required"`
+	ResultURL string `json:"resultUrl"  binding:"required,url"`
 }
 
 type CreateCheckoutResponse struct {

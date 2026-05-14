@@ -15,7 +15,7 @@ import (
 
 // CheckoutService creates payment sessions for pending bookings.
 type CheckoutService interface {
-	CreateCheckout(ctx context.Context, bookingID uuid.UUID, userID uuid.UUID, successURL, cancelURL string) (*model.CreateCheckoutResponse, error)
+	CreateCheckout(ctx context.Context, bookingID uuid.UUID, userID uuid.UUID, successURL string) (*model.CreateCheckoutResponse, error)
 }
 
 type checkoutService struct {
@@ -49,7 +49,7 @@ func (s *checkoutService) CreateCheckout(
 	ctx context.Context,
 	bookingID uuid.UUID,
 	userID uuid.UUID,
-	successURL, cancelURL string,
+	resultUrl string,
 ) (*model.CreateCheckoutResponse, error) {
 	b, err := s.bookingSvc.GetByIDForUser(ctx, bookingID, userID)
 	if err != nil {
@@ -69,10 +69,9 @@ func (s *checkoutService) CreateCheckout(
 		BookingID:   b.ID.String(),
 		UserEmail:   b.UserEmail,
 		AmountEUR:   amount,
-		Description: fmt.Sprintf("Harbour & Wave — Бронювання %s %s", b.Date, b.Time),
+		Description: fmt.Sprintf("Harbour & Wave — Бронювання %s %s", b.DateFormatted(), b.Time),
 		LineItems:   buildLineItems(b, amount),
-		SuccessURL:  successURL,
-		CancelURL:   cancelURL,
+		ResultURL:   resultUrl,
 		ExpiresAt:   b.ExpiresAt,
 		Metadata: map[string]string{
 			"booking_id": b.ID.String(),

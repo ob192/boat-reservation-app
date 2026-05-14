@@ -137,7 +137,7 @@ func (h *BookingHandler) GetBySession(c *gin.Context) {
 	if b.Status == model.StatusConfirmed {
 		resp.Booking = &model.BookingPublicView{
 			ID:         b.ID.String(),
-			Date:       b.Date,
+			Date:       b.DateFormatted(),
 			Time:       b.Time,
 			Quantities: b.Quantities(),
 			Contact: model.ContactPublicView{

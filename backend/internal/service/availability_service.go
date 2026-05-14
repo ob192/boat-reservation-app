@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
 	"github.com/harbour-wave/harbour-wave-backend/internal/repository"
 )
@@ -75,49 +77,92 @@ func ParseDate(s string) (time.Time, error) {
 	return t, nil
 }
 
+// GetMonth returns daily availability for an entire month.
+//
+// Performance notes:
+//   - All independent reads (settings, slots, date_blocks, optionally booked sums)
+//     run concurrently via errgroup — wall time ≈ slowest single query.
+//   - Booked quantities are aggregated for the whole month in ONE query
+//     (SumActiveQuantitiesForRange), not N queries-per-day.
+//   - When the global kill-switch is OFF we skip the booked-sum query entirely
+//     since every day will report zero anyway.
 func (s *availabilityService) GetMonth(ctx context.Context, month string) (*model.AvailabilityMonthResponse, error) {
 	start, end, err := ParseMonth(month)
 	if err != nil {
 		return nil, err
 	}
+	startStr := start.Format("2006-01-02")
+	endStr := end.Format("2006-01-02")
 
-	// 1) Pull all the raw data for the range. Three small queries; combined in Go.
-	settings, err := s.system.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("get settings: %w", err)
+	// Phase 1: concurrent fetch of settings + date blocks + slots.
+	// We can't decide whether to fetch booked sums until we know whether the
+	// kill-switch is on, so it's a second phase.
+	var (
+		settings   *model.SystemSettings
+		slots      []model.Slot
+		dateBlocks []model.DateBlock
+	)
+
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		v, err := s.system.Get(gctx)
+		if err != nil {
+			return fmt.Errorf("get settings: %w", err)
+		}
+		settings = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.slots.FindByMonth(gctx, start, end)
+		if err != nil {
+			return fmt.Errorf("find slots: %w", err)
+		}
+		slots = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.dateBlocks.FindManyInRange(gctx, startStr, endStr)
+		if err != nil {
+			return fmt.Errorf("find date blocks: %w", err)
+		}
+		dateBlocks = v
+		return nil
+	})
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	slots, err := s.slots.FindByMonth(ctx, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("find slots: %w", err)
-	}
-
-	dateBlocks, err := s.dateBlocks.FindManyInRange(ctx,
-		start.Format("2006-01-02"), end.Format("2006-01-02"))
-	if err != nil {
-		return nil, fmt.Errorf("find date blocks: %w", err)
-	}
 	blockedDates := make(map[string]bool, len(dateBlocks))
 	for _, db := range dateBlocks {
 		blockedDates[db.Date] = true
 	}
 
-	// 2) Group slots by date.
-	slotsByDate := make(map[string][]model.Slot)
-	for _, sl := range slots {
-		slotsByDate[sl.DateString()] = append(slotsByDate[sl.DateString()], sl)
+	// Phase 2: only query bookings if the kill-switch lets days have availability.
+	// (If bookings are globally disabled we still expose date-block state, but every
+	// day reports 0 available slots regardless of bookings.)
+	var bookedByDateTime map[string]map[string]repository.BookedQty
+	if settings.BookingsEnabled {
+		bookedByDateTime, err = s.bookings.SumActiveQuantitiesForRange(ctx, startStr, endStr)
+		if err != nil {
+			return nil, fmt.Errorf("sum quantities for range %s..%s: %w", startStr, endStr, err)
+		}
 	}
 
-	// 3) For each unique date in the result set, fetch booked sums per time slot.
-	//    For a monthly view this is 1 query per date — fine for the ~30-day cardinality.
-	//    If this ever becomes a hotspot, we can batch with one query per month.
-	days := make([]model.AvailabilityDay, 0)
+	// Group slots by date.
+	slotsByDate := make(map[string][]model.Slot, 31)
+	for _, sl := range slots {
+		d := sl.DateString()
+		slotsByDate[d] = append(slotsByDate[d], sl)
+	}
+
+	// Assemble per-day output.
+	days := make([]model.AvailabilityDay, 0, 31)
 	for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 		dateStr := d.Format("2006-01-02")
 		isBlocked := blockedDates[dateStr]
 
-		// If global kill-switch is off, expose 0 available slots.
-		if !settings.BookingsEnabled {
+		// Kill-switch OFF or date blocked → zero available.
+		if !settings.BookingsEnabled || isBlocked {
 			days = append(days, model.AvailabilityDay{
 				Date:           dateStr,
 				AvailableSlots: 0,
@@ -126,19 +171,8 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 			continue
 		}
 
-		// If the date itself is blocked, no point summing up bookings.
-		if isBlocked {
-			days = append(days, model.AvailabilityDay{
-				Date:           dateStr,
-				AvailableSlots: 0,
-				Blocked:        true,
-			})
-			continue
-		}
-
 		daySlots := slotsByDate[dateStr]
 		if len(daySlots) == 0 {
-			// No physical slots seeded for this date.
 			days = append(days, model.AvailabilityDay{
 				Date:           dateStr,
 				AvailableSlots: 0,
@@ -147,18 +181,15 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 			continue
 		}
 
-		bookedByTime, err := s.bookings.SumActiveQuantitiesForDate(ctx, dateStr)
-		if err != nil {
-			return nil, fmt.Errorf("sum quantities for %s: %w", dateStr, err)
-		}
+		bookedForDay := bookedByDateTime[dateStr] // nil-safe lookup below
 
 		// Per spec: availableSlots = MAX over unblocked time slots of (avail_big + avail_medium).
-		max := 0
+		maxAvail := 0
 		for _, sl := range daySlots {
 			if sl.Blocked {
 				continue
 			}
-			b := bookedByTime[sl.Time]
+			b := bookedForDay[sl.Time] // zero value if missing — fine
 			availBig := sl.CapacityBig - b.Big
 			if availBig < 0 {
 				availBig = 0
@@ -168,13 +199,13 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 				availMedium = 0
 			}
 			total := availBig + availMedium
-			if total > max {
-				max = total
+			if total > maxAvail {
+				maxAvail = total
 			}
 		}
 		days = append(days, model.AvailabilityDay{
 			Date:           dateStr,
-			AvailableSlots: max,
+			AvailableSlots: maxAvail,
 			Blocked:        false,
 		})
 	}
@@ -185,32 +216,58 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 	}, nil
 }
 
+// GetDate runs settings, date-block, slots, and booked-sum reads concurrently.
+// This endpoint fires every time the user picks a day on the calendar, so
+// parallelizing the 4 independent queries trims real latency.
 func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.SlotsForDateResponse, error) {
 	if _, err := ParseDate(date); err != nil {
 		return nil, err
 	}
 
-	settings, err := s.system.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("get settings: %w", err)
-	}
+	var (
+		settings     *model.SystemSettings
+		slots        []model.Slot
+		bookedByTime map[string]struct{ Big, Medium int }
+		dateBlocked  bool
+	)
 
-	dateBlocked := false
-	if _, err := s.dateBlocks.Find(ctx, date); err == nil {
-		dateBlocked = true
-	} else if !errors.Is(err, repository.ErrNotFound) {
-		return nil, fmt.Errorf("find date block: %w", err)
-	}
-
-	slots, err := s.slots.FindByDate(ctx, date)
-	if err != nil {
-		return nil, fmt.Errorf("find slots: %w", err)
-	}
-
-	// Pull aggregate booked quantities for the day in one query.
-	bookedByTime, err := s.bookings.SumActiveQuantitiesForDate(ctx, date)
-	if err != nil {
-		return nil, fmt.Errorf("sum quantities: %w", err)
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		v, err := s.system.Get(gctx)
+		if err != nil {
+			return fmt.Errorf("get settings: %w", err)
+		}
+		settings = v
+		return nil
+	})
+	g.Go(func() error {
+		if _, err := s.dateBlocks.Find(gctx, date); err == nil {
+			dateBlocked = true
+			return nil
+		} else if errors.Is(err, repository.ErrNotFound) {
+			return nil
+		} else {
+			return fmt.Errorf("find date block: %w", err)
+		}
+	})
+	g.Go(func() error {
+		v, err := s.slots.FindByDate(gctx, date)
+		if err != nil {
+			return fmt.Errorf("find slots: %w", err)
+		}
+		slots = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.bookings.SumActiveQuantitiesForDate(gctx, date)
+		if err != nil {
+			return fmt.Errorf("sum quantities: %w", err)
+		}
+		bookedByTime = v
+		return nil
+	})
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	// Build a map from time → slot so we can return the canonical 4 even if some are missing.
@@ -257,27 +314,54 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 	}, nil
 }
 
+// GetSlotAvailability — same parallel-fetch trick. Called inside the booking
+// path, so every millisecond shaved off helps under concurrent load.
 func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, time string) (*model.SlotAvailability, error) {
-	settings, err := s.system.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("get settings: %w", err)
-	}
+	var (
+		settings    *model.SystemSettings
+		slot        *model.Slot
+		bookedBig   int
+		bookedMed   int
+		dateBlocked bool
+	)
 
-	dateBlocked := false
-	if _, err := s.dateBlocks.Find(ctx, date); err == nil {
-		dateBlocked = true
-	} else if !errors.Is(err, repository.ErrNotFound) {
-		return nil, fmt.Errorf("find date block: %w", err)
-	}
-
-	slot, err := s.slots.FindByDateTime(ctx, date, time)
-	if err != nil {
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		v, err := s.system.Get(gctx)
+		if err != nil {
+			return fmt.Errorf("get settings: %w", err)
+		}
+		settings = v
+		return nil
+	})
+	g.Go(func() error {
+		if _, err := s.dateBlocks.Find(gctx, date); err == nil {
+			dateBlocked = true
+			return nil
+		} else if errors.Is(err, repository.ErrNotFound) {
+			return nil
+		} else {
+			return fmt.Errorf("find date block: %w", err)
+		}
+	})
+	g.Go(func() error {
+		v, err := s.slots.FindByDateTime(gctx, date, time)
+		if err != nil {
+			return err
+		}
+		slot = v
+		return nil
+	})
+	g.Go(func() error {
+		bb, bm, err := s.bookings.SumActiveQuantitiesForSlot(gctx, date, time)
+		if err != nil {
+			return fmt.Errorf("sum quantities: %w", err)
+		}
+		bookedBig, bookedMed = bb, bm
+		return nil
+	})
+	if err := g.Wait(); err != nil {
 		return nil, err
-	}
-
-	bb, bm, err := s.bookings.SumActiveQuantitiesForSlot(ctx, date, time)
-	if err != nil {
-		return nil, fmt.Errorf("sum quantities: %w", err)
 	}
 
 	return &model.SlotAvailability{
@@ -285,8 +369,8 @@ func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, tim
 		Time:            time,
 		CapacityBig:     slot.CapacityBig,
 		CapacityMedium:  slot.CapacityMedium,
-		BookedBig:       bb,
-		BookedMedium:    bm,
+		BookedBig:       bookedBig,
+		BookedMedium:    bookedMed,
 		SlotBlocked:     slot.Blocked,
 		DateBlocked:     dateBlocked,
 		BookingsEnabled: settings.BookingsEnabled,

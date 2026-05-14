@@ -16,8 +16,7 @@ type CreateSessionRequest struct {
 	AmountEUR   float64
 	Description string
 	LineItems   []LineItem
-	SuccessURL  string
-	CancelURL   string
+	ResultURL   string
 	ExpiresAt   time.Time
 	Metadata    map[string]string
 }

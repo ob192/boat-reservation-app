@@ -81,7 +81,7 @@ func (g *LiqPayGateway) CreateSession(ctx context.Context, req CreateSessionRequ
 		Description: req.Description,
 		OrderID:     req.BookingID, // use booking UUID as LiqPay order_id
 		ServerURL:   webhookURL,
-		ResultURL:   req.SuccessURL,
+		ResultURL:   req.ResultURL,
 		ExpiredDate: req.ExpiresAt.UTC().Format("2006-01-02 15:04:05"),
 		Language:    "uk",
 	}
