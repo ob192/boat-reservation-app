@@ -1,0 +1,830 @@
+basePath: /
+definitions:
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockDateRequest:
+    properties:
+      reason:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockDateResponse:
+    properties:
+      blocked:
+        type: boolean
+      blockedAt:
+        type: string
+      date:
+        type: string
+      reason:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockSlotRequest:
+    properties:
+      reason:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockSlotResponse:
+    properties:
+      blocked:
+        type: boolean
+      blockedAt:
+        type: string
+      date:
+        type: string
+      reason:
+        type: string
+      time:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminCancelBookingRequest:
+    properties:
+      reason:
+        minLength: 1
+        type: string
+    required:
+    - reason
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminCancelBookingResponse:
+    properties:
+      bookingId:
+        type: string
+      cancelledAt:
+        type: string
+      reason:
+        type: string
+      status:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminPriceOverrideRequest:
+    properties:
+      reason:
+        minLength: 5
+        type: string
+      totalAmount:
+        description: nil clears the override
+        type: number
+    required:
+    - reason
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminPriceOverrideResponse:
+    properties:
+      bookingId:
+        type: string
+      effectiveAmount:
+        type: number
+      overrideReason:
+        type: string
+      priceOverride:
+        type: number
+      totalAmount:
+        type: number
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSetBookingsEnabledRequest:
+    properties:
+      enabled:
+        type: boolean
+      reason:
+        type: string
+    required:
+    - enabled
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSetBookingsEnabledResponse:
+    properties:
+      bookingsEnabled:
+        type: boolean
+      reason:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockDateResponse:
+    properties:
+      blocked:
+        type: boolean
+      date:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockSlotResponse:
+    properties:
+      blocked:
+        type: boolean
+      date:
+        type: string
+      time:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityDay:
+    properties:
+      availableSlots:
+        type: integer
+      blocked:
+        type: boolean
+      date:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityMonthResponse:
+    properties:
+      days:
+        items:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityDay'
+        type: array
+      month:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.BookingBySessionResponse:
+    properties:
+      booking:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.BookingPublicView'
+      status:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.BookingPublicView:
+    properties:
+      contact:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.ContactPublicView'
+      date:
+        type: string
+      id:
+        type: string
+      quantities:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities'
+      status:
+        type: string
+      time:
+        type: string
+      totalAmount:
+        type: number
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.ContactPublicView:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.ContactRequest:
+    properties:
+      email:
+        description: ignored; JWT email used
+        type: string
+      firstName:
+        maxLength: 50
+        minLength: 1
+        type: string
+      lastName:
+        maxLength: 50
+        minLength: 1
+        type: string
+      phone:
+        description: REQUIRED
+        type: string
+    required:
+    - firstName
+    - lastName
+    - phone
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.CreateBookingRequest:
+    properties:
+      contact:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.ContactRequest'
+      date:
+        type: string
+      quantities:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.QuantitiesRequest'
+      time:
+        type: string
+    required:
+    - contact
+    - date
+    - quantities
+    - time
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.CreateBookingResponse:
+    properties:
+      bookingId:
+        type: string
+      expiresAt:
+        type: string
+      totalAmount:
+        type: number
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutRequest:
+    properties:
+      bookingId:
+        type: string
+    required:
+    - bookingId
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutResponse:
+    properties:
+      checkoutUrl:
+        type: string
+      sessionId:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities:
+    properties:
+      big:
+        type: integer
+      child:
+        type: integer
+      medium:
+        type: integer
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.QuantitiesRequest:
+    properties:
+      big:
+        type: integer
+      child:
+        type: integer
+      medium:
+        type: integer
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.SlotForDate:
+    properties:
+      availableBig:
+        type: integer
+      availableMedium:
+        type: integer
+      blocked:
+        type: boolean
+      time:
+        type: string
+      totalBig:
+        type: integer
+      totalMedium:
+        type: integer
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.SlotsForDateResponse:
+    properties:
+      bookingsEnabled:
+        type: boolean
+      date:
+        type: string
+      dateBlocked:
+        type: boolean
+      slots:
+        items:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.SlotForDate'
+        type: array
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody:
+    properties:
+      detail:
+        type: string
+      issues:
+        items:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.Issue'
+        type: array
+      message:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_pkg_httpx.Issue:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Boat reservation application API.
+  title: Harbour Wave API
+  version: "1.0"
+paths:
+  /admin/bookings/{bookingId}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Admin endpoint to force cancel a booking.
+      parameters:
+      - description: Booking ID (UUID)
+        in: path
+        name: bookingId
+        required: true
+        type: string
+      - description: Cancellation reason
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminCancelBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminCancelBookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Cancel a booking
+      tags:
+      - admin
+  /admin/bookings/{bookingId}/price:
+    patch:
+      consumes:
+      - application/json
+      description: Admin endpoint to manually override the price of a booking.
+      parameters:
+      - description: Booking ID (UUID)
+        in: path
+        name: bookingId
+        required: true
+        type: string
+      - description: Override details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminPriceOverrideRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminPriceOverrideResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Override booking price
+      tags:
+      - admin
+  /admin/dates/{date}/block:
+    delete:
+      description: Admin endpoint to remove a block on an entire date.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockDateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Unblock an entire date
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Admin endpoint to block bookings for an entire date.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      - description: Block reason
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockDateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockDateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Block an entire date
+      tags:
+      - admin
+  /admin/slots/{date}/{time}/block:
+    delete:
+      description: Admin endpoint to remove a block on a specific date and time.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      - description: Time in HH:MM format
+        in: path
+        name: time
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockSlotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Unblock a specific slot
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Admin endpoint to block bookings for a specific date and time.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      - description: Time in HH:MM format
+        in: path
+        name: time
+        required: true
+        type: string
+      - description: Block reason
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockSlotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockSlotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Block a specific slot
+      tags:
+      - admin
+  /admin/system/bookings-enabled:
+    put:
+      consumes:
+      - application/json
+      description: Admin endpoint to enable or disable the creation of all new bookings.
+      parameters:
+      - description: Kill-switch payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSetBookingsEnabledRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSetBookingsEnabledResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Toggle global booking kill-switch
+      tags:
+      - admin
+  /availability/{month}:
+    get:
+      description: Returns daily availability for a given month
+      parameters:
+      - description: Month in YYYY-MM format
+        in: path
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityMonthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Get monthly availability
+      tags:
+      - availability
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Creates a pending booking and holds slot capacity. Requires idempotency
+        key.
+      parameters:
+      - description: Idempotency Key
+        in: header
+        name: X-Idempotency-Key
+        required: true
+        type: string
+      - description: Booking payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.CreateBookingResponse'
+        "400":
+          description: INVALID_INPUT
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "401":
+          description: NOT_AUTHENTICATED
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "409":
+          description: SLOT_TAKEN
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "422":
+          description: VALIDATION_FAILED, DATE_BLOCKED, or SLOT_BLOCKED
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: BOOKINGS_DISABLED or SERVICE_UNAVAILABLE
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Create a new booking
+      tags:
+      - bookings
+  /bookings/by-session/{sessionId}:
+    get:
+      description: Returns minimal status info while pending, or the full booking
+        once confirmed.
+      parameters:
+      - description: Payment Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.BookingBySessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Get booking by session
+      tags:
+      - bookings
+  /checkout:
+    post:
+      consumes:
+      - application/json
+      description: Generates a payment gateway checkout URL for a pending booking.
+      parameters:
+      - description: Checkout Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "410":
+          description: BOOKING_EXPIRED
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "422":
+          description: BOOKING_NOT_PENDING
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Create checkout session
+      tags:
+      - checkout
+  /payment/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Receives payment status updates via HMAC-secured webhook.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: INVALID_SIGNATURE or CANNOT_READ_BODY
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "500":
+          description: WEBHOOK_PROCESSING_FAILED
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      summary: Payment gateway webhook
+      tags:
+      - webhooks
+  /slots/{date}:
+    get:
+      description: Returns all available and blocked slots for a specific date
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.SlotsForDateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Get slots for a date
+      tags:
+      - availability
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
