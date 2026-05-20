@@ -2,15 +2,16 @@
 
 import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useSlots } from '@/features/booking/hooks';
-import { MESSAGES, MAX_BIG, MAX_MEDIUM, TIME_OPTIONS } from '@/features/booking/messages';
+import { MESSAGES } from '@/features/booking/messages';
 
-function TimeSlotSkeleton({ time }: { time: string }) {
+function TimeSlotSkeleton() {
     return (
         <div className="time-slot time-slot-skeleton" aria-hidden="true">
-            <div className="skel-line" style={{ width: '55%', height: '1.5rem' }} />
-            <div className="skel-line" style={{ width: '38%', height: '0.65rem' }} />
-            <div className="skel-line" style={{ width: '100%', height: '3px', marginTop: '0.6rem' }} />
-            <div className="skel-line" style={{ width: '72%', height: '0.65rem', marginTop: '0.35rem', marginBottom: 0 }} />
+            <div className="skel-line" style={{ width: '3.5rem', height: '1.4rem' }} />
+            <div style={{ flex: 1 }}>
+                <div className="skel-line" style={{ width: '100%', height: '3px' }} />
+                <div className="skel-line" style={{ width: '60%', height: '0.65rem', marginTop: '0.3rem', marginBottom: 0 }} />
+            </div>
         </div>
     );
 }
@@ -21,7 +22,6 @@ export function TimeSlots() {
 
     if (!selectedDate) return null;
 
-    // ── Loading state ─────────────────────────────────────────────────
     if (isLoading) {
         return (
             <div>
@@ -30,15 +30,12 @@ export function TimeSlots() {
                     Перевіряємо доступні часові слоти…
                 </div>
                 <div className="time-slots" aria-busy="true">
-                    {TIME_OPTIONS.map((t) => (
-                        <TimeSlotSkeleton key={t} time={t} />
-                    ))}
+                    {[0, 1, 2, 3].map((i) => <TimeSlotSkeleton key={i} />)}
                 </div>
             </div>
         );
     }
 
-    // ── Error state ───────────────────────────────────────────────────
     if (isError) {
         return (
             <div className="availability-error-banner" role="alert">
@@ -47,87 +44,72 @@ export function TimeSlots() {
         );
     }
 
-    // ── Loaded ────────────────────────────────────────────────────────
-    const slotsMap = new Map<
-        string,
-        { availableBig: number; availableMedium: number; totalBig: number; totalMedium: number; blocked: boolean }
-    >();
-    slotsData?.slots.forEach((s) =>
-        slotsMap.set(s.time, {
-            availableBig: s.availableBig,
-            availableMedium: s.availableMedium,
-            totalBig: s.totalBig,
-            totalMedium: s.totalMedium,
-            blocked: s.blocked,
-        }),
-    );
-
+    const slots = slotsData?.slots ?? [];
     const dateBlocked = slotsData?.dateBlocked ?? false;
+
+    if (slots.length === 0) {
+        return (
+            <p style={{ color: 'var(--subtle)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem 0' }}>
+                {MESSAGES.time.noSlots}
+            </p>
+        );
+    }
 
     return (
         <div className="time-slots" role="group" aria-label="Доступні часові слоти">
-            {TIME_OPTIONS.map((t) => {
-                const slotInfo = slotsMap.get(t);
-                const isBlocked = dateBlocked || (slotInfo?.blocked ?? false);
-
-                const availableBig = slotInfo?.availableBig ?? MAX_BIG;
-                const availableMedium = slotInfo?.availableMedium ?? MAX_MEDIUM;
-                const totalBig = slotInfo?.totalBig ?? MAX_BIG;
-
-                const isFull = !isBlocked && availableBig <= 0 && availableMedium <= 0;
+            {slots.map((s) => {
+                const isBlocked = dateBlocked || s.blocked;
+                const isFull = !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0;
                 const isUnavailable = isBlocked || isFull;
-                const isSel = selectedTime === t;
+                const isSel = selectedTime === s.time;
 
-                const pctBig = totalBig > 0 ? ((totalBig - availableBig) / totalBig) * 100 : 0;
-
+                const pctBig = s.totalBig > 0 ? ((s.totalBig - s.availableBig) / s.totalBig) * 100 : 0;
                 const bigFillColor =
-                    availableBig <= 0
-                        ? 'var(--coral)'
-                        : availableBig <= 4
-                            ? 'var(--gold)'
+                    s.availableBig <= 0 ? 'var(--coral)'
+                        : s.availableBig <= 4 ? 'var(--gold)'
                             : 'var(--teal)';
 
                 return (
                     <div
-                        key={t}
+                        key={s.time}
                         className={`time-slot ${isFull ? 'full' : ''} ${isBlocked ? 'slot-blocked' : ''} ${isSel ? 'selected' : ''}`}
-                        onClick={!isUnavailable ? () => setTime(t) : undefined}
+                        onClick={!isUnavailable ? () => setTime(s.time) : undefined}
                         role="radio"
                         aria-checked={isSel}
                         aria-disabled={isUnavailable}
                         tabIndex={isUnavailable ? -1 : 0}
                         onKeyDown={(e) => {
-                            if ((e.key === 'Enter' || e.key === ' ') && !isUnavailable) setTime(t);
+                            if ((e.key === 'Enter' || e.key === ' ') && !isUnavailable) setTime(s.time);
                         }}
                     >
                         {isBlocked && <div className="full-tag blocked-tag">{MESSAGES.time.blockedTag}</div>}
                         {!isBlocked && isFull && <div className="full-tag">{MESSAGES.time.fullTag}</div>}
 
-                        <div className="time">{t}</div>
-                        <div className="period">{MESSAGES.time.periods[t] ?? ''}</div>
+                        <div className="time">{s.time}</div>
 
-                        {!isBlocked && (
-                            <div className="slots-bar" aria-hidden="true">
-                                <div
-                                    className="slots-fill"
-                                    style={{
-                                        width: `${pctBig}%`,
-                                        background: isSel ? 'var(--seafoam)' : bigFillColor,
-                                    }}
-                                />
-                            </div>
-                        )}
-
-                        <div className="slots-text">
-                            {isBlocked ? (
-                                <span>{MESSAGES.time.blockedTag}</span>
-                            ) : (
-                                <>
-                                    <span>⛵ {MESSAGES.time.bigAvailable(availableBig)}</span>
-                                    <span className="slots-sep">·</span>
-                                    <span>🚤 {MESSAGES.time.mediumAvailable(availableMedium)}</span>
-                                </>
+                        <div className="slot-right">
+                            {!isBlocked && (
+                                <div className="slots-bar" aria-hidden="true">
+                                    <div
+                                        className="slots-fill"
+                                        style={{
+                                            width: `${pctBig}%`,
+                                            background: isSel ? 'rgba(255,255,255,0.4)' : bigFillColor,
+                                        }}
+                                    />
+                                </div>
                             )}
+                            <div className="slots-text">
+                                {isBlocked ? (
+                                    <span>{MESSAGES.time.blockedTag}</span>
+                                ) : (
+                                    <>
+                                        <span>⛵ {MESSAGES.time.bigAvailable(s.availableBig)}</span>
+                                        <span className="slots-sep">·</span>
+                                        <span>🚤 {MESSAGES.time.mediumAvailable(s.availableMedium)}</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 );

@@ -214,6 +214,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                     style={{
                         textDecoration: 'none',
                         background: 'var(--navy)',
+                        color: 'white',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -222,11 +223,11 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                 >
                     {/* Google Calendar icon */}
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-                        <path d="M3 9h18" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        <rect x="7" y="13" width="3" height="3" rx="0.5" fill="currentColor"/>
-                        <rect x="14" y="13" width="3" height="3" rx="0.5" fill="currentColor"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+                        <path d="M3 9h18" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <rect x="7" y="13" width="3" height="3" rx="0.5" fill="currentColor" />
+                        <rect x="14" y="13" width="3" height="3" rx="0.5" fill="currentColor" />
                     </svg>
                     Додати до Google Календаря
                 </a>
@@ -300,6 +301,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                             {MARINA.address}
                         </div>
                     </div>
+
                     <a
                         href={mapsOpenUrl}
                         target="_blank"
@@ -310,7 +312,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                             alignItems: 'center',
                             gap: '0.3rem',
                             padding: '0.45rem 0.75rem',
-                            background: 'var(--teal)',
+                            background: 'var(--navy)',
                             color: 'white',
                             borderRadius: 8,
                             fontSize: '0.72rem',
@@ -320,8 +322,8 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                         }}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor"/>
-                            <circle cx="12" cy="9" r="2.5" fill="white"/>
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor" />
+                            <circle cx="12" cy="9" r="2.5" fill="white" />
                         </svg>
                         Відкрити
                     </a>

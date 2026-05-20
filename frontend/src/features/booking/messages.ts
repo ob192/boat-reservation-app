@@ -29,12 +29,6 @@ export const MESSAGES = {
     noSlots: 'Місць немає',
     bigAvailable: (n: number) => `Великі: ${n}`,
     mediumAvailable: (n: number) => `Середні: ${n}`,
-    periods: {
-      '08:00': 'Ранок',
-      '11:00': 'Пізній ранок',
-      '15:00': 'День',
-      '19:00': 'Вечір',
-    } as Record<string, string>,
   },
   boats: {
     title: 'Виберіть човни',
@@ -112,4 +106,3 @@ export const MAX_BIG = 15;
 export const MAX_MEDIUM = 15;
 /** @deprecated use MAX_BIG / MAX_MEDIUM instead */
 export const MAX_SLOTS = 15;
-export const TIME_OPTIONS = ['08:00', '11:00', '15:00', '19:00'] as const;
