@@ -18,11 +18,17 @@ export function BoatSelector() {
 
   const change = (type: 'big' | 'medium' | 'child', delta: number) => {
     if (type === 'child') {
-      setQuantity('child', Math.max(0, quantities.child + delta));
+      // Children are capped to the number of reserved big boats
+      setQuantity('child', Math.max(0, Math.min(quantities.big, quantities.child + delta)));
     } else if (type === 'big') {
       const newVal = Math.max(0, Math.min(availableBig, quantities.big + delta));
       setQuantity('big', newVal);
-      if (newVal === 0) setQuantity('child', 0);
+      // If big boats decrease, children can't exceed the new big-boat count
+      if (newVal === 0) {
+        setQuantity('child', 0);
+      } else {
+        setQuantity('child', Math.min(quantities.child, newVal));
+      }
     } else {
       const newVal = Math.max(0, Math.min(availableMedium, quantities.medium + delta));
       setQuantity('medium', newVal);
@@ -112,6 +118,7 @@ export function BoatSelector() {
                       onClick={() => change('child', -1)}
                       aria-label={MESSAGES.boats.decrease}
                       type="button"
+                      disabled={quantities.child === 0}
                   >
                     −
                   </button>
@@ -119,6 +126,8 @@ export function BoatSelector() {
                   <button
                       className="qty-btn"
                       onClick={() => change('child', 1)}
+                      // Children cannot exceed the number of reserved big boats
+                      disabled={quantities.child >= quantities.big}
                       aria-label={MESSAGES.boats.increase}
                       type="button"
                   >
