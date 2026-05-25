@@ -1,0 +1,28 @@
+/* ─── BACKGROUND ────────────────────────────────────────────────────────── */
+
+.bg-ocean {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: #ffffff;
+}
+
+.bg-ocean::before,
+.bg-ocean::after { display: none; }
+
+/* Keep wave elements in markup but hide them */
+.wave-layer { display: none; }
+
+@keyframes pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}

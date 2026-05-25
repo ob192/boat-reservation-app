@@ -1,0 +1,44 @@
+/* ─── DESIGN TOKENS ─────────────────────────────────────────────────────── */
+/* shadcn-inspired: clean white, near-black, neutral greys, turquoise accent */
+
+:root {
+  /* ── Core brand (keep the turquoise CTA) ── */
+  --amber:    #00C1C6;
+  --amber-lt: #3DD3D7;
+  --amber-dk: #00A3A7;
+  --amber-ink:#0A5E61;
+  --honey:    #7DDDBD;
+  --mint:     #7DDDBD;
+  --seafoam:  #00C1C6;
+  --peach:    #f0f0f0;
+
+  /* ── Surface & background ── */
+  --bg:       #ffffff;
+  --surface:  #f9f9f9;
+  --sand:     #f4f4f5;   /* zinc-100 — header strip / nav / summary           */
+  --mist:     #e4e4e7;   /* zinc-200 — borders                                */
+  --cream:    #ffffff;   /* card body                                         */
+
+  /* ── Text ── */
+  --text:     #09090b;   /* zinc-950 */
+  --subtle:   #71717a;   /* zinc-500 */
+  --on-amber: #ffffff;
+
+  /* ── Dark ── */
+  --navy:     #18181b;   /* zinc-900 */
+  --sky-top:  #18181b;
+
+  /* ── Semantic ── */
+  --coral:    #ef4444;
+  --success:  #16a34a;
+  --gold:     #f59e0b;
+  --teal:     #10b981;
+
+  /* ── Tokens ── */
+  --radius-sm:  4px;
+  --radius:     6px;
+  --radius-lg:  10px;
+  --radius-xl:  14px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-btn:  0 4px 12px rgba(0, 193, 198, 0.28);
+}

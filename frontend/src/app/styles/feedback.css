@@ -1,0 +1,86 @@
+/* ─── FULL-PAGE SPINNER ─────────────────────────────────────────────────── */
+
+.full-page-spinner {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--mist);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ─── MINI SPINNER ───────────────────────────────────────────────────────── */
+
+.mini-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--mist);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ─── SKELETON SHIMMER ──────────────────────────────────────────────────── */
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f4f4f5 25%, #fafafa 50%, #f4f4f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skel-inline {
+  height: 0.7em;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e4e4e7 25%, #f4f4f5 50%, #e4e4e7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+.skel-line {
+  background: linear-gradient(90deg, #e4e4e7 25%, #f4f4f5 50%, #e4e4e7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+/* ─── AVAILABILITY BANNERS ──────────────────────────────────────────────── */
+
+.availability-loading-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: #f0fdfb;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  color: #065f46;
+  margin-bottom: 0.75rem;
+}
+
+.availability-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius);
+  font-size: 0.76rem;
+  color: #dc2626;
+  margin-bottom: 0.75rem;
+  line-height: 1.45;
+}

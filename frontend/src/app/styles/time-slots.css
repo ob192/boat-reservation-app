@@ -1,0 +1,118 @@
+/* ─── TIME SLOTS ────────────────────────────────────────────────────────── */
+
+.time-slots {
+  display: grid;
+  grid-template-columns: 1fr;   /* single column — full width, text always fits */
+  gap: 0.5rem;
+}
+
+.time-slot {
+  border: 1px solid var(--mist);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.time-slot:active:not(.full):not(.selected) {
+  background: var(--surface);
+  border-color: var(--text);
+}
+
+.time-slot.selected { border-color: var(--text); background: var(--text); color: white; }
+.time-slot.full     { opacity: 0.4; cursor: not-allowed; background: var(--surface); }
+
+/* Time label */
+.time-slot .time {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  min-width: 3.5rem;
+}
+
+.time-slot.selected .time { color: white; }
+
+/* Right side: bar + text */
+.time-slot .slot-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* Capacity bar */
+.time-slot .slots-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--mist);
+  overflow: hidden;
+}
+
+.time-slot .slots-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--amber);
+  transition: width 0.4s;
+}
+
+.time-slot.selected .slots-fill { background: rgba(255,255,255,0.4); }
+.time-slot.full .slots-fill     { background: var(--coral); }
+
+/* Availability text — single line */
+.time-slot .slots-text {
+  font-size: 0.7rem;
+  color: var(--subtle);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.time-slot.selected .slots-text { color: rgba(255,255,255,0.65); }
+
+/* Full / blocked tags */
+.time-slot .full-tag {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.6rem;
+  background: var(--coral);
+  color: white;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.4rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.time-slot.slot-blocked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--surface);
+  border-color: var(--mist);
+}
+
+.time-slot.slot-blocked .time,
+.time-slot.slot-blocked .slots-text { color: var(--subtle); opacity: 0.7; }
+
+.blocked-tag { background: var(--subtle) !important; }
+
+.slots-sep { opacity: 0.4; flex-shrink: 0; }
+
+/* Skeleton */
+.time-slot.time-slot-skeleton {
+  cursor: default;
+  pointer-events: none;
+  background: white;
+  display: block;
+}

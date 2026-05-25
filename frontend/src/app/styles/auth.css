@@ -1,0 +1,107 @@
+/* ─── SIGN-IN PAGE ──────────────────────────────────────────────────────── */
+
+.signin-wrap {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0.85rem;
+  position: relative;
+  z-index: 10;
+  background: var(--surface);
+}
+
+.signin-card {
+  background: var(--cream);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--mist);
+  text-align: center;
+}
+
+.signin-card h1 {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
+.signin-card p {
+  color: var(--subtle);
+  font-size: 0.8rem;
+  margin-bottom: 1.75rem;
+  line-height: 1.55;
+}
+
+/* ─── USER MENU ─────────────────────────────────────────────────────────── */
+
+.user-menu-wrap { position: relative; }
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--sand);
+  border: 1px solid var(--mist);
+  border-radius: 24px;
+  padding: 0.25rem 0.6rem 0.25rem 0.25rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.72rem;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 40px;
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06);
+  min-width: 190px;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.user-menu-info {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--mist);
+}
+
+.user-menu-email  { font-size: 0.7rem; color: var(--subtle); word-break: break-all; }
+.user-menu-name   { font-size: 0.82rem; color: var(--text); font-weight: 500; margin-bottom: 0.1rem; }
+
+.user-menu-btn {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  color: var(--coral);
+  transition: background 0.15s;
+  min-height: 44px;
+}

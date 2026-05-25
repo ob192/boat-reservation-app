@@ -1,0 +1,127 @@
+/* ─── CALENDAR ──────────────────────────────────────────────────────────── */
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.cal-nav-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--mist);
+  background: white;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.cal-nav-btn:active { background: var(--text); color: white; border-color: var(--text); }
+
+.cal-month {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day-label {
+  text-align: center;
+  padding: 0.3rem 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  font-weight: 600;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  min-height: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+  gap: 2px;
+  background: white;
+}
+
+.cal-day:active:not(.empty):not(.past):not(.selected) {
+  background: var(--sand);
+  border-color: var(--mist);
+}
+
+.cal-day.selected         { background: var(--text); border-color: var(--text); color: white; }
+.cal-day.selected .avail-dot { background: rgba(255,255,255,0.4); }
+.cal-day.past             { opacity: 0.3; cursor: not-allowed; background: transparent; }
+.cal-day.empty            { cursor: default; background: transparent; }
+
+.cal-day .day-num  { font-size: 0.8rem; font-weight: 500; line-height: 1; }
+
+.cal-day .avail-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.cal-day.full .avail-dot    { background: var(--coral); }
+.cal-day.partial .avail-dot { background: var(--gold); }
+.cal-day.empty .avail-dot,
+.cal-day.past .avail-dot    { display: none; }
+
+/* Legend */
+.cal-legend {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--subtle);
+}
+
+.cal-legend-item .ld { width: 7px; height: 7px; border-radius: 50%; }
+
+/* Blocked day */
+.cal-day.date-blocked {
+  cursor: not-allowed;
+  background: var(--surface);
+  opacity: 0.6;
+}
+
+.cal-day.date-blocked .avail-dot { background: var(--subtle); opacity: 0.4; }
+
+/* Skeleton */
+.cal-day.cal-day-skeleton {
+  background: linear-gradient(90deg, #f4f4f5 25%, #fafafa 50%, #f4f4f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  cursor: default;
+  border-color: transparent !important;
+  pointer-events: none;
+}
