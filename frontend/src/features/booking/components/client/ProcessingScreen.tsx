@@ -109,7 +109,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
         day: 'numeric',
     });
 
-    const period = MESSAGES.time.periods[booking.time] ?? '';
+    const period = '';
     const total =
         booking.quantities.big * PRICES.big +
         booking.quantities.medium * PRICES.medium +
