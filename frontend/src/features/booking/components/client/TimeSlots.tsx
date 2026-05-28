@@ -16,6 +16,15 @@ function TimeSlotSkeleton() {
     );
 }
 
+/** Returns true if the slot time on the given date is in the past or within 30 min from now */
+function isSlotInPast(date: string, time: string): boolean {
+    const [h, m] = time.split(':').map(Number);
+    const slotDate = new Date(`${date}T00:00:00`);
+    slotDate.setHours(h, m, 0, 0);
+    const cutoff = new Date(Date.now() + 30 * 60 * 1000); // 30 min buffer
+    return slotDate <= cutoff;
+}
+
 export function TimeSlots() {
     const { selectedDate, selectedTime, setTime } = useBookingStore();
     const { data: slotsData, isLoading, isError } = useSlots(selectedDate);
@@ -46,6 +55,35 @@ export function TimeSlots() {
 
     const slots = slotsData?.slots ?? [];
     const dateBlocked = slotsData?.dateBlocked ?? false;
+    const fullyBlocked = slotsData?.fullyBlocked ?? false;
+
+    // ── Fully blocked ────────────────────────────────────────────────
+    if (fullyBlocked) {
+        return (
+            <div
+                style={{
+                    background: '#fefce8',
+                    border: '1px solid #fde68a',
+                    borderRadius: 12,
+                    padding: '1.25rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    textAlign: 'center',
+                }}
+                role="alert"
+            >
+                <span style={{ fontSize: '1.75rem' }}>🚧</span>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#92400e' }}>
+                    Тимчасово недоступно
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#a16207', lineHeight: 1.5, maxWidth: 280 }}>
+                    Бронювання на цей день тимчасово призупинено. Спробуйте вибрати інший день або зайдіть пізніше.
+                </div>
+            </div>
+        );
+    }
 
     if (slots.length === 0) {
         return (
@@ -55,9 +93,29 @@ export function TimeSlots() {
         );
     }
 
+    // Check if today — only then apply past-slot filtering
+    const todayKey = (() => {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    })();
+    const isToday = selectedDate === todayKey;
+
+    // Filter out slots that are in the past when viewing today
+    const visibleSlots = isToday
+        ? slots.filter((s) => !isSlotInPast(selectedDate, s.time))
+        : slots;
+
+    if (visibleSlots.length === 0) {
+        return (
+            <p style={{ color: 'var(--subtle)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem 0' }}>
+                На сьогодні більше немає доступних слотів.
+            </p>
+        );
+    }
+
     return (
         <div className="time-slots" role="group" aria-label="Доступні часові слоти">
-            {slots.map((s) => {
+            {visibleSlots.map((s) => {
                 const isBlocked = dateBlocked || s.blocked;
                 const isFull = !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0;
                 const isUnavailable = isBlocked || isFull;

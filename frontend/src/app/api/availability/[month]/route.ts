@@ -11,7 +11,7 @@ export async function GET(
   }
 
   try {
-    const res = await fetch(`${env.BACKEND_URL}/availability/${month}`, {
+    const res = await fetch(`${env.BACKEND_URL}/api/availability/${month}`, {
       headers: { Authorization: auth },
       next: { revalidate: 30 },
     });

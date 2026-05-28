@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiFetch } from '@/shared/lib/api/client';
 import type {
+  StatusResponse,
   AvailabilityResponse,
   SlotsResponse,
   CreateBookingBody,
@@ -12,12 +13,21 @@ import type {
   BookingStatusResponse,
 } from '@/shared/lib/api/types';
 
-export function useAvailability(month: string) {
+export function useBookingSystemStatus() {
+  return useQuery({
+    queryKey: ['system-status'],
+    queryFn: () => apiFetch<StatusResponse>('/status'),
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
+export function useAvailability(month: string, enabled = true) {
   return useQuery({
     queryKey: ['availability', month],
     queryFn: () => apiFetch<AvailabilityResponse>(`/availability/${month}`),
     staleTime: 30_000,
-    enabled: !!month,
+    enabled: !!month && enabled,
   });
 }
 
@@ -33,21 +43,21 @@ export function useSlots(date: string | null) {
 export function useCreateBooking() {
   return useMutation({
     mutationFn: (body: CreateBookingBody) =>
-      apiFetch<CreateBookingResponse>('/bookings', {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
-      }),
+        apiFetch<CreateBookingResponse>('/bookings', {
+          method: 'POST',
+          body: JSON.stringify(body),
+          headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        }),
   });
 }
 
 export function useCreateCheckout() {
   return useMutation({
     mutationFn: (body: CheckoutBody) =>
-      apiFetch<CheckoutResponse>('/checkout', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
+        apiFetch<CheckoutResponse>('/checkout', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
   });
 }
 
@@ -57,9 +67,9 @@ export function useBookingStatus(sessionId: string | null) {
     queryFn: () => apiFetch<BookingStatusResponse>(`/bookings/${sessionId}`),
     enabled: !!sessionId,
     refetchInterval: (query) =>
-      query.state.data?.status === 'confirmed' || query.state.data?.status === 'failed'
-        ? false
-        : 2000,
+        query.state.data?.status === 'confirmed' || query.state.data?.status === 'failed'
+            ? false
+            : 2000,
     refetchIntervalInBackground: false,
   });
 }

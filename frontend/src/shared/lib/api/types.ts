@@ -1,8 +1,15 @@
+// Status
+export interface StatusResponse {
+  bookingsEnabled: boolean;
+  reason?: string;
+}
+
 // Availability
 export interface DayAvailability {
   date: string;
   availableSlots: number;
   blocked: boolean;
+  fullyBlocked: boolean;
 }
 
 export interface AvailabilityResponse {
@@ -24,6 +31,7 @@ export interface SlotsResponse {
   date: string;
   dateBlocked: boolean;
   bookingsEnabled: boolean;
+  fullyBlocked: boolean;
   slots: TimeSlot[];
 }
 

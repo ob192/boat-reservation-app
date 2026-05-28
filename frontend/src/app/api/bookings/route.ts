@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const idempotencyKey = req.headers.get('x-idempotency-key') ?? crypto.randomUUID();
 
   try {
-    const res = await fetch(`${env.BACKEND_URL}/bookings`, {
+    const res = await fetch(`${env.BACKEND_URL}/api/bookings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -15,6 +15,7 @@ export const MESSAGES = {
     limited: 'Обмежено',
     booked: 'Заброньовано',
     blocked: 'Недоступно',
+    fullyBlocked: 'Тимчасово Недоступно',
     days: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
     months: [
       'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
@@ -101,8 +102,7 @@ export const MESSAGES = {
   },
 };
 
-export const PRICES = { big: 35, medium: 20, child: 17.5 };
-export const MAX_BIG = 15;
-export const MAX_MEDIUM = 15;
-/** @deprecated use MAX_BIG / MAX_MEDIUM instead */
-export const MAX_SLOTS = 15;
+export const PRICES = { big: 400, medium: 400, child: 200 };
+
+export const MAX_BIG = 30;
+export const MAX_MEDIUM = 30;

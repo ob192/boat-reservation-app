@@ -11,7 +11,7 @@ export async function GET(
   }
 
   try {
-    const res = await fetch(`${env.BACKEND_URL}/bookings/by-session/${sessionId}`, {
+    const res = await fetch(`${env.BACKEND_URL}/api/bookings/by-session/${sessionId}`, {
       headers: { Authorization: auth },
     });
 

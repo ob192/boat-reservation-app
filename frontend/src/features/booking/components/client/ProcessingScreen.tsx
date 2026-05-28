@@ -1,28 +1,28 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useBookingStore } from '@/features/booking/store/bookingStore';
-import { useBookingStatus } from '@/features/booking/hooks';
-import { MESSAGES, PRICES } from '@/features/booking/messages';
-import { formatCurrency } from '@/shared/lib/currency';
+import Script from 'next/script';
+import {useRouter} from 'next/navigation';
+import {useBookingStore} from '@/features/booking/store/bookingStore';
+import {useBookingStatus} from '@/features/booking/hooks';
+import {MESSAGES, PRICES} from '@/features/booking/messages';
+import {formatCurrency} from '@/shared/lib/currency';
 
-// ─── Mocked marina location ────────────────────────────────────────────────
-// Replace coordinates and name with the real departure point.
+// ─── Marina location ───────────────────────────────────────────────────────
 const MARINA = {
-    name: 'Harbour & Wave Marina',
-    address: 'Набережна Перемоги, 1, Чернігів, 14000',
-    lat: 51.4982,
-    lng: 31.2893,
-    /** Google Maps place ID — replace with real one */
-    placeId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
+    name: 'Kyryla Rozumovskoho St, 5',
+    address: 'Chernihiv, Chernihivs\'ka oblast, 14000',
+    lat: 51.51083547181443,
+    lng: 31.35220277765311,
+    placeId: '0x46d5484aca07d961:0xdc3b564198209bee',
 } as const;
 
-// Duration of a boat session in minutes (adjust to real session length)
+const MAPS_EMBED_SRC =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2483.129752207899!2d31.354777700000003!3d51.5108355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5484aca07d961%3A0xdc3b564198209bee!2sKyryla%20Rozumovskoho%20St%2C%205%2C%20Chernihiv%2C%20Chernihivs%27ka%20oblast%2C%2014000!5e0!3m2!1sen!2sua!4v1779964836720!5m2!1sen!2sua';
+// Duration of a boat session in minutes
 const SESSION_DURATION_MINUTES = 120;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-/** Build a Google Calendar "add event" URL */
 function buildCalendarUrl({
                               title,
                               description,
@@ -36,7 +36,6 @@ function buildCalendarUrl({
     startISO: string;
     endISO: string;
 }): string {
-    // Google Calendar expects UTC datetimes in the format YYYYMMDDTHHmmssZ
     const fmt = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const params = new URLSearchParams({
         action: 'TEMPLATE',
@@ -48,7 +47,6 @@ function buildCalendarUrl({
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-/** Parse "HH:MM" time string and return Date set to that time on the given date string */
 function buildStartDate(date: string, time: string): Date {
     const [h, m] = time.split(':').map(Number);
     const d = new Date(`${date}T00:00:00`);
@@ -56,14 +54,10 @@ function buildStartDate(date: string, time: string): Date {
     return d;
 }
 
-/** Google Static Maps thumbnail URL (no API key needed for embed link, but Static Maps needs a key)
- *  We use the Maps *embed* iframe approach which is free and key-optional for basic usage. */
-function buildMapsEmbedUrl(lat: number, lng: number): string {
-    // This uses the no-API-key-required embed endpoint.
-    return `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+function buildMapsEmbedUrl(_lat: number, _lng: number): string {
+    return MAPS_EMBED_SRC;
 }
 
-/** Direct "open in Google Maps" link */
 function buildMapsOpenUrl(lat: number, lng: number, placeId: string): string {
     return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${placeId}`;
 }
@@ -73,7 +67,7 @@ function buildMapsOpenUrl(lat: number, lng: number, placeId: string): string {
 export function ProcessingScreen() {
     return (
         <div className="processing-screen">
-            <div className="processing-spinner" aria-hidden="true" />
+            <div className="processing-spinner" aria-hidden="true"/>
             <h3
                 style={{
                     fontFamily: 'var(--font-playfair)',
@@ -84,7 +78,7 @@ export function ProcessingScreen() {
             >
                 {MESSAGES.processing.title}
             </h3>
-            <p style={{ color: 'var(--subtle)', fontSize: '0.85rem' }}>{MESSAGES.processing.subtitle}</p>
+            <p style={{color: 'var(--subtle)', fontSize: '0.85rem'}}>{MESSAGES.processing.subtitle}</p>
         </div>
     );
 }
@@ -95,8 +89,8 @@ interface ConfirmationDisplayProps {
     booking: NonNullable<ReturnType<typeof useBookingStatus>['data']>['booking'];
 }
 
-function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
-    const { reset } = useBookingStore();
+function ConfirmationDisplay({booking}: ConfirmationDisplayProps) {
+    const {reset} = useBookingStore();
     const router = useRouter();
 
     if (!booking) return null;
@@ -116,8 +110,8 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
         booking.quantities.child * PRICES.child;
 
     const rows = [
-        { label: MESSAGES.success.dateLabel, val: dateStr },
-        { label: MESSAGES.success.departureLabel, val: `${booking.time} · ${period}` },
+        {label: MESSAGES.success.dateLabel, val: dateStr},
+        {label: MESSAGES.success.departureLabel, val: `${booking.time} · ${period}`},
         ...(booking.quantities.big > 0
             ? [
                 {
@@ -149,7 +143,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     const endDate = new Date(startDate.getTime() + SESSION_DURATION_MINUTES * 60_000);
 
     const calendarUrl = buildCalendarUrl({
-        title: `⛵ Harbour & Wave — Прогулянка на човні`,
+        title: `⛵ SUP Chernihiv — Прогулянка на SUP-борді`,
         description: [
             `Ваше бронювання підтверджено!`,
             ``,
@@ -184,170 +178,221 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     };
 
     return (
-        <div className="confirm-screen">
-            <div className="confirm-icon">🎉</div>
-            <h3>{MESSAGES.success.title}</h3>
-            <p>{MESSAGES.success.message}</p>
+        <>
+            <div className="confirm-screen">
+                <div className="confirm-icon">🎉</div>
+                <h3>{MESSAGES.success.title}</h3>
+                <p>{MESSAGES.success.message}</p>
 
-            {/* Booking details */}
-            <div className="confirm-details">
-                {rows.map((r) => (
-                    <div key={r.label} className="confirm-row">
-                        <span className="cr-label">{r.label}</span>
-                        <span className="cr-val">{r.val}</span>
-                    </div>
-                ))}
-                <div className="confirm-row total">
-                    <span className="cr-label">{MESSAGES.success.totalLabel}</span>
-                    <span className="cr-val">{formatCurrency(total)}</span>
-                </div>
-            </div>
-
-            {/* ── Action buttons ───────────────────────────────────────────── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.5rem' }}>
-                {/* Add to Google Calendar */}
-                <a
-                    href={calendarUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-primary"
-                    style={{
-                        textDecoration: 'none',
-                        background: 'var(--navy)',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                    }}
-                >
-                    {/* Google Calendar icon */}
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                        <path d="M3 9h18" stroke="currentColor" strokeWidth="2" />
-                        <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <rect x="7" y="13" width="3" height="3" rx="0.5" fill="currentColor" />
-                        <rect x="14" y="13" width="3" height="3" rx="0.5" fill="currentColor" />
-                    </svg>
-                    Додати до Google Календаря
-                </a>
-
-                {/* New booking */}
-                <button
-                    className="btn-ghost"
-                    onClick={handleNewBooking}
-                    type="button"
-                    style={{ width: '100%' }}
-                >
-                    {MESSAGES.buttons.newBooking}
-                </button>
-            </div>
-
-            {/* ── Departure point map ──────────────────────────────────────── */}
-            <div style={{ textAlign: 'left' }}>
-                <div
-                    style={{
-                        fontSize: '0.6rem',
-                        letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                        color: 'var(--subtle)',
-                        fontWeight: 600,
-                        marginBottom: '0.55rem',
-                    }}
-                >
-                    📍 Місце відправлення
-                </div>
-
-                {/* Map iframe */}
-                <div
-                    style={{
-                        borderRadius: 12,
-                        overflow: 'hidden',
-                        border: '1.5px solid var(--mist)',
-                        marginBottom: '0.55rem',
-                        height: 200,
-                        position: 'relative',
-                    }}
-                >
-                    <iframe
-                        title="Місце відправлення"
-                        src={mapsEmbedUrl}
-                        width="100%"
-                        height="200"
-                        style={{ border: 0, display: 'block' }}
-                        allowFullScreen={false}
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                    />
-                </div>
-
-                {/* Marina info + "Open in Maps" link */}
-                <div
-                    style={{
-                        background: 'var(--sand)',
-                        borderRadius: 10,
-                        padding: '0.75rem 0.9rem',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                    }}
-                >
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--navy)', marginBottom: '0.15rem' }}>
-                            {MARINA.name}
+                {/* Booking details */}
+                <div className="confirm-details">
+                    {rows.map((r) => (
+                        <div key={r.label} className="confirm-row">
+                            <span className="cr-label">{r.label}</span>
+                            <span className="cr-val">{r.val}</span>
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--subtle)', lineHeight: 1.4 }}>
-                            {MARINA.address}
-                        </div>
+                    ))}
+                    <div className="confirm-row total">
+                        <span className="cr-label">{MESSAGES.success.totalLabel}</span>
+                        <span className="cr-val">{formatCurrency(total)}</span>
                     </div>
+                </div>
 
+                {/* ── Action buttons ───────────────────────────────────────────── */}
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.5rem'}}>
                     <a
-                        href={mapsOpenUrl}
+                        href={calendarUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="btn-primary"
                         style={{
-                            flexShrink: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            padding: '0.45rem 0.75rem',
+                            textDecoration: 'none',
                             background: 'var(--navy)',
                             color: 'white',
-                            borderRadius: 8,
-                            fontSize: '0.72rem',
-                            fontWeight: 500,
-                            textDecoration: 'none',
-                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
                         }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor" />
-                            <circle cx="12" cy="9" r="2.5" fill="white" />
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"
+                                  fill="none"/>
+                            <path d="M3 9h18" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <rect x="7" y="13" width="3" height="3" rx="0.5" fill="currentColor"/>
+                            <rect x="14" y="13" width="3" height="3" rx="0.5" fill="currentColor"/>
                         </svg>
-                        Відкрити
+                        Додати до Google Календаря
                     </a>
+
+                    <button
+                        className="btn-ghost"
+                        onClick={handleNewBooking}
+                        type="button"
+                        style={{width: '100%'}}
+                    >
+                        {MESSAGES.buttons.newBooking}
+                    </button>
+                </div>
+
+                {/* ── Departure point map ──────────────────────────────────────── */}
+                <div style={{textAlign: 'left'}}>
+                    <div
+                        style={{
+                            fontSize: '0.6rem',
+                            letterSpacing: '0.14em',
+                            textTransform: 'uppercase',
+                            color: 'var(--subtle)',
+                            fontWeight: 600,
+                            marginBottom: '0.55rem',
+                        }}
+                    >
+                        📍 Місце відправлення
+                    </div>
+
+                    <div
+                        style={{
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            border: '1.5px solid var(--mist)',
+                            marginBottom: '0.55rem',
+                            height: 200,
+                            position: 'relative',
+                        }}
+                    >
+                        <iframe
+                            title="Місце відправлення"
+                            src={mapsEmbedUrl}
+                            width="100%"
+                            height="200"
+                            style={{border: 0, display: 'block'}}
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                        />
+                    </div>
+
+                    <div
+                        style={{
+                            background: 'var(--sand)',
+                            borderRadius: 10,
+                            padding: '0.75rem 0.9rem',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                        }}
+                    >
+                        <div style={{minWidth: 0}}>
+                            <div style={{
+                                fontWeight: 600,
+                                fontSize: '0.85rem',
+                                color: 'var(--navy)',
+                                marginBottom: '0.15rem'
+                            }}>
+                                {MARINA.name}
+                            </div>
+                            <div style={{fontSize: '0.72rem', color: 'var(--subtle)', lineHeight: 1.4}}>
+                                {MARINA.address}
+                            </div>
+                        </div>
+
+                        <a
+                            href={mapsOpenUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                flexShrink: 0,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.45rem 0.75rem',
+                                background: 'var(--navy)',
+                                color: 'white',
+                                borderRadius: 8,
+                                fontSize: '0.72rem',
+                                fontWeight: 500,
+                                textDecoration: 'none',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                                      fill="currentColor"/>
+                                <circle cx="12" cy="9" r="2.5" fill="white"/>
+                            </svg>
+                            Відкрити
+                        </a>
+                    </div>
+                </div>
+
+                {/* ── Instagram embed ──────────────────────────────────────────── */}
+                <div style={{marginTop: '1.75rem', textAlign: 'left'}}>
+                    <div
+                        style={{
+                            fontSize: '0.6rem',
+                            letterSpacing: '0.14em',
+                            textTransform: 'uppercase',
+                            color: 'var(--subtle)',
+                            fontWeight: 600,
+                            marginBottom: '0.65rem',
+                        }}
+                    >
+                        📸 Ми в Instagram
+                    </div>
+                    <div
+                        style={{
+                            borderRadius: 14,
+                            overflow: 'hidden',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06)',
+                        }}
+                    >
+                        <blockquote
+                            className="instagram-media"
+                            data-instgrm-captioned=""
+                            data-instgrm-permalink="https://www.instagram.com/reel/DYPbuVwyOZX/?utm_source=ig_embed&utm_campaign=loading"
+                            data-instgrm-version="14"
+                            style={{
+                                background: '#FFF',
+                                border: 0,
+                                borderRadius: 0,
+                                boxShadow: 'none',
+                                margin: 0,
+                                maxWidth: '100%',
+                                minWidth: 0,
+                                padding: 0,
+                                width: '100%',
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <Script
+                async
+                src="https://www.instagram.com/embed.js"
+                strategy="lazyOnload"
+            />
+        </>
     );
 }
 
 // ─── SuccessPoller ─────────────────────────────────────────────────────────
 
-export function SuccessPoller({ sessionId }: { sessionId: string }) {
-    const { data, isLoading } = useBookingStatus(sessionId);
+export function SuccessPoller({sessionId}: { sessionId: string }) {
+    const {data, isLoading} = useBookingStatus(sessionId);
 
-    if (isLoading) return <ProcessingScreen />;
+    if (isLoading) return <ProcessingScreen/>;
 
     if (data?.status === 'confirmed') {
-        return <ConfirmationDisplay booking={data.booking} />;
+        return <ConfirmationDisplay booking={data.booking}/>;
     }
 
     if (data?.status === 'failed' || data?.status === 'expired') {
         return (
             <div className="confirm-screen">
-                <div className="confirm-icon" style={{ background: '#fff0ed' }}>
+                <div className="confirm-icon" style={{background: '#fff0ed'}}>
                     ❌
                 </div>
                 <h3
@@ -360,15 +405,15 @@ export function SuccessPoller({ sessionId }: { sessionId: string }) {
                 >
                     {data.status === 'expired' ? MESSAGES.errors.bookingExpired : MESSAGES.errors.paymentFailed}
                 </h3>
-                <p style={{ color: 'var(--subtle)', fontSize: '0.85rem' }}>
+                <p style={{color: 'var(--subtle)', fontSize: '0.85rem'}}>
                     Спробуйте ще раз або оберіть інший слот.
                 </p>
-                <a href="/book/date" className="btn-primary" style={{ marginTop: '1.5rem', textDecoration: 'none' }}>
+                <a href="/book/date" className="btn-primary" style={{marginTop: '1.5rem', textDecoration: 'none'}}>
                     Спробувати знову
                 </a>
             </div>
         );
     }
 
-    return <ProcessingScreen />;
+    return <ProcessingScreen/>;
 }

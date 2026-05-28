@@ -38,6 +38,13 @@
   gap: 2px;
 }
 
+/* All days dimmed when bookings globally disabled */
+.cal-grid--disabled .cal-day:not(.past):not(.empty) {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .cal-day-label {
   text-align: center;
   padding: 0.3rem 0;
@@ -69,12 +76,12 @@
   border-color: var(--mist);
 }
 
-.cal-day.selected         { background: var(--text); border-color: var(--text); color: white; }
+.cal-day.selected            { background: var(--text); border-color: var(--text); color: white; }
 .cal-day.selected .avail-dot { background: rgba(255,255,255,0.4); }
-.cal-day.past             { opacity: 0.3; cursor: not-allowed; background: transparent; }
-.cal-day.empty            { cursor: default; background: transparent; }
+.cal-day.past                { opacity: 0.3; cursor: not-allowed; background: transparent; }
+.cal-day.empty               { cursor: default; background: transparent; }
 
-.cal-day .day-num  { font-size: 0.8rem; font-weight: 500; line-height: 1; }
+.cal-day .day-num { font-size: 0.8rem; font-weight: 500; line-height: 1; }
 
 .cal-day .avail-dot {
   width: 4px;
@@ -88,26 +95,35 @@
 .cal-day.empty .avail-dot,
 .cal-day.past .avail-dot    { display: none; }
 
-/* Legend */
+/* ─── LEGEND ─────────────────────────────────────────────────────────────── */
+
 .cal-legend {
   display: flex;
-  gap: 0.7rem;
-  margin-top: 0.75rem;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 0.3rem 0.6rem;
+  margin-top: 0.75rem;
+  padding: 0 0.25rem;
 }
 
 .cal-legend-item {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: var(--subtle);
+  white-space: nowrap;
 }
 
-.cal-legend-item .ld { width: 7px; height: 7px; border-radius: 50%; }
+.cal-legend-item .ld {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-/* Blocked day */
+/* ─── BLOCKED DAYS ───────────────────────────────────────────────────────── */
+
 .cal-day.date-blocked {
   cursor: not-allowed;
   background: var(--surface);
@@ -116,7 +132,32 @@
 
 .cal-day.date-blocked .avail-dot { background: var(--subtle); opacity: 0.4; }
 
-/* Skeleton */
+/* Fully blocked day (temporary) — must come after date-blocked */
+.cal-day.date-fully-blocked {
+  cursor: not-allowed;
+  background: #fefce8;
+  opacity: 0.85;
+}
+
+.cal-day.date-fully-blocked .avail-dot {
+  background: var(--gold);
+  opacity: 0.9;
+}
+
+/* Prevent selected style from overriding blocked states */
+.cal-day.date-blocked.selected,
+.cal-day.date-fully-blocked.selected {
+  background: var(--surface);
+  border-color: var(--mist);
+  color: var(--text);
+}
+
+.cal-day.date-fully-blocked.selected {
+  background: #fefce8;
+}
+
+/* ─── SKELETON ───────────────────────────────────────────────────────────── */
+
 .cal-day.cal-day-skeleton {
   background: linear-gradient(90deg, #f4f4f5 25%, #fafafa 50%, #f4f4f5 75%);
   background-size: 200% 100%;

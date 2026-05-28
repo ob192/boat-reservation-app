@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch(`${env.BACKEND_URL}/checkout`, {
+    const res = await fetch(`${env.BACKEND_URL}/api/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ export async function GET(
   }
 
   try {
-    const res = await fetch(`${env.BACKEND_URL}/slots/${date}`, {
+    const res = await fetch(`${env.BACKEND_URL}/api/slots/${date}`, {
       headers: { Authorization: auth },
       next: { revalidate: 15 },
     });

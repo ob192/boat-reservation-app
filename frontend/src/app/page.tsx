@@ -2,16 +2,18 @@ import Link from 'next/link';
 import Script from 'next/script';
 
 // ─── Contact & location constants ─────────────────────────────────────────
-const PHONE_DISPLAY = '+38 (067) 123-45-67';
-const PHONE_HREF = 'tel:+380671234567';
+const PHONE_DISPLAY = '+38 (050) 367-66-70';
+const PHONE_HREF = 'tel:+380503676670';
 
-/** Replace with the real coordinates and place ID */
-const MARINA_LAT = 51.4982;
-const MARINA_LNG = 31.2893;
-const MARINA_PLACE_ID = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
+const MARINA_LAT = 51.51083547181443;
+const MARINA_LNG = 31.35220277765311;
+const MARINA_PLACE_ID = '0x46d5484aca07d961:0xdc3b564198209bee';
 
-function buildMapsEmbedUrl(lat: number, lng: number): string {
-    return `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+const MAPS_EMBED_SRC =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2483.129752207899!2d31.354777700000003!3d51.5108355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5484aca07d961%3A0xdc3b564198209bee!2sKyryla%20Rozumovskoho%20St%2C%205%2C%20Chernihiv%2C%20Chernihivs%27ka%20oblast%2C%2014000!5e0!3m2!1sen!2sua!4v1779964836720!5m2!1sen!2sua';
+
+function buildMapsEmbedUrl(_lat: number, _lng: number): string {
+    return MAPS_EMBED_SRC;
 }
 
 function buildMapsOpenUrl(lat: number, lng: number, placeId: string): string {
@@ -57,7 +59,7 @@ export default function HomePage() {
 
             <div className="hero">
                 <h2>
-                    Відчуйте свободу<br />
+                    Відчуйте свободу<br/>
                     <em>на воді</em>
                 </h2>
                 <p>
@@ -96,88 +98,6 @@ export default function HomePage() {
                     zIndex: 10,
                 }}
             >
-
-                {/* ── Phone number ──────────────────────────────────────────── */}
-                {/*<div*/}
-                {/*    style={{*/}
-                {/*        marginTop: '2rem',*/}
-                {/*        background: 'var(--sand)',*/}
-                {/*        border: '1px solid var(--mist)',*/}
-                {/*        borderRadius: 14,*/}
-                {/*        padding: '1rem 1.25rem',*/}
-                {/*        display: 'flex',*/}
-                {/*        alignItems: 'center',*/}
-                {/*        justifyContent: 'space-between',*/}
-                {/*        gap: '0.75rem',*/}
-                {/*    }}*/}
-                {/*>*/}
-                {/*    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>*/}
-                {/*        <div*/}
-                {/*            style={{*/}
-                {/*                width: 36,*/}
-                {/*                height: 36,*/}
-                {/*                borderRadius: 10,*/}
-                {/*                background: 'var(--cream)',*/}
-                {/*                border: '1px solid var(--mist)',*/}
-                {/*                display: 'flex',*/}
-                {/*                alignItems: 'center',*/}
-                {/*                justifyContent: 'center',*/}
-                {/*                fontSize: '1.1rem',*/}
-                {/*                flexShrink: 0,*/}
-                {/*            }}*/}
-                {/*        >*/}
-                {/*            📞*/}
-                {/*        </div>*/}
-                {/*        <div>*/}
-                {/*            <div*/}
-                {/*                style={{*/}
-                {/*                    fontSize: '0.6rem',*/}
-                {/*                    textTransform: 'uppercase',*/}
-                {/*                    letterSpacing: '0.12em',*/}
-                {/*                    color: 'var(--subtle)',*/}
-                {/*                    fontWeight: 600,*/}
-                {/*                    marginBottom: '0.15rem',*/}
-                {/*                }}*/}
-                {/*            >*/}
-                {/*                Зв'язатися з нами*/}
-                {/*            </div>*/}
-                {/*            <a*/}
-                {/*                href={PHONE_HREF}*/}
-                {/*                style={{*/}
-                {/*                    fontFamily: 'var(--font-playfair), "Playfair Display", serif',*/}
-                {/*                    fontSize: '1.05rem',*/}
-                {/*                    fontWeight: 700,*/}
-                {/*                    color: 'var(--text)',*/}
-                {/*                    textDecoration: 'none',*/}
-                {/*                    letterSpacing: '0.02em',*/}
-                {/*                }}*/}
-                {/*            >*/}
-                {/*                {PHONE_DISPLAY}*/}
-                {/*            </a>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-
-                {/*    <a*/}
-                {/*        href={PHONE_HREF}*/}
-                {/*        style={{*/}
-                {/*            flexShrink: 0,*/}
-                {/*            display: 'inline-flex',*/}
-                {/*            alignItems: 'center',*/}
-                {/*            gap: '0.3rem',*/}
-                {/*            padding: '0.5rem 0.9rem',*/}
-                {/*            background: 'var(--seafoam)',*/}
-                {/*            color: 'white',*/}
-                {/*            borderRadius: 10,*/}
-                {/*            fontSize: '0.78rem',*/}
-                {/*            fontWeight: 600,*/}
-                {/*            textDecoration: 'none',*/}
-                {/*            whiteSpace: 'nowrap',*/}
-                {/*        }}*/}
-                {/*    >*/}
-                {/*        Подзвонити*/}
-                {/*    </a>*/}
-                {/*</div>*/}
-
                 {/* ── Phone number ──────────────────────────────────────────── */}
                 <div
                     style={{
@@ -193,7 +113,7 @@ export default function HomePage() {
                         flexWrap: 'wrap',
                     }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: '1 1 auto' }}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: '1 1 auto'}}>
                         <div
                             style={{
                                 width: 36,
@@ -210,7 +130,7 @@ export default function HomePage() {
                         >
                             📞
                         </div>
-                        <div style={{ minWidth: 0 }}>
+                        <div style={{minWidth: 0}}>
                             <div
                                 style={{
                                     fontSize: '0.6rem',
@@ -224,168 +144,91 @@ export default function HomePage() {
                                 Зв'язатися з нами
                             </div>
                             <a
-                            href={PHONE_HREF}
-                            style={{
-                            fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                            fontSize: 'clamp(0.9rem, 4vw, 1.05rem)',
-                            fontWeight: 700,
-                            color: 'var(--text)',
-                            textDecoration: 'none',
-                            letterSpacing: '0.02em',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'block',
-                        }}
+                                href={PHONE_HREF}
+                                style={{
+                                    fontFamily: 'var(--font-playfair), "Playfair Display", serif',
+                                    fontSize: 'clamp(0.9rem, 4vw, 1.05rem)',
+                                    fontWeight: 700,
+                                    color: 'var(--text)',
+                                    textDecoration: 'none',
+                                    letterSpacing: '0.02em',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    display: 'block',
+                                }}
                             >
-                            {PHONE_DISPLAY}
-                        </a>
+                                {PHONE_DISPLAY}
+                            </a>
+                        </div>
                     </div>
+
+                    <a
+                        href={PHONE_HREF}
+                        style={{
+                            flexShrink: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            padding: '0.55rem 1rem',
+                            background: 'var(--seafoam)',
+                            color: 'white',
+                            borderRadius: 10,
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            whiteSpace: 'nowrap',
+                            minHeight: 44,
+                        }}
+                    >
+                        Подзвонити
+                    </a>
                 </div>
-
-                <a
-                href={PHONE_HREF}
-                style={{
-                flexShrink: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.55rem 1rem',
-                background: 'var(--seafoam)',
-                color: 'white',
-                borderRadius: 10,
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                minHeight: 44,
-            }}
-                >
-                Подзвонити
-            </a>
-        </div>
-
 
                 {/* ── Instagram embed ───────────────────────────────────────── */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '1rem',
-                        padding: '0 0.25rem',
-                    }}
-                >
-                    {/*<div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>*/}
-                    {/*    <div*/}
-                    {/*        style={{*/}
-                    {/*            width: 36,*/}
-                    {/*            height: 36,*/}
-                    {/*            borderRadius: 10,*/}
-                    {/*            background:*/}
-                    {/*                'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',*/}
-                    {/*            display: 'flex',*/}
-                    {/*            alignItems: 'center',*/}
-                    {/*            justifyContent: 'center',*/}
-                    {/*            flexShrink: 0,*/}
-                    {/*        }}*/}
-                    {/*    >*/}
-                    {/*        <svg*/}
-                    {/*            width="20"*/}
-                    {/*            height="20"*/}
-                    {/*            viewBox="0 0 24 24"*/}
-                    {/*            fill="none"*/}
-                    {/*            aria-hidden="true"*/}
-                    {/*        >*/}
-                    {/*            <rect*/}
-                    {/*                x="2"*/}
-                    {/*                y="2"*/}
-                    {/*                width="20"*/}
-                    {/*                height="20"*/}
-                    {/*                rx="5"*/}
-                    {/*                stroke="white"*/}
-                    {/*                strokeWidth="2"*/}
-                    {/*            />*/}
-                    {/*            <circle cx="12" cy="12" r="4" stroke="white" strokeWidth="2" />*/}
-                    {/*            <circle cx="17.5" cy="6.5" r="1" fill="white" />*/}
-                    {/*        </svg>*/}
-                    {/*    </div>*/}
-                    {/*    <div>*/}
-                    {/*        <div*/}
-                    {/*            style={{*/}
-                    {/*                color: 'var(--text)',*/}
-                    {/*                fontWeight: 600,*/}
-                    {/*                fontSize: '0.9rem',*/}
-                    {/*                lineHeight: 1.2,*/}
-                    {/*            }}*/}
-                    {/*        >*/}
-                    {/*            Ми в Instagram*/}
-                    {/*        </div>*/}
-                    {/*        <div*/}
-                    {/*            style={{*/}
-                    {/*                color: 'var(--amber-ink)',*/}
-                    {/*                fontSize: '0.65rem',*/}
-                    {/*                letterSpacing: '0.1em',*/}
-                    {/*                textTransform: 'uppercase',*/}
-                    {/*                fontWeight: 500,*/}
-                    {/*            }}*/}
-                    {/*        >*/}
-                    {/*            @supboard_che*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
-
-                    {/*<a*/}
-                    {/*    href="https://www.instagram.com/supboard_che/"*/}
-                    {/*    target="_blank"*/}
-                    {/*    rel="noopener noreferrer"*/}
-                    {/*    style={subscribeStyle}*/}
-                    {/*>*/}
-                    {/*    Підписатись*/}
-                    {/*</a>*/}
-                </div>
-
-                <div
-                    style={{
-                        borderRadius: 18,
-                        overflow: 'hidden',
-                        boxShadow:
-                            '0 20px 50px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
-                    }}
-                >
-                    <blockquote
-                        className="instagram-media"
-                        data-instgrm-captioned=""
-                        data-instgrm-permalink="https://www.instagram.com/reel/DYPbuVwyOZX/?utm_source=ig_embed&utm_campaign=loading"
-                        data-instgrm-version="14"
+                <div style={{marginTop: '2rem'}}>
+                    <div
                         style={{
-                            background: '#FFF',
-                            border: 0,
-                            borderRadius: 0,
-                            boxShadow: 'none',
-                            margin: 0,
-                            maxWidth: '100%',
-                            minWidth: 0,
-                            padding: 0,
-                            width: '100%',
+                            borderRadius: 18,
+                            overflow: 'hidden',
+                            boxShadow:
+                                '0 20px 50px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
                         }}
-                    />
-                </div>
+                    >
+                        <blockquote
+                            className="instagram-media"
+                            data-instgrm-captioned=""
+                            data-instgrm-permalink="https://www.instagram.com/reel/DYPbuVwyOZX/?utm_source=ig_embed&utm_campaign=loading"
+                            data-instgrm-version="14"
+                            style={{
+                                background: '#FFF',
+                                border: 0,
+                                borderRadius: 0,
+                                boxShadow: 'none',
+                                margin: 0,
+                                maxWidth: '100%',
+                                minWidth: 0,
+                                padding: 0,
+                                width: '100%',
+                            }}
+                        />
+                    </div>
 
-                <p
-                    style={{
-                        textAlign: 'center',
-                        color: 'var(--subtle)',
-                        fontSize: '0.65rem',
-                        marginTop: '0.85rem',
-                        letterSpacing: '0.05em',
-                    }}
-                >
-                    Більше відео та фото — в нашому Instagram
-                </p>
+                    <p
+                        style={{
+                            textAlign: 'center',
+                            color: 'var(--subtle)',
+                            fontSize: '0.65rem',
+                            marginTop: '0.85rem',
+                            letterSpacing: '0.05em',
+                        }}
+                    >
+                        Більше відео та фото — в нашому Instagram
+                    </p>
+                </div>
 
                 {/* ── Location / Google Maps ─────────────────────────────────── */}
-                <div style={{ marginTop: '2rem' }}>
+                <div style={{marginTop: '2rem'}}>
                     <div
                         style={{
                             display: 'flex',
@@ -431,8 +274,8 @@ export default function HomePage() {
                             src={mapsEmbedUrl}
                             width="100%"
                             height="240"
-                            style={{ border: 0, display: 'block' }}
-                            allowFullScreen={false}
+                            style={{border: 0, display: 'block'}}
+                            allowFullScreen
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
                         />
@@ -447,11 +290,16 @@ export default function HomePage() {
                             padding: '0.7rem 0.9rem',
                         }}
                     >
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--navy)', marginBottom: '0.1rem' }}>
-                            Harbour &amp; Wave Marina
+                        <div style={{
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                            color: 'var(--navy)',
+                            marginBottom: '0.1rem'
+                        }}>
+                            Kyryla Rozumovskoho St, 5
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--subtle)' }}>
-                            Набережна Перемоги, 1, Чернігів, 14000
+                        <div style={{fontSize: '0.72rem', color: 'var(--subtle)'}}>
+                            Chernihiv, Chernihivs'ka oblast, 14000
                         </div>
                     </div>
                 </div>
@@ -480,7 +328,7 @@ export default function HomePage() {
                     >
                         Політика конфіденційності
                     </Link>
-                    <span style={{ fontSize: '0.6rem', color: 'var(--mist)' }}>·</span>
+                    <span style={{fontSize: '0.6rem', color: 'var(--mist)'}}>·</span>
                     <Link
                         href="/terms"
                         style={{
@@ -492,10 +340,10 @@ export default function HomePage() {
                     >
                         Умови використання
                     </Link>
-                    <span style={{ fontSize: '0.6rem', color: 'var(--mist)' }}>·</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--subtle)', letterSpacing: '0.03em' }}>
-                    © 2026 SUP Chernihiv
-                </span>
+                    <span style={{fontSize: '0.6rem', color: 'var(--mist)'}}>·</span>
+                    <span style={{fontSize: '0.68rem', color: 'var(--subtle)', letterSpacing: '0.03em'}}>
+                        © 2026 SUP Chernihiv
+                    </span>
                 </div>
             </div>
 
