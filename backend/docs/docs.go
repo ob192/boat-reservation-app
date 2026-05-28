@@ -286,6 +286,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/slots/{date}/{time}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin endpoint to create a slot for a given date/time or update its capacity.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create or update a slot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Date in YYYY-MM-DD format",
+                        "name": "date",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time in HH:MM format",
+                        "name": "time",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Capacity payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/slots/{date}/{time}/block": {
             "put": {
                 "security": [
@@ -402,6 +473,71 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockSlotResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/slots/{date}/{time}/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin endpoint returning all bookings (any status) for a specific date/time slot.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List bookings for a slot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Date in YYYY-MM-DD format",
+                        "name": "date",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time in HH:MM format",
+                        "name": "time",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSlotBookingsResponse"
                         }
                     },
                     "400": {
@@ -835,6 +971,37 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns whether bookings are globally available or fully blocked",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "availability"
+                ],
+                "summary": "Get booking status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.BookingStatusResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -887,6 +1054,41 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBookingListEntry": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "effectiveAmount": {
+                    "type": "number"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "quantities": {
+                    "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "totalAmount": {
+                    "type": "number"
+                },
+                "userEmail": {
                     "type": "string"
                 }
             }
@@ -984,6 +1186,23 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSlotBookingsResponse": {
+            "type": "object",
+            "properties": {
+                "bookings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBookingListEntry"
+                    }
+                },
+                "date": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockDateResponse": {
             "type": "object",
             "properties": {
@@ -1009,6 +1228,47 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotRequest": {
+            "type": "object",
+            "required": [
+                "capacityBig",
+                "capacityMedium"
+            ],
+            "properties": {
+                "capacityBig": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "capacityMedium": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean"
+                },
+                "capacityBig": {
+                    "type": "integer"
+                },
+                "capacityMedium": {
+                    "type": "integer"
+                },
+                "created": {
+                    "description": "true = new row, false = updated",
+                    "type": "boolean"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityDay": {
             "type": "object",
             "properties": {
@@ -1020,6 +1280,9 @@ const docTemplate = `{
                 },
                 "date": {
                     "type": "string"
+                },
+                "fullyBlocked": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1071,6 +1334,17 @@ const docTemplate = `{
                 },
                 "totalAmount": {
                     "type": "number"
+                }
+            }
+        },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.BookingStatusResponse": {
+            "type": "object",
+            "properties": {
+                "bookingsEnabled": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "type": "string"
                 }
             }
         },
@@ -1156,10 +1430,14 @@ const docTemplate = `{
         "github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutRequest": {
             "type": "object",
             "required": [
-                "bookingId"
+                "bookingId",
+                "resultUrl"
             ],
             "properties": {
                 "bookingId": {
+                    "type": "string"
+                },
+                "resultUrl": {
                     "type": "string"
                 }
             }
@@ -1238,6 +1516,9 @@ const docTemplate = `{
                 "dateBlocked": {
                     "type": "boolean"
                 },
+                "fullyBlocked": {
+                    "type": "boolean"
+                },
                 "slots": {
                     "type": "array",
                     "items": {
@@ -1274,24 +1555,17 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "Harbour Wave API",
-	Description:      "Boat reservation application API.",
+	Title:            "Harbour & Wave API",
+	Description:      "Boat reservation backend",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

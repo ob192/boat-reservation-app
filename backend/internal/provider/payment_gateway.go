@@ -13,7 +13,7 @@ import (
 type CreateSessionRequest struct {
 	BookingID   string
 	UserEmail   string
-	AmountEUR   float64
+	AmountUAH   float64
 	Description string
 	LineItems   []LineItem
 	ResultURL   string

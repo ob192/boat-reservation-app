@@ -15,6 +15,7 @@ import (
 )
 
 import (
+	_ "github.com/harbour-wave/harbour-wave-backend/docs"
 	_ "strings"
 )
 
@@ -46,7 +47,8 @@ func InitializeServer() (*Server, error) {
 	checkoutService := service.NewCheckoutService(bookingService, bookingRepository, pricingService, paymentGateway, configConfig, clock)
 	checkoutHandler := handler.NewCheckoutHandler(checkoutService, logger)
 	emailService := service.NewEmailService(configConfig, logger)
-	webhookService := service.NewWebhookService(bookingRepository, emailService, logger)
+	posterClient := ProvidePosterClient(configConfig, logger)
+	webhookService := service.NewWebhookService(bookingRepository, emailService, posterClient, logger)
 	webhookHandler := handler.NewWebhookHandler(paymentGateway, webhookService, logger)
 	adminService := service.NewAdminService(db, bookingRepository, slotRepository, dateBlockRepository, systemRepository, pricingService, clock)
 	adminHandler := handler.NewAdminHandler(adminService, logger)

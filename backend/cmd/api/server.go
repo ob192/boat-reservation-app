@@ -63,6 +63,15 @@ func ProvidePaymentGateway(cfg *config.Config, log *slog.Logger) provider.Paymen
 	}
 }
 
+func ProvidePosterClient(cfg *config.Config, log *slog.Logger) provider.PosterClient {
+	if cfg.PosterAPIToken == "" {
+		log.Warn("POSTER_API_TOKEN not set — poster orders disabled")
+		return provider.NoopPosterClient{}
+	}
+	log.Info("poster client enabled")
+	return provider.NewPosterClient(cfg.PosterAPIToken)
+}
+
 // ProvideRouter isolates the Gin wiring from main().
 func ProvideRouter(
 	cfg *config.Config,
@@ -79,7 +88,7 @@ func ProvideRouter(
 	r.Use(gin.Recovery())
 	r.Use(requestLogger(log))
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{cfg.FrontendURL},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Idempotency-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -89,10 +98,11 @@ func ProvideRouter(
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
-	r.POST("/payment/webhook", webhookH.Handle)
+	r.POST("/api/payment/webhook", webhookH.Handle)
 
-	protected := r.Group("/", handler.AuthMiddleware(authSvc))
+	protected := r.Group("/api", handler.AuthMiddleware(authSvc))
 	{
+		protected.GET("/status", availabilityH.GetStatus)
 		protected.GET("/availability/:month", availabilityH.GetAvailability)
 		protected.GET("/slots/:date", availabilityH.GetSlots)
 		protected.POST("/bookings", bookingH.CreateBooking)
@@ -100,7 +110,7 @@ func ProvideRouter(
 		protected.GET("/bookings/by-session/:sessionId", bookingH.GetBySession)
 	}
 
-	admin := r.Group("/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware())
+	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware())
 	{
 		admin.GET("/slots/:date/:time/bookings", adminH.GetSlotBookings)
 		admin.PUT("/slots/:date/:time", adminH.UpsertSlot)

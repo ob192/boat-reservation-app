@@ -85,9 +85,7 @@ CREATE TABLE IF NOT EXISTS slots (
     blocked_by      UUID,
     blocked_at      TIMESTAMPTZ,
     block_reason    VARCHAR(255),
-    PRIMARY KEY (date, time),
-    CONSTRAINT slots_time_chk CHECK (time IN ('08:00', '11:00', '15:00', '19:00'))
-);
+    PRIMARY KEY (date, time));
 
 -- ---------------------------------------------------------------------------
 -- date_blocks — whole-day admin blocks.

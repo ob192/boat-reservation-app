@@ -77,6 +77,26 @@ func (h *AvailabilityHandler) GetSlots(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
+// GetStatus handles GET /status
+//
+// @Summary      Get booking status
+// @Description  Returns whether bookings are globally available or fully blocked
+// @Tags         availability
+// @Produce      json
+// @Success      200  {object}  model.BookingStatusResponse
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /status [get]
+func (h *AvailabilityHandler) GetStatus(c *gin.Context) {
+	resp, err := h.svc.GetStatus(c.Request.Context())
+	if err != nil {
+		h.log.Error("status", "err", err)
+		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		return
+	}
+	httpx.OK(c, resp)
+}
+
 // isInvalidInput recognises the validation errors thrown by service.ParseMonth / ParseDate.
 // They surface as wrapped fmt.Errorf strings whose message starts with "invalid".
 // Brittle by nature, but the surface area is tiny and well-known.

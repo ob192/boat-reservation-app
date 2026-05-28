@@ -93,6 +93,7 @@ type AvailabilityDay struct {
 	Date           string `json:"date"`
 	AvailableSlots int    `json:"availableSlots"`
 	Blocked        bool   `json:"blocked"`
+	FullyBlocked   bool   `json:"fullyBlocked"`
 }
 
 // ============================================================================
@@ -103,6 +104,7 @@ type SlotsForDateResponse struct {
 	Date            string        `json:"date"`
 	DateBlocked     bool          `json:"dateBlocked"`
 	BookingsEnabled bool          `json:"bookingsEnabled"`
+	FullyBlocked    bool          `json:"fullyBlocked"`
 	Slots           []SlotForDate `json:"slots"`
 }
 
@@ -232,14 +234,21 @@ type AdminSlotBookingsResponse struct {
 }
 
 type AdminBookingListEntry struct {
-	ID              string     `json:"id"`
-	UserEmail       string     `json:"userEmail"`
-	FirstName       string     `json:"firstName"`
-	LastName        string     `json:"lastName"`
-	Phone           *string    `json:"phone,omitempty"`
-	Quantities      Quantities `json:"quantities"`
-	TotalAmount     float64    `json:"totalAmount"`
-	EffectiveAmount float64    `json:"effectiveAmount"`
-	Status          string     `json:"status"`
-	CreatedAt       time.Time  `json:"createdAt"`
+	ID                          string     `json:"id"`
+	UserEmail                   string     `json:"userEmail"`
+	FirstName                   string     `json:"firstName"`
+	LastName                    string     `json:"lastName"`
+	Phone                       *string    `json:"phone,omitempty"`
+	Quantities                  Quantities `json:"quantities"`
+	TotalAmount                 float64    `json:"totalAmount"`
+	EffectiveAmount             float64    `json:"effectiveAmount"`
+	Status                      string     `json:"status"`
+	CreatedAt                   time.Time  `json:"createdAt"`
+	PosterIncomingOrderID       *int64     `json:"posterIncomingOrderId,omitempty"`
+	PosterIncomingTransactionID *int64     `json:"posterIncomingTransactionId,omitempty"`
+}
+
+type BookingStatusResponse struct {
+	BookingsEnabled bool   `json:"bookingsEnabled"`
+	Reason          string `json:"reason,omitempty"`
 }

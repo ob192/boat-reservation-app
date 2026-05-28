@@ -12,22 +12,17 @@ import (
 	"github.com/harbour-wave/harbour-wave-backend/internal/repository"
 )
 
-// ValidSlotTimes is the canonical, ordered list of bookable time slots.
-// Any time received from the client outside this list is rejected.
-var ValidSlotTimes = []string{"08:00", "11:00", "15:00", "19:00"}
-
-// IsValidSlotTime reports whether t is one of the four allowed slot times.
 func IsValidSlotTime(t string) bool {
-	for _, v := range ValidSlotTimes {
-		if v == t {
-			return true
-		}
+	if len(t) != 5 || t[2] != ':' {
+		return false
 	}
-	return false
+	_, err := time.Parse("15:04", t)
+	return err == nil
 }
 
 // AvailabilityService provides per-day and per-slot availability views.
 type AvailabilityService interface {
+	GetStatus(ctx context.Context) (*model.BookingStatusResponse, error)
 	GetMonth(ctx context.Context, month string) (*model.AvailabilityMonthResponse, error)
 	GetDate(ctx context.Context, date string) (*model.SlotsForDateResponse, error)
 
@@ -167,6 +162,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 				Date:           dateStr,
 				AvailableSlots: 0,
 				Blocked:        isBlocked,
+				FullyBlocked:   true,
 			})
 			continue
 		}
@@ -177,6 +173,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 				Date:           dateStr,
 				AvailableSlots: 0,
 				Blocked:        false,
+				FullyBlocked:   true,
 			})
 			continue
 		}
@@ -207,12 +204,28 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 			Date:           dateStr,
 			AvailableSlots: maxAvail,
 			Blocked:        false,
+			FullyBlocked:   maxAvail == 0,
 		})
 	}
 
 	return &model.AvailabilityMonthResponse{
 		Month: month,
 		Days:  days,
+	}, nil
+}
+
+func (s *availabilityService) GetStatus(ctx context.Context) (*model.BookingStatusResponse, error) {
+	settings, err := s.system.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reason := ""
+	if settings.Reason != nil {
+		reason = *settings.Reason
+	}
+	return &model.BookingStatusResponse{
+		BookingsEnabled: settings.BookingsEnabled,
+		Reason:          reason,
 	}, nil
 }
 
@@ -276,18 +289,9 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 		byTime[sl.Time] = sl
 	}
 
-	out := make([]model.SlotForDate, 0, len(ValidSlotTimes))
-	for _, t := range ValidSlotTimes {
-		sl, ok := byTime[t]
-		if !ok {
-			// No physical slot row → expose zero capacity rather than 404 the date.
-			out = append(out, model.SlotForDate{
-				Time:    t,
-				Blocked: false,
-			})
-			continue
-		}
-		b := bookedByTime[t]
+	out := make([]model.SlotForDate, 0, len(slots))
+	for _, sl := range slots {
+		b := bookedByTime[sl.Time]
 		availBig := sl.CapacityBig - b.Big
 		if availBig < 0 {
 			availBig = 0
@@ -297,7 +301,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 			availMedium = 0
 		}
 		out = append(out, model.SlotForDate{
-			Time:            t,
+			Time:            sl.Time,
 			AvailableBig:    availBig,
 			TotalBig:        sl.CapacityBig,
 			AvailableMedium: availMedium,
@@ -306,10 +310,23 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 		})
 	}
 
+	fullyBlocked := !settings.BookingsEnabled || dateBlocked
+	if !fullyBlocked {
+		anyOpen := false
+		for _, sl := range out {
+			if !sl.Blocked && (sl.AvailableBig > 0 || sl.AvailableMedium > 0) {
+				anyOpen = true
+				break
+			}
+		}
+		fullyBlocked = !anyOpen
+	}
+
 	return &model.SlotsForDateResponse{
 		Date:            date,
 		DateBlocked:     dateBlocked,
 		BookingsEnabled: settings.BookingsEnabled,
+		FullyBlocked:    fullyBlocked,
 		Slots:           out,
 	}, nil
 }

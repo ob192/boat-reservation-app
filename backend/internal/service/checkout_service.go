@@ -68,8 +68,8 @@ func (s *checkoutService) CreateCheckout(
 	req := provider.CreateSessionRequest{
 		BookingID:   b.ID.String(),
 		UserEmail:   b.UserEmail,
-		AmountEUR:   amount,
-		Description: fmt.Sprintf("Harbour & Wave — Бронювання %s %s", b.DateFormatted(), b.Time),
+		AmountUAH:   amount,
+		Description: fmt.Sprintf("SUP Chernihiv — Бронювання %s %s", b.DateFormatted(), b.Time),
 		LineItems:   buildLineItems(b, amount),
 		ResultURL:   resultUrl,
 		ExpiresAt:   b.ExpiresAt,

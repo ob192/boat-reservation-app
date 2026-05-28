@@ -32,6 +32,10 @@ type Config struct {
 	Port    string
 	GinMode string
 
+	// Poster CRM
+	PosterAPIToken string
+	PosterEnabled  bool
+
 	// Backend self-URL (for webhook callback construction, success URLs, etc.)
 	BackendURL string
 }
@@ -53,6 +57,8 @@ func Load() (*Config, error) {
 		Port:                     getenv("PORT", "8080"),
 		GinMode:                  getenv("GIN_MODE", "debug"),
 		BackendURL:               getenv("BACKEND_URL", "http://localhost:8080"),
+		PosterAPIToken:           getenv("POSTER_API_TOKEN", ""),
+		PosterEnabled:            getenv("POSTER_API_TOKEN", "") != "",
 	}
 
 	if err := cfg.validate(); err != nil {

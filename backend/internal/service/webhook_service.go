@@ -19,18 +19,21 @@ type WebhookService interface {
 type webhookService struct {
 	bookings repository.BookingRepository
 	emails   EmailService
+	poster   provider.PosterClient
 	log      *slog.Logger
 }
 
 func NewWebhookService(
 	bookings repository.BookingRepository,
 	emails EmailService,
+	poster provider.PosterClient,
 	log *slog.Logger,
 ) WebhookService {
 	return &webhookService{
 		bookings: bookings,
 		emails:   emails,
 		log:      log,
+		poster:   poster,
 	}
 }
 
@@ -48,14 +51,17 @@ func (s *webhookService) Handle(ctx context.Context, event provider.WebhookEvent
 
 	switch event.Status {
 	case provider.PaymentStatusPaid:
-		// Skip if already confirmed — webhook retries are safe.
 		if booking.Status == model.StatusConfirmed {
 			return nil
 		}
 		if err := s.bookings.SetStatus(ctx, booking.ID, model.StatusConfirmed); err != nil {
 			return fmt.Errorf("set confirmed: %w", err)
 		}
-		// Fire-and-forget — we never want SMTP latency to make the gateway retry.
+
+		if err := s.createPosterOrder(ctx, booking); err != nil {
+			s.log.Error("poster order failed", "err", err, "booking_id", booking.ID)
+		}
+
 		bookingSnapshot := *booking
 		bookingSnapshot.Status = model.StatusConfirmed
 		go s.emails.SendConfirmation(&bookingSnapshot)
@@ -79,6 +85,36 @@ func (s *webhookService) Handle(ctx context.Context, event provider.WebhookEvent
 
 	default:
 		s.log.Warn("unknown webhook status", "status", string(event.Status))
+	}
+	return nil
+}
+
+func (s *webhookService) createPosterOrder(ctx context.Context, booking *model.Booking) error {
+	if booking.Phone == nil || *booking.Phone == "" {
+		return fmt.Errorf("booking %s has no phone, skipping poster order", booking.ID)
+	}
+
+	products := []provider.PosterProduct{
+		{ProductID: 1, Count: booking.QtyBig + booking.QtyMedium},
+	}
+	if booking.QtyChild > 0 {
+		products = append(products, provider.PosterProduct{ProductID: 6, Count: booking.QtyChild})
+	}
+
+	order := provider.PosterOrder{
+		SpotID:      1,
+		ServiceMode: 1,
+		Phone:       *booking.Phone,
+		Products:    products,
+	}
+
+	res, err := s.poster.CreateIncomingOrder(ctx, order)
+	if err != nil {
+		return err
+	}
+
+	if err := s.bookings.SetPosterIDs(ctx, booking.ID, res.IncomingOrderID, res.IncomingTransactionID); err != nil {
+		return fmt.Errorf("save poster ids: %w", err)
 	}
 	return nil
 }

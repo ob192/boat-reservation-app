@@ -59,7 +59,9 @@ type Booking struct {
 	CancelledAt  *time.Time `json:"cancelledAt,omitempty"`
 	CancelReason *string    `gorm:"type:varchar(255)" json:"cancelReason,omitempty"`
 
-	PaymentSessionID *string `gorm:"type:varchar(255);uniqueIndex" json:"paymentSessionId,omitempty"`
+	PaymentSessionID            *string `gorm:"type:varchar(255);uniqueIndex" json:"paymentSessionId,omitempty"`
+	PosterIncomingOrderID       *int64  `gorm:"type:bigint" json:"posterIncomingOrderId,omitempty"`
+	PosterIncomingTransactionID *int64  `gorm:"type:bigint" json:"posterIncomingTransactionId,omitempty"`
 
 	IdempotencyKey string `gorm:"type:varchar(255);not null;uniqueIndex:idx_bookings_idem_user,priority:2" json:"-"`
 

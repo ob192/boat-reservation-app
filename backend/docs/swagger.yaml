@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api
 definitions:
   github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockDateRequest:
     properties:
@@ -32,6 +32,29 @@ definitions:
       reason:
         type: string
       time:
+        type: string
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBookingListEntry:
+    properties:
+      createdAt:
+        type: string
+      effectiveAmount:
+        type: number
+      firstName:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+      phone:
+        type: string
+      quantities:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities'
+      status:
+        type: string
+      totalAmount:
+        type: number
+      userEmail:
         type: string
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.AdminCancelBookingRequest:
@@ -95,6 +118,17 @@ definitions:
       updatedAt:
         type: string
     type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSlotBookingsResponse:
+    properties:
+      bookings:
+        items:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBookingListEntry'
+        type: array
+      date:
+        type: string
+      time:
+        type: string
+    type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockDateResponse:
     properties:
       blocked:
@@ -111,6 +145,34 @@ definitions:
       time:
         type: string
     type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotRequest:
+    properties:
+      capacityBig:
+        minimum: 0
+        type: integer
+      capacityMedium:
+        minimum: 0
+        type: integer
+    required:
+    - capacityBig
+    - capacityMedium
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse:
+    properties:
+      blocked:
+        type: boolean
+      capacityBig:
+        type: integer
+      capacityMedium:
+        type: integer
+      created:
+        description: true = new row, false = updated
+        type: boolean
+      date:
+        type: string
+      time:
+        type: string
+    type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityDay:
     properties:
       availableSlots:
@@ -119,6 +181,8 @@ definitions:
         type: boolean
       date:
         type: string
+      fullyBlocked:
+        type: boolean
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityMonthResponse:
     properties:
@@ -152,6 +216,13 @@ definitions:
         type: string
       totalAmount:
         type: number
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.BookingStatusResponse:
+    properties:
+      bookingsEnabled:
+        type: boolean
+      reason:
+        type: string
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.ContactPublicView:
     properties:
@@ -212,8 +283,11 @@ definitions:
     properties:
       bookingId:
         type: string
+      resultUrl:
+        type: string
     required:
     - bookingId
+    - resultUrl
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.CreateCheckoutResponse:
     properties:
@@ -263,6 +337,8 @@ definitions:
         type: string
       dateBlocked:
         type: boolean
+      fullyBlocked:
+        type: boolean
       slots:
         items:
           $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.SlotForDate'
@@ -286,11 +362,10 @@ definitions:
       message:
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
-  description: Boat reservation application API.
-  title: Harbour Wave API
+  description: Boat reservation backend
+  title: Harbour & Wave API
   version: "1.0"
 paths:
   /admin/bookings/{bookingId}/cancel:
@@ -467,6 +542,53 @@ paths:
       summary: Block an entire date
       tags:
       - admin
+  /admin/slots/{date}/{time}:
+    put:
+      consumes:
+      - application/json
+      description: Admin endpoint to create a slot for a given date/time or update
+        its capacity.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      - description: Time in HH:MM format
+        in: path
+        name: time
+        required: true
+        type: string
+      - description: Capacity payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Create or update a slot
+      tags:
+      - admin
   /admin/slots/{date}/{time}/block:
     delete:
       description: Admin endpoint to remove a block on a specific date and time.
@@ -559,6 +681,49 @@ paths:
       security:
       - BearerAuth: []
       summary: Block a specific slot
+      tags:
+      - admin
+  /admin/slots/{date}/{time}/bookings:
+    get:
+      description: Admin endpoint returning all bookings (any status) for a specific
+        date/time slot.
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        in: path
+        name: date
+        required: true
+        type: string
+      - description: Time in HH:MM format
+        in: path
+        name: time
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSlotBookingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: List bookings for a slot
       tags:
       - admin
   /admin/system/bookings-enabled:
@@ -822,9 +987,23 @@ paths:
       summary: Get slots for a date
       tags:
       - availability
-securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+  /status:
+    get:
+      description: Returns whether bookings are globally available or fully blocked
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.BookingStatusResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Get booking status
+      tags:
+      - availability
 swagger: "2.0"

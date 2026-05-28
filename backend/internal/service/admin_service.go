@@ -398,16 +398,18 @@ func (s *adminService) GetSlotBookings(
 	entries := make([]model.AdminBookingListEntry, 0, len(bookings))
 	for _, b := range bookings {
 		entries = append(entries, model.AdminBookingListEntry{
-			ID:              b.ID.String(),
-			UserEmail:       b.UserEmail,
-			FirstName:       b.FirstName,
-			LastName:        b.LastName,
-			Phone:           b.Phone,
-			Quantities:      b.Quantities(),
-			TotalAmount:     b.TotalAmount,
-			EffectiveAmount: s.pricing.EffectiveAmount(b.TotalAmount, b.PriceOverride),
-			Status:          string(b.Status),
-			CreatedAt:       b.CreatedAt,
+			ID:                          b.ID.String(),
+			UserEmail:                   b.UserEmail,
+			FirstName:                   b.FirstName,
+			LastName:                    b.LastName,
+			Phone:                       b.Phone,
+			Quantities:                  b.Quantities(),
+			TotalAmount:                 b.TotalAmount,
+			EffectiveAmount:             s.pricing.EffectiveAmount(b.TotalAmount, b.PriceOverride),
+			Status:                      string(b.Status),
+			CreatedAt:                   b.CreatedAt,
+			PosterIncomingOrderID:       b.PosterIncomingOrderID,
+			PosterIncomingTransactionID: b.PosterIncomingTransactionID,
 		})
 	}
 

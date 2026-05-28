@@ -64,22 +64,23 @@ type liqpayRequest struct {
 }
 
 func (g *LiqPayGateway) CreateSession(ctx context.Context, req CreateSessionRequest) (CreateSessionResponse, error) {
+
 	// LiqPay works in UAH; the rest of the app uses EUR.
-	// The caller passes AmountEUR — we treat it as the display currency and pass
+	// The caller passes AmountUAH — we treat it as the display currency and pass
 	// currency=EUR so LiqPay converts at its live rate.  Change to UAH + conversion
 	// if you prefer a fixed-rate approach.
-	amount := math.Ceil(req.AmountEUR*100) / 100 // round to 2 dp
+	amount := math.Ceil(req.AmountUAH*100) / 100 // round to 2 dp
 
-	webhookURL := fmt.Sprintf("%s/payment/webhook?booking_id=%s", g.backendURL, req.BookingID)
+	webhookURL := fmt.Sprintf("%s/api/payment/webhook?booking_id=%s", g.backendURL, req.BookingID)
 
 	params := liqpayRequest{
 		Version:     3,
 		PublicKey:   g.publicKey,
 		Action:      "pay",
 		Amount:      fmt.Sprintf("%.2f", amount),
-		Currency:    "EUR",
+		Currency:    "UAH",
 		Description: req.Description,
-		OrderID:     req.BookingID, // use booking UUID as LiqPay order_id
+		OrderID:     req.BookingID,
 		ServerURL:   webhookURL,
 		ResultURL:   req.ResultURL,
 		ExpiredDate: req.ExpiresAt.UTC().Format("2006-01-02 15:04:05"),

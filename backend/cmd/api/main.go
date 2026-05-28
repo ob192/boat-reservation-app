@@ -17,6 +17,10 @@ import (
 	"github.com/harbour-wave/harbour-wave-backend/internal/service"
 )
 
+// @title           Harbour & Wave API
+// @version         1.0
+// @description     Boat reservation backend
+// @BasePath        /api
 func main() {
 	// 1. Load .env BEFORE Wire invokes config.Load()
 	_ = godotenv.Load()

@@ -236,6 +236,7 @@ func (s *bookingService) ExpireStale(ctx context.Context) (int64, error) {
 // validateCreateInput enforces business rules that Gin's struct binding can't:
 // non-negative ints, child-without-big, sums ≥ 1, allowed time, date not in the past, etc.
 func validateCreateInput(in CreateBookingInput, now time.Time) error {
+
 	// Time slot whitelist.
 	if !IsValidSlotTime(in.Time) {
 		return fmt.Errorf("%w: invalid time %q", ErrInvalidInput, in.Time)

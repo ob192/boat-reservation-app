@@ -55,6 +55,8 @@ type BookingRepository interface {
 	// FindBySlot returns all bookings for a given (date, time) pair, ordered by creation time.
 	// No status filter — admin sees everything.
 	FindBySlot(ctx context.Context, date, time string) ([]model.Booking, error)
+
+	SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, txID int64) error
 }
 
 type bookingRepo struct {
@@ -265,4 +267,14 @@ func (r *bookingRepo) FindBySlot(ctx context.Context, date, time_ string) ([]mod
 		Order("created_at ASC").
 		Find(&bookings).Error
 	return bookings, err
+}
+
+func (r *bookingRepo) SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, txID int64) error {
+	return r.tx(ctx).
+		Model(&model.Booking{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"poster_incoming_order_id":       orderID,
+			"poster_incoming_transaction_id": txID,
+		}).Error
 }

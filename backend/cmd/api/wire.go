@@ -30,6 +30,7 @@ func InitializeServer() (*Server, error) {
 
 		// 3. Providers & Gateway
 		ProvidePaymentGateway,
+		ProvidePosterClient,
 
 		// 4. Services
 		service.NewAuthService,

@@ -4,9 +4,9 @@ import "github.com/harbour-wave/harbour-wave-backend/internal/model"
 
 // Unit prices in EUR. Single source of truth for the whole codebase.
 const (
-	PriceBig    = 35.00
-	PriceMedium = 20.00
-	PriceChild  = 17.50
+	PriceBig    = 400.00
+	PriceMedium = 400.00
+	PriceChild  = 200.00
 )
 
 // PricingService computes booking totals and resolves admin overrides.
