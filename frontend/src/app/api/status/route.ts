@@ -9,7 +9,6 @@ export async function GET(req: Request) {
     try {
         const res = await fetch(`${env.BACKEND_URL}/api/status`, {
             headers: { Authorization: auth },
-            next: { revalidate: 30 },
         });
 
         if (!res.ok) {
