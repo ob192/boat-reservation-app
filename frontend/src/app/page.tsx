@@ -1,357 +1,377 @@
 import Link from 'next/link';
-import Script from 'next/script';
+import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 
-// ─── Contact & location constants ─────────────────────────────────────────
+// ─── Fonts (scoped to this page via the .ed-root variable classes) ──────────
+const instrument = Instrument_Serif({
+    subsets: ['latin'],
+    weight: ['400'],
+    style: ['normal', 'italic'],
+    variable: '--ed-serif',
+    display: 'swap',
+});
+
+const interTight = Inter_Tight({
+    subsets: ['latin', 'cyrillic'],
+    weight: ['400', '500', '600'],
+    variable: '--ed-sans',
+    display: 'swap',
+});
+
+const jetbrains = JetBrains_Mono({
+    subsets: ['latin'],
+    weight: ['400', '500'],
+    variable: '--ed-mono',
+    display: 'swap',
+});
+
+// ─── Contact constants ──────────────────────────────────────────────────────
 const PHONE_DISPLAY = '+38 (050) 367-66-70';
 const PHONE_HREF = 'tel:+380503676670';
 
-const MARINA_LAT = 51.51083547181443;
-const MARINA_LNG = 31.35220277765311;
-const MARINA_PLACE_ID = '0x46d5484aca07d961:0xdc3b564198209bee';
-
+// ─── Departure point (Google Maps) ──────────────────────────────────────────
 const MAPS_EMBED_SRC =
     'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2483.129752207899!2d31.354777700000003!3d51.5108355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5484aca07d961%3A0xdc3b564198209bee!2sKyryla%20Rozumovskoho%20St%2C%205%2C%20Chernihiv%2C%20Chernihivs%27ka%20oblast%2C%2014000!5e0!3m2!1sen!2sua!4v1779964836720!5m2!1sen!2sua';
+const MAPS_OPEN_URL =
+    'https://www.google.com/maps/search/?api=1&query=51.51083547181443,31.35220277765311&query_place_id=0x46d5484aca07d961:0xdc3b564198209bee';
 
-function buildMapsEmbedUrl(_lat: number, _lng: number): string {
-    return MAPS_EMBED_SRC;
-}
+// ─── Instagram ───────────────────────────────────────────────────────────────
+const IG_URL = 'https://www.instagram.com/supboard_che/';
 
-function buildMapsOpenUrl(lat: number, lng: number, placeId: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${placeId}`;
-}
-
-// ─── Shared inline styles ──────────────────────────────────────────────────
-
-const subscribeStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.35rem',
-    padding: '0.45rem 0.9rem',
-    background: 'var(--surface)',
-    border: '1px solid var(--mist)',
-    borderRadius: 20,
-    color: 'var(--amber-ink)',
-    fontSize: '0.72rem',
-    fontWeight: 500,
-    textDecoration: 'none',
-    letterSpacing: '0.03em',
-    whiteSpace: 'nowrap',
-};
-
-// ─── Component ────────────────────────────────────────────────────────────
+// ─── FAQ items 2–9 (the first, "Де старт і фініш?", embeds a map) ────────────
+const FAQ_REST: { q: string; a: string }[] = [
+    {
+        q: 'Як дістатися автомобілем?',
+        a: 'Біля бази є місце для безкоштовного паркування. Заїзд зручний із боку набережної — орієнтуйтеся на наш банер біля води.',
+    },
+    {
+        q: 'Який мінімум для групи та чи робите корпоративи?',
+        a: 'Мінімальне бронювання — два борди. Для груп від восьми осіб та корпоративних заходів готуємо окремі умови й маршрут — просто зателефонуйте нам.',
+    },
+    {
+        q: 'Що взяти з собою?',
+        a: 'Рушник, змінний одяг, головний убір, сонцезахисний крем і воду. Решту спорядження видаємо на місці.',
+    },
+    {
+        q: 'Яке спорядження ви даєте і чи треба вміти плавати?',
+        a: 'Видаємо борд, весло та рятувальний жилет на кожного учасника. Базові навички плавання бажані, але жилет обовʼязковий для всіх без винятку.',
+    },
+    {
+        q: 'Чи можна з дітьми?',
+        a: 'Так. Діти вагою від 45 кг можуть веслувати на власному борді. Молодших беремо разом із дорослим на один борд.',
+    },
+    {
+        q: 'Як відбувається оплата?',
+        a: 'Оплата онлайн карткою під час бронювання. Підтвердження з усіма деталями надходить на вашу пошту одразу після успішної оплати.',
+    },
+    {
+        q: 'А якщо погода зіпсується?',
+        a: 'За несприятливих умов ми безкоштовно перенесемо сеанс на інший зручний день або повернемо повну вартість — на ваш вибір.',
+    },
+    {
+        q: 'Чи буде інструктаж перед виходом?',
+        a: 'Так. Перед стартом проводимо короткий інструктаж: техніка веслування, рівновага й правила безпеки. Загалом близько десяти хвилин.',
+    },
+];
 
 export default function HomePage() {
-    const mapsEmbedUrl = buildMapsEmbedUrl(MARINA_LAT, MARINA_LNG);
-    const mapsOpenUrl = buildMapsOpenUrl(MARINA_LAT, MARINA_LNG, MARINA_PLACE_ID);
-
     return (
-        <>
-            <header className="header">
-                <div className="logo">
-                    <div className="logo-icon">🏄</div>
-                    <div className="logo-text">
-                        <h1>SUP Chernihiv</h1>
-                        <span>Оренда SUP-бордів</span>
+        <div className={`${instrument.variable} ${interTight.variable} ${jetbrains.variable} ed-root`}>
+            <div className="ed-shell">
+                {/* ── Top bar ──────────────────────────────────────────────── */}
+                <header className="ed-topbar">
+                    <div className="ed-brand">
+                        <span className="ed-monogram">S</span>
+                        <span className="ed-wordmark">
+              <span className="ed-wordmark-name">SUP Chernihiv</span>
+              <span className="ed-wordmark-sub">оренда SUP-бордів</span>
+            </span>
                     </div>
-                </div>
-                <div className="header-badge">Сезон 2026</div>
-            </header>
+                    <span className="ed-season">Сезон 2026</span>
+                </header>
 
-            <div className="hero">
-                <h2>
-                    Відчуйте свободу<br/>
-                    <em>на воді</em>
-                </h2>
-                <p>
-                    Орендуй SUP-борд, вийди на воду та насолодись Черніговом з нового
-                    ракурсу — спокійно, у власному темпі.
-                </p>
+                <div className="ed-rule" />
 
-                <Link
-                    href="/book"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginTop: '1.75rem',
-                        padding: '0.9rem 2rem',
-                        background: 'var(--seafoam)',
-                        color: 'var(--on-amber)',
-                        borderRadius: '12px',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        letterSpacing: '0.03em',
-                        textDecoration: 'none',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                    }}
-                >
-                    Забронювати зараз
-                </Link>
-            </div>
+                {/* ── Hero / Intro ─────────────────────────────────────────── */}
+                <section className="ed-hero">
+                    <p className="ed-eyebrow ed-eyebrow--lead">
+                        <span className="ed-eyebrow-rule" />
+                        № 01 — Десна, Чернігів
+                    </p>
 
-            <div
-                style={{
-                    maxWidth: 680,
-                    margin: '0 auto',
-                    padding: '0 0.5rem 3rem',
-                    position: 'relative',
-                    zIndex: 10,
-                }}
-            >
-                {/* ── Phone number ──────────────────────────────────────────── */}
-                <div
-                    style={{
-                        marginTop: '2rem',
-                        background: 'var(--sand)',
-                        border: '1px solid var(--mist)',
-                        borderRadius: 14,
-                        padding: '0.85rem 1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                        flexWrap: 'wrap',
-                    }}
-                >
-                    <div style={{display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: '1 1 auto'}}>
-                        <div
-                            style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 10,
-                                background: 'var(--cream)',
-                                border: '1px solid var(--mist)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '1.1rem',
-                                flexShrink: 0,
-                            }}
-                        >
-                            📞
-                        </div>
-                        <div style={{minWidth: 0}}>
-                            <div
-                                style={{
-                                    fontSize: '0.6rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.12em',
-                                    color: 'var(--subtle)',
-                                    fontWeight: 600,
-                                    marginBottom: '0.15rem',
-                                }}
-                            >
-                                Зв'язатися з нами
+                    <h1 className="ed-headline">
+                        Відчуйте
+                        <br />
+                        свободу
+                        <br />
+                        <em>на воді.</em>
+                    </h1>
+
+                    <p className="ed-lede">
+                        Орендуйте SUP-борд, вийдіть на спокійну воду Десни та подивіться на Чернігів
+                        із нового ракурсу — у власному темпі, без поспіху.
+                    </p>
+                </section>
+
+                {/* ── Stats strip ──────────────────────────────────────────── */}
+                <section className="ed-stats">
+                    <div className="ed-stat">
+                        <span className="ed-stat-num">15</span>
+                        <span className="ed-eyebrow">бордів</span>
+                    </div>
+                    <div className="ed-stat">
+                        <span className="ed-stat-num">2 год</span>
+                        <span className="ed-eyebrow">мінімум</span>
+                    </div>
+                    <div className="ed-stat">
+                        <span className="ed-stat-num">₴400</span>
+                        <span className="ed-eyebrow">за борд</span>
+                    </div>
+                </section>
+
+                <div className="ed-rule" />
+
+                {/* ── Contact row ──────────────────────────────────────────── */}
+                <section className="ed-contact">
+                    <a href={PHONE_HREF} className="ed-phone-btn" aria-label="Подзвонити">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path
+                                d="M6.5 4h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 5 6.6 1.5 1.5 0 0 1 6.5 4Z"
+                                stroke="currentColor"
+                                strokeWidth="1.6"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </a>
+
+                    <div className="ed-contact-body">
+                        <span className="ed-eyebrow">Звʼязатися</span>
+                        <a href={PHONE_HREF} className="ed-phone-num">{PHONE_DISPLAY}</a>
+                    </div>
+
+                    <a href={PHONE_HREF} className="ed-call-link">Дзвінок →</a>
+                </section>
+
+                <div className="ed-rule" />
+
+                {/* ── FAQ ──────────────────────────────────────────────────── */}
+                <section className="ed-faq">
+                    <p className="ed-eyebrow ed-eyebrow--lead">
+                        <span className="ed-eyebrow-rule" />
+                        Усе, що варто знати
+                    </p>
+
+                    <h2 className="ed-faq-title">
+                        Питання про <em>сплав.</em>
+                    </h2>
+                    <p className="ed-faq-sub">
+                        Найчастіше запитують про логістику, спорядження та оплату. Якщо чогось бракує — телефонуйте.
+                    </p>
+
+                    <div className="ed-faq-list">
+                        {/* Item 01 — start/finish, with embedded map */}
+                        <details className="ed-faq-item">
+                            <summary className="ed-faq-q">
+                                <span className="ed-faq-qtext">Де старт і фініш?</span>
+                                <span className="ed-faq-toggle" aria-hidden="true">+</span>
+                            </summary>
+                            <div className="ed-faq-a">
+                                <p>
+                                    Старт і фініш — на нашій базі на вулиці Кирила Розумовського, 5. Маршрут
+                                    пролягає вздовж Десни й повертається до тієї самої точки, тож загубитися
+                                    неможливо.
+                                </p>
+                                <div className="ed-faq-map">
+                                    <iframe
+                                        title="Місце старту та фінішу"
+                                        src={MAPS_EMBED_SRC}
+                                        loading="lazy"
+                                        allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                    />
+                                </div>
+                                <a
+                                    href={MAPS_OPEN_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ed-faq-maplink"
+                                >
+                                    Відкрити маршрут ↗
+                                </a>
+                            </div>
+                        </details>
+
+                        {/* Items 02–09 */}
+                        {FAQ_REST.map((item) => (
+                            <details className="ed-faq-item" key={item.q}>
+                                <summary className="ed-faq-q">
+                                    <span className="ed-faq-qtext">{item.q}</span>
+                                    <span className="ed-faq-toggle" aria-hidden="true">+</span>
+                                </summary>
+                                <div className="ed-faq-a">
+                                    <p>{item.a}</p>
+                                </div>
+                            </details>
+                        ))}
+                    </div>
+                </section>
+
+                <div className="ed-rule" />
+
+                {/* ── Instagram card ───────────────────────────────────────── */}
+                <section className="ed-ig-sec">
+                    <p className="ed-eyebrow ed-eyebrow--lead">
+                        <span className="ed-eyebrow-rule" />
+                        Свіже з води
+                    </p>
+
+                    <article className="ed-ig">
+                        {/* Header */}
+                        <div className="ed-ig-head">
+                            <div className="ed-ig-avatar">
+                                <div className="ed-ig-avatar-inner">S</div>
+                            </div>
+                            <div className="ed-ig-meta">
+                                <span className="ed-ig-handle">supboard_che</span>
+                                <span className="ed-ig-sub">Чернігів · Десна</span>
                             </div>
                             <a
-                                href={PHONE_HREF}
-                                style={{
-                                    fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                                    fontSize: 'clamp(0.9rem, 4vw, 1.05rem)',
-                                    fontWeight: 700,
-                                    color: 'var(--text)',
-                                    textDecoration: 'none',
-                                    letterSpacing: '0.02em',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: 'block',
-                                }}
+                                href={IG_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ed-ig-follow"
                             >
-                                {PHONE_DISPLAY}
+                                Підписатися
                             </a>
                         </div>
-                    </div>
 
-                    <a
-                        href={PHONE_HREF}
-                        style={{
-                            flexShrink: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            padding: '0.55rem 1rem',
-                            background: 'var(--seafoam)',
-                            color: 'white',
-                            borderRadius: 10,
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            textDecoration: 'none',
-                            whiteSpace: 'nowrap',
-                            minHeight: 44,
-                        }}
-                    >
-                        Подзвонити
-                    </a>
-                </div>
-
-                {/* ── Instagram embed ───────────────────────────────────────── */}
-                <div style={{marginTop: '2rem'}}>
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            overflow: 'hidden',
-                            boxShadow:
-                                '0 20px 50px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
-                        }}
-                    >
-                        <blockquote
-                            className="instagram-media"
-                            data-instgrm-captioned=""
-                            data-instgrm-permalink="https://www.instagram.com/reel/DYPbuVwyOZX/?utm_source=ig_embed&utm_campaign=loading"
-                            data-instgrm-version="14"
-                            style={{
-                                background: '#FFF',
-                                border: 0,
-                                borderRadius: 0,
-                                boxShadow: 'none',
-                                margin: 0,
-                                maxWidth: '100%',
-                                minWidth: 0,
-                                padding: 0,
-                                width: '100%',
-                            }}
-                        />
-                    </div>
-
-                    <p
-                        style={{
-                            textAlign: 'center',
-                            color: 'var(--subtle)',
-                            fontSize: '0.65rem',
-                            marginTop: '0.85rem',
-                            letterSpacing: '0.05em',
-                        }}
-                    >
-                        Більше відео та фото — в нашому Instagram
-                    </p>
-                </div>
-
-                {/* ── Location / Google Maps ─────────────────────────────────── */}
-                <div style={{marginTop: '2rem'}}>
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: '0.75rem',
-                            padding: '0 0.25rem',
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: '0.6rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.14em',
-                                color: 'var(--subtle)',
-                                fontWeight: 600,
-                            }}
-                        >
-                            📍 Місце відправлення
+                        {/* Photo slot */}
+                        <div className="ed-ig-photo" role="img" aria-label="Ранкова Десна">
+                            <svg
+                                className="ed-ig-photo-art"
+                                viewBox="0 0 400 400"
+                                preserveAspectRatio="xMidYMid slice"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                            >
+                                <circle cx="300" cy="92" r="46" fill="oklch(0.95 0.10 90 / 0.85)" />
+                                <path
+                                    d="M0 250 Q 110 232 210 250 T 400 246 L 400 400 L 0 400 Z"
+                                    fill="oklch(0.34 0.07 225 / 0.55)"
+                                />
+                                <path
+                                    d="M40 300 Q 130 288 230 300"
+                                    stroke="oklch(0.92 0.05 220 / 0.45)"
+                                    strokeWidth="2"
+                                    fill="none"
+                                    strokeLinecap="round"
+                                />
+                                <g transform="rotate(-7 215 286)">
+                                    <ellipse cx="215" cy="286" rx="96" ry="15" fill="oklch(0.98 0.01 90 / 0.95)" />
+                                    <line
+                                        x1="258"
+                                        y1="206"
+                                        x2="238"
+                                        y2="282"
+                                        stroke="oklch(0.24 0.012 60)"
+                                        strokeWidth="3.5"
+                                        strokeLinecap="round"
+                                    />
+                                </g>
+                            </svg>
                         </div>
-                        <a
-                            href={mapsOpenUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={subscribeStyle}
-                        >
-                            Відкрити в Maps
-                        </a>
-                    </div>
 
-                    {/* Map iframe */}
-                    <div
-                        style={{
-                            borderRadius: 16,
-                            overflow: 'hidden',
-                            border: '1px solid var(--mist)',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                            height: 240,
-                        }}
-                    >
-                        <iframe
-                            title="Місце відправлення SUP Chernihiv"
-                            src={mapsEmbedUrl}
-                            width="100%"
-                            height="240"
-                            style={{border: 0, display: 'block'}}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                        />
-                    </div>
-
-                    {/* Address strip */}
-                    <div
-                        style={{
-                            marginTop: '0.6rem',
-                            background: 'var(--sand)',
-                            borderRadius: 10,
-                            padding: '0.7rem 0.9rem',
-                        }}
-                    >
-                        <div style={{
-                            fontWeight: 600,
-                            fontSize: '0.85rem',
-                            color: 'var(--navy)',
-                            marginBottom: '0.1rem'
-                        }}>
-                            Kyryla Rozumovskoho St, 5
+                        {/* Action row */}
+                        <div className="ed-ig-actions">
+                            <div className="ed-ig-actions-left">
+                                <span className="ed-ig-icon" aria-hidden="true">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path
+                                            d="M12 20s-7-4.5-9.5-9C1 8 2.5 4.5 6 4.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 15.5 12 20 12 20Z"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+                                <span className="ed-ig-icon" aria-hidden="true">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path
+                                            d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+                                <span className="ed-ig-icon" aria-hidden="true">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path
+                                            d="M22 3 11 14M22 3l-7 18-4-7-7-4 18-7Z"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                            <span className="ed-ig-icon" aria-hidden="true">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        d="M6 4h12v17l-6-4.2L6 21V4Z"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </span>
                         </div>
-                        <div style={{fontSize: '0.72rem', color: 'var(--subtle)'}}>
-                            Chernihiv, Chernihivs'ka oblast, 14000
-                        </div>
-                    </div>
-                </div>
 
-                {/* ── Footer legal links ─────────────────────────────────────── */}
-                <div
-                    style={{
-                        marginTop: '2.5rem',
-                        paddingTop: '1.25rem',
-                        borderTop: '1px solid var(--mist)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        flexWrap: 'wrap',
-                    }}
-                >
-                    <Link
-                        href="/privacy"
-                        style={{
-                            fontSize: '0.68rem',
-                            color: 'var(--subtle)',
-                            textDecoration: 'none',
-                            letterSpacing: '0.03em',
-                        }}
-                    >
-                        Політика конфіденційності
-                    </Link>
-                    <span style={{fontSize: '0.6rem', color: 'var(--mist)'}}>·</span>
-                    <Link
-                        href="/terms"
-                        style={{
-                            fontSize: '0.68rem',
-                            color: 'var(--subtle)',
-                            textDecoration: 'none',
-                            letterSpacing: '0.03em',
-                        }}
-                    >
-                        Умови використання
-                    </Link>
-                    <span style={{fontSize: '0.6rem', color: 'var(--mist)'}}>·</span>
-                    <span style={{fontSize: '0.68rem', color: 'var(--subtle)', letterSpacing: '0.03em'}}>
-                        © 2026 SUP Chernihiv
-                    </span>
-                </div>
+                        {/* Likes */}
+                        <div className="ed-ig-likes">
+                            <span className="ed-ig-heart" aria-hidden="true">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 21s-7-4.5-9.5-9C1 8.5 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 3.5 3.5 7-2.5 4.5-9.5 9-9.5 9Z" />
+                                </svg>
+                            </span>
+                            1 247 вподобань
+                        </div>
+
+                        {/* Caption */}
+                        <p className="ed-ig-caption">
+                            <b>supboard_che</b> Ранкова тиша на Десні…
+                        </p>
+                        <p className="ed-ig-hashtags">#supchernihiv #десна #standuppaddle</p>
+
+                        {/* Footer */}
+                        <div className="ed-ig-footer">
+                            <a
+                                href={IG_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ed-ig-footlink"
+                            >
+                                Дивитись у Instagram ↗
+                            </a>
+                        </div>
+                    </article>
+                </section>
+
+                {/* ── Footer legal ─────────────────────────────────────────── */}
+                <footer className="ed-footer">
+                    <Link href="/privacy" className="ed-foot-link">Політика конфіденційності</Link>
+                    <span className="ed-foot-dot">·</span>
+                    <Link href="/terms" className="ed-foot-link">Умови використання</Link>
+                    <span className="ed-foot-dot">·</span>
+                    <span className="ed-foot-link">© 2026 SUP Chernihiv</span>
+                </footer>
+
+                <div className="ed-dock-spacer" />
             </div>
 
-            <Script
-                async
-                src="https://www.instagram.com/embed.js"
-                strategy="lazyOnload"
-            />
-        </>
+            {/* ── Sticky bottom dock ─────────────────────────────────────── */}
+            <div className="ed-dock">
+                <Link href="/book" className="ed-cta">Забронювати зараз</Link>
+            </div>
+        </div>
     );
 }

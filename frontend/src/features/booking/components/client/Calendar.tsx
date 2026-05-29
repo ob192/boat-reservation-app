@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useAvailability, useBookingSystemStatus } from '@/features/booking/hooks';
-import { MESSAGES, MAX_BIG } from '@/features/booking/messages';
+import { MESSAGES, MAX_BIG, PRICES } from '@/features/booking/messages';
+import { formatCurrency } from '@/shared/lib/currency';
 
 function dateKey(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -13,41 +14,25 @@ function monthKey(y: number, m: number): string {
     return `${y}-${String(m + 1).padStart(2, '0')}`;
 }
 
-function BookingsDisabledBanner({ reason }: { reason?: string }) {
+const LEGEND = [
+    { cls: 'available', color: 'var(--mint)', label: MESSAGES.calendar.available },
+    { cls: 'limited', color: 'var(--ochre)', label: MESSAGES.calendar.limited },
+    { cls: 'booked', color: 'var(--rust)', label: MESSAGES.calendar.booked },
+] as const;
+
+function Chevron({ dir }: { dir: 'left' | 'right' }) {
     return (
-        <div
-            style={{
-                background: '#fefce8',
-                border: '1px solid #fde68a',
-                borderRadius: 12,
-                padding: '1.25rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.5rem',
-                textAlign: 'center',
-                marginBottom: '1rem',
-            }}
-            role="alert"
-        >
-            <span style={{ fontSize: '1.75rem' }}>🚧</span>
-            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#92400e' }}>
-                Бронювання тимчасово недоступне
-            </div>
-            <div style={{ fontSize: '0.78rem', color: '#a16207', lineHeight: 1.5, maxWidth: 300 }}>
-                {reason ?? 'Спробуйте, будь ласка, пізніше.'}
-            </div>
-        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+                d={dir === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
     );
 }
-
-const LEGEND_ITEMS = [
-    { color: 'var(--teal)',                    opacity: 1,   labelKey: 'available'     },
-    { color: 'var(--gold)',                    opacity: 1,   labelKey: 'limited'       },
-    { color: 'var(--coral)',                   opacity: 1,   labelKey: 'booked'        },
-    { color: 'var(--subtle)',                  opacity: 0.6, labelKey: 'blocked'       },
-    { color: 'var(--gold)',                    opacity: 0.8, labelKey: 'fullyBlocked'  },
-] as const;
 
 export function Calendar() {
     const { selectedDate, setDate } = useBookingStore();
@@ -64,12 +49,11 @@ export function Calendar() {
         isError,
     } = useAvailability(month, !statusLoading && bookingsEnabled);
 
-    const availabilityMap = new Map<string, { slots: number; blocked: boolean; fullyBlocked: boolean }>();
+    const availabilityMap = new Map<string, { slots: number; blocked: boolean }>();
     availability?.days.forEach((d) =>
         availabilityMap.set(d.date, {
             slots: d.availableSlots,
-            blocked: d.blocked,
-            fullyBlocked: d.fullyBlocked,
+            blocked: d.blocked || d.fullyBlocked,
         }),
     );
 
@@ -79,60 +63,57 @@ export function Calendar() {
     today.setHours(0, 0, 0, 0);
 
     const firstDayRaw = new Date(calYear, calMonth, 1).getDay();
-    const firstDay = firstDayRaw === 0 ? 6 : firstDayRaw - 1;
+    const firstDay = firstDayRaw === 0 ? 6 : firstDayRaw - 1; // Monday-first
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    const priceLabel = formatCurrency(PRICES.big); // ₴400
 
     const prevMonth = () => {
         if (calMonth === 0) { setCalYear((y) => y - 1); setCalMonth(11); }
         else setCalMonth((m) => m - 1);
     };
-
     const nextMonth = () => {
         if (calMonth === 11) { setCalYear((y) => y + 1); setCalMonth(0); }
         else setCalMonth((m) => m + 1);
     };
 
     return (
-        <div>
-            <div className="calendar-nav">
-                <button className="cal-nav-btn" onClick={prevMonth} aria-label={MESSAGES.calendar.prevMonth} type="button">
-                    ‹
+        <div className="bk-cal">
+            <div className="bk-cal-nav">
+                <button className="bk-cal-chev" onClick={prevMonth} aria-label={MESSAGES.calendar.prevMonth} type="button">
+                    <Chevron dir="left" />
                 </button>
-                <span className="cal-month">
-          {MESSAGES.calendar.months[calMonth]} {calYear}
-        </span>
-                <button className="cal-nav-btn" onClick={nextMonth} aria-label={MESSAGES.calendar.nextMonth} type="button">
-                    ›
+                <div className="bk-cal-monthwrap">
+                    <span className="bk-cal-year">{calYear}</span>
+                    <span className="bk-cal-month">{MESSAGES.calendar.months[calMonth]}</span>
+                </div>
+                <button className="bk-cal-chev" onClick={nextMonth} aria-label={MESSAGES.calendar.nextMonth} type="button">
+                    <Chevron dir="right" />
                 </button>
             </div>
 
             {!statusLoading && !bookingsEnabled && (
-                <BookingsDisabledBanner reason={status?.reason} />
-            )}
-
-            {bookingsEnabled && isLoading && (
-                <div className="availability-loading-banner" role="status" aria-live="polite">
-                    <div className="mini-spinner" aria-hidden="true" />
-                    Завантажуємо доступність…
+                <div className="bk-banner bk-banner--warn" role="alert">
+                    <span style={{ fontFamily: 'var(--bk-serif), serif', fontSize: '15px', color: 'var(--ink)' }}>
+                        Бронювання тимчасово недоступне
+                    </span>
+                    <span>{status?.reason ?? 'Спробуйте, будь ласка, пізніше.'}</span>
                 </div>
             )}
+
             {bookingsEnabled && isError && !isLoading && (
-                <div className="availability-error-banner" role="alert">
-                    ⚠️ Не вдалося завантажити доступність. Спробуйте оновити сторінку.
+                <div className="bk-banner bk-banner--error" role="alert">
+                    Не вдалося завантажити доступність. Спробуйте оновити сторінку.
                 </div>
             )}
 
-            <div
-                className={`cal-grid${!bookingsEnabled ? ' cal-grid--disabled' : ''}`}
-                role="grid"
-                aria-label="Календар"
-            >
+            <div className="bk-cal-grid" role="grid" aria-label="Календар">
                 {MESSAGES.calendar.days.map((d) => (
-                    <div key={d} className="cal-day-label" role="columnheader">{d}</div>
+                    <div key={d} className="bk-cal-dow" role="columnheader">{d}</div>
                 ))}
 
                 {Array.from({ length: firstDay }).map((_, i) => (
-                    <div key={`empty-${i}`} className="cal-day empty" aria-hidden="true" />
+                    <div key={`empty-${i}`} className="bk-day empty" aria-hidden="true" />
                 ))}
 
                 {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -141,85 +122,48 @@ export function Calendar() {
                     const dKey = dateKey(thisDate);
                     const isPast = thisDate < today;
                     const info = availabilityMap.get(dKey);
-                    const slotsAvailable = info?.slots ?? MAX_BIG;
+                    const slots = info?.slots ?? MAX_BIG;
                     const isBlocked = info?.blocked ?? false;
-                    const isFullyBlocked = info?.fullyBlocked ?? false;
                     const isSel = selectedDate === dKey;
 
                     if (isLoading && !isPast) {
-                        return (
-                            <div
-                                key={dKey}
-                                className="cal-day cal-day-skeleton"
-                                aria-hidden="true"
-                                tabIndex={-1}
-                            >
-                                <span className="day-num" style={{ opacity: 0.5 }}>{day}</span>
-                            </div>
-                        );
+                        return <div key={dKey} className="bk-day-skeleton" aria-hidden="true" />;
                     }
 
-                    if (!bookingsEnabled && !isPast) {
-                        return (
-                            <div
-                                key={dKey}
-                                className="cal-day date-blocked"
-                                role="gridcell"
-                                aria-label={`${day} ${MESSAGES.calendar.months[calMonth]} — недоступно`}
-                                aria-disabled="true"
-                                tabIndex={-1}
-                            >
-                                <span className="day-num">{day}</span>
-                                <div className="avail-dot" aria-hidden="true" />
-                            </div>
-                        );
-                    }
+                    let state = 'available';
+                    if (isPast) state = 'past';
+                    else if (!bookingsEnabled || isBlocked) state = 'blocked';
+                    else if (slots <= 0) state = 'booked';
+                    else if (slots <= 5) state = 'limited';
 
-                    let statusClass = '';
-                    if (!isPast) {
-                        if (isFullyBlocked) {
-                            statusClass = 'date-blocked date-fully-blocked';
-                        } else if (isBlocked) {
-                            statusClass = 'date-blocked';
-                        } else if (slotsAvailable <= 0) {
-                            statusClass = 'full';
-                        } else if (slotsAvailable <= 5) {
-                            statusClass = 'partial';
-                        }
-                    }
-
-                    const isClickable = !isPast && !isBlocked && !isFullyBlocked && slotsAvailable > 0;
+                    const clickable = !isPast && bookingsEnabled && !isBlocked && slots > 0;
 
                     return (
                         <div
                             key={dKey}
-                            className={`cal-day ${isPast ? 'past' : ''} ${statusClass} ${isSel ? 'selected' : ''}`}
-                            onClick={isClickable ? () => setDate(dKey) : undefined}
+                            className={`bk-day ${state} ${isSel ? 'selected' : ''}`}
+                            onClick={clickable ? () => setDate(dKey) : undefined}
                             role="gridcell"
-                            aria-label={`${day} ${MESSAGES.calendar.months[calMonth]}${isFullyBlocked ? ' — тимчасово недоступно' : isBlocked ? ' — недоступно' : ''}`}
+                            aria-label={`${day} ${MESSAGES.calendar.months[calMonth]}`}
                             aria-pressed={isSel}
-                            aria-disabled={!isClickable}
-                            tabIndex={isClickable ? 0 : -1}
+                            aria-disabled={!clickable}
+                            tabIndex={clickable ? 0 : -1}
                             onKeyDown={(e) => {
-                                if ((e.key === 'Enter' || e.key === ' ') && isClickable) setDate(dKey);
+                                if ((e.key === 'Enter' || e.key === ' ') && clickable) setDate(dKey);
                             }}
                         >
-                            <span className="day-num">{day}</span>
-                            <div className="avail-dot" aria-hidden="true" />
+                            <span className="bk-day-num">{day}</span>
+                            {!isPast && <span className="bk-day-dot" aria-hidden="true" />}
                         </div>
                     );
                 })}
             </div>
 
-            {/* ── Legend — 2-col grid on mobile, single row on wider screens ── */}
-            <div className="cal-legend" aria-label="Легенда">
-                {LEGEND_ITEMS.map((item) => (
-                    <div key={item.labelKey} className="cal-legend-item">
-                        <div
-                            className="ld"
-                            style={{ background: item.color, opacity: item.opacity }}
-                        />
-                        {MESSAGES.calendar[item.labelKey as keyof typeof MESSAGES.calendar] as string}
+            <div className="bk-legend" aria-label="Легенда">
+                {LEGEND.map((l) => (
+                    <div key={l.cls} className="bk-legend-item">
+                        <span className="bk-legend-dot" style={{ background: l.color }} />
+                        {l.label}
                     </div>
                 ))}
             </div>

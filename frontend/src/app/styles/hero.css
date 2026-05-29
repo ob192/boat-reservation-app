@@ -1,0 +1,447 @@
+/* ─── EDITORIAL HERO (home page) ────────────────────────────────────────── */
+/* Scoped under .ed-root — tokens & classes do not leak to other pages.       */
+/* Font CSS variables (--ed-serif / --ed-sans / --ed-mono) are injected by    */
+/* next/font on the .ed-root element in app/page.tsx.                         */
+
+.ed-root {
+    --paper: oklch(0.965 0.012 80);
+    --ink: oklch(0.20 0.012 60);
+    --ink-muted: oklch(0.46 0.012 65);
+    --lake: oklch(0.42 0.07 220);
+    --terracotta: oklch(0.62 0.13 35);
+    --mint: oklch(0.72 0.10 160);
+    --ochre: oklch(0.74 0.12 80);
+    --rust: oklch(0.55 0.13 35);
+    --hairline: oklch(0.20 0.012 60 / 0.14);
+
+    --serif: var(--ed-serif), 'Instrument Serif', serif;
+    --sans: var(--ed-sans), 'Inter Tight', sans-serif;
+    --mono: var(--ed-mono), 'JetBrains Mono', monospace;
+
+    min-height: 100dvh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+.ed-shell {
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 22px;
+}
+
+.ed-rule { height: 1px; background: var(--hairline); }
+
+/* ── Eyebrow / mono labels ── */
+.ed-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-muted);
+    line-height: 1.2;
+}
+.ed-eyebrow--lead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+}
+.ed-eyebrow-rule { width: 26px; height: 1px; background: var(--ink); display: inline-block; flex-shrink: 0; }
+
+/* ── Top bar ── */
+.ed-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0 14px;
+}
+.ed-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.ed-monogram {
+    font-family: var(--serif);
+    font-size: 30px;
+    line-height: 1;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.ed-wordmark { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.ed-wordmark-name { font-family: var(--serif); font-size: 17px; line-height: 1; }
+.ed-wordmark-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-muted);
+}
+.ed-season {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-muted);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
+    padding: 6px 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Hero ── */
+.ed-hero { padding: 30px 0 26px; }
+.ed-headline {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 56px;
+    line-height: 0.96;
+    letter-spacing: -0.01em;
+    margin: 20px 0 18px;
+}
+.ed-headline em { font-style: italic; color: var(--lake); }
+.ed-lede {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    max-width: 33ch;
+}
+
+/* ── Stats ── */
+.ed-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 26px 0;
+}
+.ed-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-left: 16px;
+}
+.ed-stat:first-child { padding-left: 0; }
+.ed-stat + .ed-stat { border-left: 1px solid var(--hairline); }
+.ed-stat-num { font-family: var(--serif); font-size: 28px; line-height: 1; }
+
+/* ── Contact ── */
+.ed-contact {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 0;
+}
+.ed-phone-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.ed-phone-btn:active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ed-contact-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.ed-phone-num {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+.ed-call-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--lake);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+/* ── FAQ ── */
+.ed-faq { padding: 28px 0 8px; }
+.ed-faq-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 1.05;
+    margin: 16px 0 7px;
+}
+.ed-faq-title em { font-style: italic; color: var(--lake); }
+.ed-faq-sub {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    max-width: 36ch;
+    margin-bottom: 16px;
+}
+
+.ed-faq-list { border-top: 1px solid var(--hairline); }
+.ed-faq-item { border-bottom: 1px solid var(--hairline); }
+
+/* summary = question row */
+.ed-faq-q {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.ed-faq-q::-webkit-details-marker { display: none; }
+.ed-faq-q::marker { content: ''; }
+
+.ed-faq-qtext {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.25;
+    color: var(--ink);
+}
+
+.ed-faq-toggle {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--ink);
+    background: transparent;
+    transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.ed-faq-item[open] .ed-faq-toggle {
+    transform: rotate(45deg);
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+}
+
+.ed-faq-a {
+    padding: 0 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    max-width: 42ch;
+}
+.ed-faq-a p { margin-bottom: 12px; }
+.ed-faq-a p:last-child { margin-bottom: 0; }
+
+.ed-faq-item[open] .ed-faq-a { animation: edFaqIn 0.25s ease both; }
+
+@keyframes edFaqIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.ed-faq-map {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    margin: 4px 0 12px;
+    height: 190px;
+}
+.ed-faq-map iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    filter: grayscale(0.9) contrast(0.95) sepia(0.08);
+}
+.ed-faq-maplink {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--lake);
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* ── Instagram card ── */
+.ed-ig-sec { padding: 26px 0 8px; }
+.ed-ig {
+    margin-top: 16px;
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    overflow: hidden;
+    background: oklch(1 0 0);
+}
+
+.ed-ig-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+}
+.ed-ig-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    flex-shrink: 0;
+}
+.ed-ig-avatar-inner {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid oklch(1 0 0);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--ink);
+}
+.ed-ig-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.ed-ig-handle { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.1; }
+.ed-ig-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-muted);
+}
+.ed-ig-follow {
+    flex-shrink: 0;
+    background: var(--lake);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 100px;
+    padding: 7px 16px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.ed-ig-photo {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background:
+            radial-gradient(120% 90% at 78% 18%, oklch(0.93 0.13 88 / 0.85), transparent 55%),
+            linear-gradient(165deg, oklch(0.80 0.10 70), oklch(0.52 0.09 220) 58%, oklch(0.34 0.07 225));
+}
+.ed-ig-photo-art { width: 100%; height: 100%; display: block; }
+
+.ed-ig-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 6px;
+}
+.ed-ig-actions-left { display: flex; align-items: center; gap: 16px; }
+.ed-ig-icon { color: var(--ink); display: inline-flex; }
+
+.ed-ig-likes {
+    padding: 2px 14px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ed-ig-heart { color: var(--rust); display: inline-flex; }
+
+.ed-ig-caption {
+    padding: 6px 14px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+}
+.ed-ig-caption b { font-weight: 600; }
+.ed-ig-hashtags {
+    padding: 5px 14px 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--lake);
+}
+
+.ed-ig-footer {
+    margin-top: 14px;
+    border-top: 1px solid var(--hairline);
+    padding: 13px 14px;
+    text-align: center;
+}
+.ed-ig-footlink {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-muted);
+    text-decoration: none;
+}
+
+/* ── Footer ── */
+.ed-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 28px 0 22px;
+    margin-top: 8px;
+    border-top: 1px solid var(--hairline);
+}
+.ed-foot-link {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    text-decoration: none;
+}
+.ed-foot-dot { color: var(--hairline); font-size: 10px; }
+
+/* ── Sticky dock ── */
+.ed-dock-spacer { height: 96px; }
+.ed-dock {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 26px 22px max(22px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, var(--paper) 38%);
+    pointer-events: none;
+    z-index: 50;
+}
+.ed-dock > * { pointer-events: auto; }
+.ed-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    padding: 17px;
+    border-radius: 100px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+.ed-cta:active { transform: scale(0.985); opacity: 0.92; }
+
+@media (hover: hover) {
+    .ed-phone-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .ed-cta:hover { opacity: 0.9; }
+    .ed-faq-q:hover .ed-faq-toggle { border-color: var(--ink); }
+    .ed-ig-follow:hover { opacity: 0.92; }
+    .ed-call-link:hover,
+    .ed-faq-maplink:hover,
+    .ed-ig-footlink:hover { opacity: 0.7; }
+}

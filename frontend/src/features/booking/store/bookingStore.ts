@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { clearIdempotencyKey } from '@/shared/lib/idempotency';
 
 export interface BookingQuantities {
   big: number;
@@ -74,7 +75,10 @@ export const useBookingStore = create<BookingState>()(
       setBookingId: (id) => set({ bookingId: id }),
       setSessionId: (id) => set({ sessionId: id }),
 
-      reset: () => set(initialState),
+        reset: () => {
+            clearIdempotencyKey();
+            set(initialState);
+        },
     }),
     {
       name: 'harbour-wave-booking',
@@ -86,3 +90,4 @@ export const useBookingStore = create<BookingState>()(
     },
   ),
 );
+

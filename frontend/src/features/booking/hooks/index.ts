@@ -12,6 +12,7 @@ import type {
   CheckoutResponse,
   BookingStatusResponse,
 } from '@/shared/lib/api/types';
+import { getStableIdempotencyKey } from '@/shared/lib/idempotency';
 
 export function useBookingSystemStatus() {
   return useQuery({
@@ -46,7 +47,7 @@ export function useCreateBooking() {
         apiFetch<CreateBookingResponse>('/bookings', {
           method: 'POST',
           body: JSON.stringify(body),
-          headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+          headers: { 'X-Idempotency-Key': getStableIdempotencyKey(body) },
         }),
   });
 }
