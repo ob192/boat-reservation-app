@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
+import Script from 'next/script';
 
 // ─── Fonts (scoped to this page via the .ed-root variable classes) ──────────
 const instrument = Instrument_Serif({
@@ -224,136 +225,25 @@ export default function HomePage() {
                         Свіже з води
                     </p>
 
-                    <article className="ed-ig">
-                        {/* Header */}
-                        <div className="ed-ig-head">
-                            <div className="ed-ig-avatar">
-                                <div className="ed-ig-avatar-inner">S</div>
-                            </div>
-                            <div className="ed-ig-meta">
-                                <span className="ed-ig-handle">supboard_che</span>
-                                <span className="ed-ig-sub">Чернігів · Десна</span>
-                            </div>
-                            <a
-                                href={IG_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="ed-ig-follow"
-                            >
-                                Підписатися
-                            </a>
-                        </div>
-
-                        {/* Photo slot */}
-                        <div className="ed-ig-photo" role="img" aria-label="Ранкова Десна">
-                            <svg
-                                className="ed-ig-photo-art"
-                                viewBox="0 0 400 400"
-                                preserveAspectRatio="xMidYMid slice"
-                                xmlns="http://www.w3.org/2000/svg"
-                                aria-hidden="true"
-                            >
-                                <circle cx="300" cy="92" r="46" fill="oklch(0.95 0.10 90 / 0.85)" />
-                                <path
-                                    d="M0 250 Q 110 232 210 250 T 400 246 L 400 400 L 0 400 Z"
-                                    fill="oklch(0.34 0.07 225 / 0.55)"
-                                />
-                                <path
-                                    d="M40 300 Q 130 288 230 300"
-                                    stroke="oklch(0.92 0.05 220 / 0.45)"
-                                    strokeWidth="2"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                />
-                                <g transform="rotate(-7 215 286)">
-                                    <ellipse cx="215" cy="286" rx="96" ry="15" fill="oklch(0.98 0.01 90 / 0.95)" />
-                                    <line
-                                        x1="258"
-                                        y1="206"
-                                        x2="238"
-                                        y2="282"
-                                        stroke="oklch(0.24 0.012 60)"
-                                        strokeWidth="3.5"
-                                        strokeLinecap="round"
-                                    />
-                                </g>
-                            </svg>
-                        </div>
-
-                        {/* Action row */}
-                        <div className="ed-ig-actions">
-                            <div className="ed-ig-actions-left">
-                                <span className="ed-ig-icon" aria-hidden="true">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M12 20s-7-4.5-9.5-9C1 8 2.5 4.5 6 4.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 15.5 12 20 12 20Z"
-                                            stroke="currentColor"
-                                            strokeWidth="1.6"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                </span>
-                                <span className="ed-ig-icon" aria-hidden="true">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"
-                                            stroke="currentColor"
-                                            strokeWidth="1.6"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                </span>
-                                <span className="ed-ig-icon" aria-hidden="true">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M22 3 11 14M22 3l-7 18-4-7-7-4 18-7Z"
-                                            stroke="currentColor"
-                                            strokeWidth="1.6"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                </span>
-                            </div>
-                            <span className="ed-ig-icon" aria-hidden="true">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path
-                                        d="M6 4h12v17l-6-4.2L6 21V4Z"
-                                        stroke="currentColor"
-                                        strokeWidth="1.6"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            </span>
-                        </div>
-
-                        {/* Likes */}
-                        <div className="ed-ig-likes">
-                            <span className="ed-ig-heart" aria-hidden="true">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 21s-7-4.5-9.5-9C1 8.5 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 3.5 3.5 7-2.5 4.5-9.5 9-9.5 9Z" />
-                                </svg>
-                            </span>
-                            1 247 вподобань
-                        </div>
-
-                        {/* Caption */}
-                        <p className="ed-ig-caption">
-                            <b>supboard_che</b> Ранкова тиша на Десні…
-                        </p>
-                        <p className="ed-ig-hashtags">#supchernihiv #десна #standuppaddle</p>
-
-                        {/* Footer */}
-                        <div className="ed-ig-footer">
-                            <a
-                                href={IG_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="ed-ig-footlink"
-                            >
-                                Дивитись у Instagram ↗
-                            </a>
-                        </div>
-                    </article>
+                    <div style={{ marginTop: 16 }}>
+                        <blockquote
+                            className="instagram-media"
+                            data-instgrm-captioned
+                            data-instgrm-permalink="https://www.instagram.com/reel/DYPbuVwyOZX/?utm_source=ig_embed&utm_campaign=loading"
+                            data-instgrm-version="14"
+                            style={{
+                                background: '#FFF',
+                                border: 0,
+                                borderRadius: 3,
+                                boxShadow: '0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15)',
+                                margin: '1px',
+                                maxWidth: 540,
+                                minWidth: 326,
+                                padding: 0,
+                                width: '100%',
+                            }}
+                        />
+                    </div>
                 </section>
 
                 {/* ── Footer legal ─────────────────────────────────────────── */}
@@ -372,6 +262,8 @@ export default function HomePage() {
             <div className="ed-dock">
                 <Link href="/book" className="ed-cta">Забронювати зараз</Link>
             </div>
+
+            <Script async src="https://www.instagram.com/embed.js" strategy="lazyOnload" />
         </div>
     );
 }
