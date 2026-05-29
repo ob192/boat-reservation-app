@@ -13,7 +13,7 @@ export async function adminFetch<T>(path: string, init: RequestInit = {}): Promi
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new ApiError(401, 'NOT_AUTHENTICATED');
 
-  const res = await fetch(`${BASE}/api${path}`, {
+  const res = await fetch(`/api${path}`, {   // ← was `${BASE}/api${path}`
     ...init,
     headers: {
       'Content-Type': 'application/json',

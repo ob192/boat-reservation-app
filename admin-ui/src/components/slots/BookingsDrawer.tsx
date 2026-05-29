@@ -48,7 +48,7 @@ function BookingRow({ booking, date, time }: { booking: Booking; date: string; t
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
           <StatusBadge status={booking.status} />
-          <span className="booking-amount">€{booking.effectiveAmount.toFixed(2)}</span>
+          <span className="booking-amount">{booking.effectiveAmount.toFixed(2)} ₴</span>
         </div>
       </div>
 
