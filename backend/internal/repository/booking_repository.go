@@ -26,7 +26,7 @@ type BookingRepository interface {
 	Create(ctx context.Context, b *model.Booking) error
 	FindByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
 	FindByPaymentSessionID(ctx context.Context, sessionID string) (*model.Booking, error)
-	FindByIdempotencyKey(ctx context.Context, userID uuid.UUID, key string) (*model.Booking, error)
+	FindByIdempotencyKey(ctx context.Context, userID uuid.UUID, key string, date string, time string) (*model.Booking, error)
 	SetStatus(ctx context.Context, id uuid.UUID, status model.BookingStatus) error
 	SetPaymentSessionID(ctx context.Context, id uuid.UUID, sessionID string) error
 	SetPriceOverride(ctx context.Context, id uuid.UUID, override *float64, reason *string, adminID *uuid.UUID) error
@@ -99,10 +99,16 @@ func (r *bookingRepo) FindByPaymentSessionID(ctx context.Context, sessionID stri
 	return &b, nil
 }
 
-func (r *bookingRepo) FindByIdempotencyKey(ctx context.Context, userID uuid.UUID, key string) (*model.Booking, error) {
+func (r *bookingRepo) FindByIdempotencyKey(
+	ctx context.Context,
+	userID uuid.UUID,
+	key string,
+	date string,
+	time string,
+) (*model.Booking, error) {
 	var b model.Booking
 	err := r.tx(ctx).
-		Where("user_id = ? AND idempotency_key = ?", userID, key).
+		Where("user_id = ? AND idempotency_key = ? AND date = ? AND time = ?", userID, key, date, time).
 		First(&b).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound

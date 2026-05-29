@@ -16,7 +16,7 @@ import (
 )
 
 // HoldDuration is how long a pending booking holds slot capacity before expiring.
-const HoldDuration = 15 * time.Minute
+const HoldDuration = 5 * time.Minute
 
 // Booking-creation typed errors. Handlers map these to HTTP error codes.
 var (
@@ -121,7 +121,7 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 
 	// (4) Idempotency: if a previous booking exists with this (user_id, idempotency_key),
 	// return it as-is. Safe because we never mutate it post-creation under the same key.
-	if existing, err := s.bookings.FindByIdempotencyKey(ctx, in.UserID, in.IdempotencyKey); err == nil {
+	if existing, err := s.bookings.FindByIdempotencyKey(ctx, in.UserID, in.IdempotencyKey, in.Date, in.Time); err == nil {
 		return existing, nil
 	} else if !errors.Is(err, repository.ErrNotFound) {
 		return nil, fmt.Errorf("check idempotency: %w", err)
