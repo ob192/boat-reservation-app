@@ -27,6 +27,7 @@ func InitializeServer() (*Server, error) {
 		repository.NewSlotRepository,
 		repository.NewDateBlockRepository,
 		repository.NewSystemRepository,
+		repository.NewAdminRepository,
 
 		// 3. Providers & Gateway
 		ProvidePaymentGateway,

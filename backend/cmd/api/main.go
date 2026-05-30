@@ -38,6 +38,7 @@ func main() {
 		&model.Slot{},
 		&model.DateBlock{},
 		&model.SystemSettings{},
+		&model.Admin{},
 	); err != nil {
 		server.Log.Error("auto-migrate failed", "err", err)
 		os.Exit(1)

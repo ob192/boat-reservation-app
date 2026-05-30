@@ -10,16 +10,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
+	"github.com/harbour-wave/harbour-wave-backend/internal/repository"
 	"github.com/harbour-wave/harbour-wave-backend/internal/service"
 	"github.com/harbour-wave/harbour-wave-backend/pkg/httpx"
 )
 
-// ContextUserDetails is the gin.Context key that stores the *model.AuthUser
-// after AuthMiddleware has validated the JWT.
 const ContextUserDetails = "UserDetails"
 
-// ExtractBearerToken pulls the bearer token from the Authorization header.
-// Spec-compliant: requires a literal "Bearer " prefix and a non-empty token.
 func ExtractBearerToken(c *gin.Context) (string, error) {
 	header := c.GetHeader("Authorization")
 	if header == "" {
@@ -37,8 +34,6 @@ func ExtractBearerToken(c *gin.Context) (string, error) {
 	return token, nil
 }
 
-// AuthMiddleware validates the JWT and attaches the resolved *model.AuthUser to context.
-// On any failure it aborts with 401 + a spec-defined message.
 func AuthMiddleware(authSvc service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := ExtractBearerToken(c)
@@ -56,12 +51,25 @@ func AuthMiddleware(authSvc service.AuthService) gin.HandlerFunc {
 	}
 }
 
-// AdminMiddleware requires that the already-authenticated user has app_metadata.role == "admin".
+// AdminMiddleware checks the `admins` DB table for the authenticated user.
 // Must be installed *after* AuthMiddleware in the route group.
-func AdminMiddleware() gin.HandlerFunc {
+func AdminMiddleware(adminRepo repository.AdminRepository) gin.HandlerFunc {
+
 	return func(c *gin.Context) {
 		user, err := GetUserFromContext(c)
-		if err != nil || !user.IsAdmin() {
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": httpx.CodeForbidden})
+			return
+		}
+		ok, err := adminRepo.IsAdmin(c.Request.Context(), user.ID)
+		if err != nil {
+			// Treat a DB error conservatively: deny access and let the request logger
+			// surface the underlying error via the 503 path is not applicable here
+			// because we're in a middleware — just log and forbid.
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": httpx.CodeForbidden})
+			return
+		}
+		if !ok {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": httpx.CodeForbidden})
 			return
 		}
@@ -69,7 +77,6 @@ func AdminMiddleware() gin.HandlerFunc {
 	}
 }
 
-// GetUserFromContext returns the *model.AuthUser attached by AuthMiddleware.
 func GetUserFromContext(c *gin.Context) (*model.AuthUser, error) {
 	raw, ok := c.Get(ContextUserDetails)
 	if !ok {
@@ -88,7 +95,6 @@ func GetUserFromContext(c *gin.Context) (*model.AuthUser, error) {
 	}
 }
 
-// GetUserIDFromContext is a convenience wrapper around GetUserFromContext.
 func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	user, err := GetUserFromContext(c)
 	if err != nil {

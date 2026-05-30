@@ -77,6 +77,7 @@ func ProvideRouter(
 	cfg *config.Config,
 	log *slog.Logger,
 	authSvc service.AuthService,
+	adminRepo repository.AdminRepository,
 	availabilityH *handler.AvailabilityHandler,
 	bookingH *handler.BookingHandler,
 	checkoutH *handler.CheckoutHandler,
@@ -110,7 +111,7 @@ func ProvideRouter(
 		protected.GET("/bookings/by-session/:sessionId", bookingH.GetBySession)
 	}
 
-	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware())
+	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware(adminRepo))
 	{
 		admin.GET("/slots/:date/:time/bookings", adminH.GetSlotBookings)
 		admin.PUT("/slots/:date/:time", adminH.UpsertSlot)

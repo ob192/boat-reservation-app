@@ -33,6 +33,7 @@ func InitializeServer() (*Server, error) {
 		return nil, err
 	}
 	authService := service.NewAuthService(configConfig)
+	adminRepository := repository.NewAdminRepository(db)
 	slotRepository := repository.NewSlotRepository(db)
 	bookingRepository := repository.NewBookingRepository(db)
 	dateBlockRepository := repository.NewDateBlockRepository(db)
@@ -52,7 +53,7 @@ func InitializeServer() (*Server, error) {
 	webhookHandler := handler.NewWebhookHandler(paymentGateway, webhookService, logger)
 	adminService := service.NewAdminService(db, bookingRepository, slotRepository, dateBlockRepository, systemRepository, pricingService, clock)
 	adminHandler := handler.NewAdminHandler(adminService, logger)
-	engine := ProvideRouter(configConfig, logger, authService, availabilityHandler, bookingHandler, checkoutHandler, webhookHandler, adminHandler)
+	engine := ProvideRouter(configConfig, logger, authService, adminRepository, availabilityHandler, bookingHandler, checkoutHandler, webhookHandler, adminHandler)
 	server := &Server{
 		Config:     configConfig,
 		Log:        logger,
