@@ -45,6 +45,19 @@ function BookingRow({ booking, date, time }: { booking: Booking; date: string; t
           <div className="booking-quantities mt-4">
             Великих: {booking.quantities.big} · Середніх: {booking.quantities.medium} · Дітей: {booking.quantities.child}
           </div>
+          {(booking.posterIncomingOrderId != null || booking.posterIncomingTransactionId != null) && (
+              <div className="text-subtle mt-4" style={{ fontSize: '0.78rem' }}>
+                {booking.posterIncomingOrderId != null && (
+                    <span>Poster замовлення: <strong>#{booking.posterIncomingOrderId}</strong></span>
+                )}
+                {booking.posterIncomingOrderId != null && booking.posterIncomingTransactionId != null && (
+                    <span> · </span>
+                )}
+                {booking.posterIncomingTransactionId != null && (
+                    <span>транзакція: <strong>#{booking.posterIncomingTransactionId}</strong></span>
+                )}
+              </div>
+          )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
           <StatusBadge status={booking.status} />

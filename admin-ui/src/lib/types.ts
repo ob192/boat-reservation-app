@@ -43,6 +43,8 @@ export interface Booking {
   effectiveAmount: number;
   status: BookingStatus;
   createdAt: string;
+  posterIncomingOrderId?: number | null;
+  posterIncomingTransactionId?: number | null;
 }
 
 export interface SlotBookingsResponse {
