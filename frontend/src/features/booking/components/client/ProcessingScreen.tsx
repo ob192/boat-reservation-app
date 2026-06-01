@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Script from 'next/script';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
@@ -62,6 +62,46 @@ function buildStartDate(date: string, time: string): Date {
 
 function buildMapsOpenUrl(lat: number, lng: number, placeId: string) {
     return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${placeId}`;
+}
+
+function useIsIOS(): boolean {
+    const [isIOS, setIsIOS] = useState(false);
+    useEffect(() => {
+        const ua = navigator.userAgent || '';
+        const iOS =
+            /iPad|iPhone|iPod/.test(ua) ||
+            // iPadOS 13+ reports as "MacIntel" but has touch points
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        setIsIOS(iOS);
+    }, []);
+    return isIOS;
+}
+
+function buildICS({ title, description, location, startISO, endISO }: {
+    title: string; description: string; location: string; startISO: string; endISO: string;
+}): string {
+    // Keep UTC (Z) — startISO/endISO already come from Date.toISOString()
+    const fmt = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const esc = (s: string) =>
+        s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+
+    return [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//SUP Chernihiv//Booking//UK',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${crypto.randomUUID()}@sup-chernihiv`,
+        `DTSTAMP:${fmt(new Date().toISOString())}`,
+        `DTSTART:${fmt(startISO)}`,
+        `DTEND:${fmt(endISO)}`,
+        `SUMMARY:${esc(title)}`,
+        `DESCRIPTION:${esc(description)}`,
+        `LOCATION:${esc(location)}`,
+        'END:VEVENT',
+        'END:VCALENDAR',
+    ].join('\r\n');
 }
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
@@ -174,6 +214,7 @@ interface ConfirmationDisplayProps {
 function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     const { reset } = useBookingStore();
     const router = useRouter();
+    const isIOS = useIsIOS();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
 
     if (!booking) return null;
@@ -215,6 +256,26 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
         startISO: startDate.toISOString(),
         endISO: endDate.toISOString(),
     });
+    const icsHref = useMemo(() => {
+        const ics = buildICS({
+            title: '⛵ SUP Chernihiv — Прогулянка на SUP-борді',
+            description: [
+                'Ваше бронювання підтверджено!',
+                '',
+                `📍 Місце: ${MARINA.name}`,
+                `📫 Адреса: ${MARINA.address}`,
+                '',
+                ...boardParts.map((b) => `• ${b}`),
+                '',
+                `💶 Сума: ${formatCurrency(total)}`,
+                `Бронювання #${booking.id}`,
+            ].join('\n'),
+            location: `${MARINA.name}, ${MARINA.address}`,
+            startISO: startDate.toISOString(),
+            endISO: endDate.toISOString(),
+        });
+        return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+    }, [booking.id, total, boardParts, startDate, endDate]);
     const mapsOpenUrl = buildMapsOpenUrl(MARINA.lat, MARINA.lng, MARINA.placeId);
 
     const handleNewBooking = () => { reset(); router.replace('/book/date'); };
@@ -294,7 +355,12 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
 
                 {/* ── CTAs ── */}
                 <div className="bk-confirm-ctas">
-                    <a href={calendarUrl} target="_blank" rel="noopener noreferrer" className="bk-confirm-cta-dark">
+                    <a href={isIOS ? icsHref : calendarUrl}
+                       {...(isIOS
+                           ? { download: 'sup-chernihiv.ics' }
+                           : { target: '_blank', rel: 'noopener noreferrer' })}
+                       className="bk-confirm-cta-dark"
+                    >
                         <CalendarIcon />
                         Додати до календаря
                     </a>
