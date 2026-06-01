@@ -13,6 +13,28 @@ export const contactSchema = z.object({
   phone: z.string().min(1), // required by backend; no custom message (soft)
 });
 
+export const consentSchema = z.object({
+  event: z.literal('consent_agreed'),
+  consentId: z.string(),
+  agreementId: z.string(),
+  agreementVersion: z.string(),
+  agreementHash: z.string(),
+  user: z.object({
+    id: z.string().optional(),
+    email: z.string().email(),
+    name: z.string(),
+  }),
+  device: z.object({
+    fingerprint: z.string(),
+    userAgent: z.string(),
+    platform: z.string(),
+    timezone: z.string(),
+    language: z.string(),
+    screen: z.string(),
+  }),
+  clientTimestamp: z.string(),
+});
+
 export const bookingSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Невірний формат дати'),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Невірний формат часу'),

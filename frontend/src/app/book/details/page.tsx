@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,9 @@ import { contactSchema, type ContactFormValues } from '@/features/booking/schema
 import { UserMenu } from '@/features/auth/components/UserMenu';
 import { MESSAGES, PRICES } from '@/features/booking/messages';
 import { formatCurrency } from '@/shared/lib/currency';
+import { ConsentAgreement } from '@/features/booking/components/client/ConsentAgreement';
+import { CONSENT_AGREEMENT, buildAgreementText } from '@/features/booking/consent-text';
+import { sha256Hex, buildConsentRecord } from '@/shared/lib/consent';
 
 const instrument = Instrument_Serif({
     subsets: ['latin'],
@@ -88,6 +91,13 @@ export default function DetailsPage() {
         resolver: zodResolver(contactSchema),
     });
 
+    const [agreed, setAgreed] = useState(false);
+    const [docHash, setDocHash] = useState('');
+
+    useEffect(() => {
+        sha256Hex(buildAgreementText()).then(setDocHash);
+    }, []);
+
     useEffect(() => {
         if (user?.email) setValue('email', user.email);
     }, [user, setValue]);
@@ -96,11 +106,23 @@ export default function DetailsPage() {
         if (!selectedDate || !selectedTime) return;
         setContact(data);
         try {
+            const consent = await buildConsentRecord({
+                agreementId: CONSENT_AGREEMENT.id,
+                agreementVersion: CONSENT_AGREEMENT.version,
+                agreementHash: docHash,
+                user: {
+                    id: user?.id,
+                    email: data.email,
+                    name: `${data.firstName} ${data.lastName}`.trim(),
+                },
+            });
+
             const booking = await createBooking.mutateAsync({
                 date: selectedDate,
                 time: selectedTime,
                 quantities,
                 contact: data,
+                consent,
             });
             setBookingId(booking.bookingId);
             const origin = window.location.origin;
@@ -281,6 +303,8 @@ export default function DetailsPage() {
                         </div>
                     </div>
 
+                    <ConsentAgreement agreed={agreed} onAgreedChange={setAgreed} docHash={docHash} />
+
                     {/* ── API error ── */}
                     {apiError && (
                         <div className="bk-banner bk-banner--error" role="alert" style={{ marginTop: 16 }}>
@@ -319,7 +343,7 @@ export default function DetailsPage() {
                             <button
                                 className="bk-cta"
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || !agreed}
                             >
                                 {isLoading ? 'Обробка…' : 'Перейти до оплати'}
                             </button>

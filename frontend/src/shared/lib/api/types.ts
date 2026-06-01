@@ -54,6 +54,7 @@ export interface CreateBookingBody {
   time: string;
   quantities: BookingQuantities;
   contact: BookingContact;
+  consent?: ConsentRecord;
 }
 
 export interface CreateBookingResponse {
@@ -88,4 +89,22 @@ export interface BookingDetail {
 export interface BookingStatusResponse {
   status: BookingStatus;
   booking?: BookingDetail;
+}
+
+export interface ConsentRecord {
+  event: 'consent_agreed';
+  consentId: string;
+  agreementId: string;
+  agreementVersion: string;
+  agreementHash: string;
+  user: { id?: string; email: string; name: string };
+  device: {
+    fingerprint: string;
+    userAgent: string;
+    platform: string;
+    timezone: string;
+    language: string;
+    screen: string;
+  };
+  clientTimestamp: string;
 }
