@@ -13,6 +13,7 @@ import "time"
 type CreateBookingRequest struct {
 	Date       string            `json:"date"       binding:"required"`
 	Time       string            `json:"time"       binding:"required"`
+	RouteName  string            `json:"routeName"  binding:"required"`
 	Quantities QuantitiesRequest `json:"quantities" binding:"required"`
 	Contact    ContactRequest    `json:"contact"    binding:"required"`
 }
@@ -22,6 +23,7 @@ type CreateBookingRequest struct {
 type QuantitiesRequest struct {
 	Big    *int `json:"big"`
 	Medium *int `json:"medium"`
+	Small  *int `json:"small"`
 	Child  *int `json:"child"`
 }
 
@@ -68,6 +70,7 @@ type BookingPublicView struct {
 	ID          string            `json:"id"`
 	Date        string            `json:"date"`
 	Time        string            `json:"time"`
+	RouteName   string            `json:"routeName"`
 	Quantities  Quantities        `json:"quantities"`
 	Contact     ContactPublicView `json:"contact"`
 	TotalAmount float64           `json:"totalAmount"`
@@ -110,10 +113,13 @@ type SlotsForDateResponse struct {
 
 type SlotForDate struct {
 	Time            string `json:"time"`
+	RouteName       string `json:"routeName"`
 	AvailableBig    int    `json:"availableBig"`
 	TotalBig        int    `json:"totalBig"`
 	AvailableMedium int    `json:"availableMedium"`
 	TotalMedium     int    `json:"totalMedium"`
+	AvailableSmall  int    `json:"availableSmall"`
+	TotalSmall      int    `json:"totalSmall"`
 	Blocked         bool   `json:"blocked"`
 }
 
@@ -143,6 +149,7 @@ type AdminBlockSlotRequest struct {
 type AdminBlockSlotResponse struct {
 	Date      string    `json:"date"`
 	Time      string    `json:"time"`
+	RouteName string    `json:"routeName"`
 	Blocked   bool      `json:"blocked"`
 	Reason    *string   `json:"reason,omitempty"`
 	BlockedAt time.Time `json:"blockedAt"`
@@ -150,9 +157,10 @@ type AdminBlockSlotResponse struct {
 
 // DELETE /admin/slots/:date/:time/block
 type AdminUnblockSlotResponse struct {
-	Date    string `json:"date"`
-	Time    string `json:"time"`
-	Blocked bool   `json:"blocked"`
+	Date      string `json:"date"`
+	Time      string `json:"time"`
+	RouteName string `json:"routeName"`
+	Blocked   bool   `json:"blocked"`
 }
 
 // PUT /admin/dates/:date/block
@@ -201,40 +209,48 @@ type AdminCancelBookingResponse struct {
 type AdminUpsertSlotRequest struct {
 	CapacityBig    *int `json:"capacityBig"    binding:"required,gte=0"`
 	CapacityMedium *int `json:"capacityMedium" binding:"required,gte=0"`
+	CapacitySmall  *int `json:"capacitySmall"  binding:"required,gte=0"`
 }
 
 type AdminUpsertSlotResponse struct {
 	Date           string `json:"date"`
 	Time           string `json:"time"`
+	RouteName      string `json:"routeName"`
 	CapacityBig    int    `json:"capacityBig"`
 	CapacityMedium int    `json:"capacityMedium"`
+	CapacitySmall  int    `json:"capacitySmall"`
 	Blocked        bool   `json:"blocked"`
-	Created        bool   `json:"created"` // true = new row, false = updated
+	Created        bool   `json:"created"`
 }
 
 // PATCH /admin/slots/:date/:time/capacity
 type AdminUpdateSlotCapacityRequest struct {
 	CapacityBig    *int `json:"capacityBig"    binding:"required,gte=0"`
 	CapacityMedium *int `json:"capacityMedium" binding:"required,gte=0"`
+	CapacitySmall  *int `json:"capacitySmall"  binding:"required,gte=0"`
 }
 
 type AdminUpdateSlotCapacityResponse struct {
 	Date           string `json:"date"`
 	Time           string `json:"time"`
+	RouteName      string `json:"routeName"`
 	CapacityBig    int    `json:"capacityBig"`
 	CapacityMedium int    `json:"capacityMedium"`
+	CapacitySmall  int    `json:"capacitySmall"`
 	Blocked        bool   `json:"blocked"`
 }
 
 // GET /admin/slots/:date/:time/bookings
 type AdminSlotBookingsResponse struct {
-	Date     string                  `json:"date"`
-	Time     string                  `json:"time"`
-	Bookings []AdminBookingListEntry `json:"bookings"`
+	Date      string                  `json:"date"`
+	Time      string                  `json:"time"`
+	RouteName string                  `json:"routeName"`
+	Bookings  []AdminBookingListEntry `json:"bookings"`
 }
 
 type AdminBookingListEntry struct {
 	ID                          string     `json:"id"`
+	RouteName                   string     `json:"routeName"`
 	UserEmail                   string     `json:"userEmail"`
 	FirstName                   string     `json:"firstName"`
 	LastName                    string     `json:"lastName"`
@@ -251,4 +267,24 @@ type AdminBookingListEntry struct {
 type BookingStatusResponse struct {
 	BookingsEnabled bool   `json:"bookingsEnabled"`
 	Reason          string `json:"reason,omitempty"`
+}
+
+// ============================================================================
+// GET /bookings
+// ============================================================================
+
+type MyBookingsResponse struct {
+	Bookings []MyBookingView `json:"bookings"`
+}
+
+type MyBookingView struct {
+	ID          string     `json:"id"`
+	Date        string     `json:"date"`
+	Time        string     `json:"time"`
+	RouteName   string     `json:"routeName"`
+	Quantities  Quantities `json:"quantities"`
+	TotalAmount float64    `json:"totalAmount"`
+	Status      string     `json:"status"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	ExpiresAt   time.Time  `json:"expiresAt"`
 }

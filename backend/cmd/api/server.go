@@ -109,15 +109,16 @@ func ProvideRouter(
 		protected.POST("/bookings", bookingH.CreateBooking)
 		protected.POST("/checkout", checkoutH.CreateCheckout)
 		protected.GET("/bookings/by-session/:sessionId", bookingH.GetBySession)
+		protected.GET("/bookings", bookingH.ListMyBookings)
 	}
 
 	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware(adminRepo))
 	{
-		admin.GET("/slots/:date/:time/bookings", adminH.GetSlotBookings)
-		admin.PUT("/slots/:date/:time", adminH.UpsertSlot)
+		admin.GET("/slots/:date/:time/:route/bookings", adminH.GetSlotBookings)
+		admin.PUT("/slots/:date/:time/:route", adminH.UpsertSlot)
 		admin.PATCH("/bookings/:bookingId/price", adminH.OverridePrice)
-		admin.PUT("/slots/:date/:time/block", adminH.BlockSlot)
-		admin.DELETE("/slots/:date/:time/block", adminH.UnblockSlot)
+		admin.PUT("/slots/:date/:time/:route/block", adminH.BlockSlot)
+		admin.DELETE("/slots/:date/:time/:route/block", adminH.UnblockSlot)
 		admin.PUT("/dates/:date/block", adminH.BlockDate)
 		admin.DELETE("/dates/:date/block", adminH.UnblockDate)
 		admin.PUT("/system/bookings-enabled", adminH.SetBookingsEnabled)

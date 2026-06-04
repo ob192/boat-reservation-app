@@ -64,6 +64,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	q := model.Quantities{
 		Big:    deref(req.Quantities.Big),
 		Medium: deref(req.Quantities.Medium),
+		Small:  deref(req.Quantities.Small),
 		Child:  deref(req.Quantities.Child),
 	}
 
@@ -73,12 +74,12 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		IdempotencyKey: idemKey,
 		Date:           req.Date,
 		Time:           req.Time,
+		RouteName:      req.RouteName,
 		Quantities:     q,
 		FirstName:      req.Contact.FirstName,
 		LastName:       req.Contact.LastName,
 		Phone:          req.Contact.Phone,
 	}
-
 	b, err := h.bookingSvc.Create(c.Request.Context(), in)
 	if err != nil {
 		mapBookingError(c, err, h.log)
@@ -139,6 +140,7 @@ func (h *BookingHandler) GetBySession(c *gin.Context) {
 			ID:         b.ID.String(),
 			Date:       b.DateFormatted(),
 			Time:       b.Time,
+			RouteName:  b.RouteName,
 			Quantities: b.Quantities(),
 			Contact: model.ContactPublicView{
 				FirstName: b.FirstName,
@@ -150,6 +152,49 @@ func (h *BookingHandler) GetBySession(c *gin.Context) {
 		}
 	}
 	httpx.OK(c, resp)
+}
+
+// ListMyBookings handles GET /bookings.
+//
+// @Summary      List the authenticated user's bookings
+// @Description  Returns all bookings (any status) belonging to the current user, newest first.
+// @Tags         bookings
+// @Produce      json
+// @Success      200  {object}  model.MyBookingsResponse
+// @Failure      401  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /bookings [get]
+func (h *BookingHandler) ListMyBookings(c *gin.Context) {
+	user, err := GetUserFromContext(c)
+	if err != nil {
+		httpx.Err(c, http.StatusUnauthorized, httpx.CodeNotAuthenticated, "")
+		return
+	}
+
+	bookings, err := h.bookingSvc.GetAllForUser(c.Request.Context(), user.ID)
+	if err != nil {
+		h.log.Error("list my bookings", "err", err, "user_id", user.ID)
+		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		return
+	}
+
+	views := make([]model.MyBookingView, 0, len(bookings))
+	for _, b := range bookings {
+		views = append(views, model.MyBookingView{
+			ID:          b.ID.String(),
+			Date:        b.DateFormatted(),
+			Time:        b.Time,
+			RouteName:   b.RouteName,
+			Quantities:  b.Quantities(),
+			TotalAmount: b.EffectiveAmount(),
+			Status:      string(b.Status),
+			CreatedAt:   b.CreatedAt,
+			ExpiresAt:   b.ExpiresAt,
+		})
+	}
+
+	httpx.OK(c, model.MyBookingsResponse{Bookings: views})
 }
 
 // mapBookingError translates a service-layer error into the spec's HTTP shape.
@@ -179,6 +224,8 @@ func mapBookingError(c *gin.Context, err error, log *slog.Logger) {
 		httpx.Err(c, http.StatusForbidden, httpx.CodeForbidden, "")
 	case errors.Is(err, service.ErrBookingNotFound):
 		httpx.Err(c, http.StatusNotFound, httpx.CodeBookingNotFound, "")
+	case errors.Is(err, service.ErrInvalidRoute):
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, err.Error())
 	default:
 		log.Error("booking error", "err", err)
 		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")

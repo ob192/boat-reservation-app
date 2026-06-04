@@ -46,7 +46,7 @@ func main() {
 
 	seedStart := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
 	seedEnd := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
-	if err := seedSlots(context.Background(), server.DB, server.Log, seedStart, seedEnd, 5, 10); err != nil {
+	if err := seedSlots(context.Background(), server.DB, server.Log, seedStart, seedEnd, 8, 10, 1); err != nil {
 		server.Log.Error("slot seeding failed", "err", err)
 		os.Exit(1)
 	}

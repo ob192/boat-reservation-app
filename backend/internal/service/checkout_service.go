@@ -69,7 +69,7 @@ func (s *checkoutService) CreateCheckout(
 		BookingID:   b.ID.String(),
 		UserEmail:   b.UserEmail,
 		AmountUAH:   amount,
-		Description: fmt.Sprintf("SUP Chernihiv — Бронювання %s %s", b.DateFormatted(), b.Time),
+		Description: fmt.Sprintf("SUP Chernihiv — Бронювання %s %s (%s)", b.DateFormatted(), b.Time, b.RouteName),
 		LineItems:   buildLineItems(b, amount),
 		ResultURL:   resultUrl,
 		ExpiresAt:   b.ExpiresAt,
@@ -100,21 +100,31 @@ func buildLineItems(b *model.Booking, effective float64) []provider.LineItem {
 	if b.PriceOverride != nil {
 		return []provider.LineItem{
 			{
-				Name:      "Harbour & Wave — Бронювання (зі знижкою)",
+				Name:      "SUP Chernihiv — Бронювання (зі знижкою)",
 				AmountEUR: effective,
 				Quantity:  1,
 			},
 		}
 	}
-	items := make([]provider.LineItem, 0, 3)
+
+	p, ok := RoutePriceFor(b.RouteName)
+	if !ok {
+		// Unknown route — fall back to a single effective-amount line.
+		return []provider.LineItem{{Name: "Бронювання", AmountEUR: effective, Quantity: 1}}
+	}
+
+	items := make([]provider.LineItem, 0, 4)
 	if b.QtyBig > 0 {
-		items = append(items, provider.LineItem{Name: "Велика яхта", AmountEUR: PriceBig, Quantity: b.QtyBig})
+		items = append(items, provider.LineItem{Name: "Великий борд", AmountEUR: p.Big, Quantity: b.QtyBig})
 	}
 	if b.QtyMedium > 0 {
-		items = append(items, provider.LineItem{Name: "Середня яхта", AmountEUR: PriceMedium, Quantity: b.QtyMedium})
+		items = append(items, provider.LineItem{Name: "Середній борд", AmountEUR: p.Medium, Quantity: b.QtyMedium})
+	}
+	if b.QtySmall > 0 {
+		items = append(items, provider.LineItem{Name: "Малий борд", AmountEUR: p.Small, Quantity: b.QtySmall})
 	}
 	if b.QtyChild > 0 {
-		items = append(items, provider.LineItem{Name: "Дитяче місце", AmountEUR: PriceChild, Quantity: b.QtyChild})
+		items = append(items, provider.LineItem{Name: "Дитяче місце", AmountEUR: p.Child, Quantity: b.QtyChild})
 	}
 	return items
 }

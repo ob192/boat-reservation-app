@@ -31,6 +31,8 @@ definitions:
         type: string
       reason:
         type: string
+      routeName:
+        type: string
       time:
         type: string
     type: object
@@ -48,8 +50,14 @@ definitions:
         type: string
       phone:
         type: string
+      posterIncomingOrderId:
+        type: integer
+      posterIncomingTransactionId:
+        type: integer
       quantities:
         $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities'
+      routeName:
+        type: string
       status:
         type: string
       totalAmount:
@@ -126,6 +134,8 @@ definitions:
         type: array
       date:
         type: string
+      routeName:
+        type: string
       time:
         type: string
     type: object
@@ -142,6 +152,8 @@ definitions:
         type: boolean
       date:
         type: string
+      routeName:
+        type: string
       time:
         type: string
     type: object
@@ -153,9 +165,13 @@ definitions:
       capacityMedium:
         minimum: 0
         type: integer
+      capacitySmall:
+        minimum: 0
+        type: integer
     required:
     - capacityBig
     - capacityMedium
+    - capacitySmall
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse:
     properties:
@@ -165,10 +181,13 @@ definitions:
         type: integer
       capacityMedium:
         type: integer
+      capacitySmall:
+        type: integer
       created:
-        description: true = new row, false = updated
         type: boolean
       date:
+        type: string
+      routeName:
         type: string
       time:
         type: string
@@ -210,6 +229,8 @@ definitions:
         type: string
       quantities:
         $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities'
+      routeName:
+        type: string
       status:
         type: string
       time:
@@ -262,12 +283,15 @@ definitions:
         type: string
       quantities:
         $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.QuantitiesRequest'
+      routeName:
+        type: string
       time:
         type: string
     required:
     - contact
     - date
     - quantities
+    - routeName
     - time
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.CreateBookingResponse:
@@ -296,6 +320,34 @@ definitions:
       sessionId:
         type: string
     type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingView:
+    properties:
+      createdAt:
+        type: string
+      date:
+        type: string
+      expiresAt:
+        type: string
+      id:
+        type: string
+      quantities:
+        $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities'
+      routeName:
+        type: string
+      status:
+        type: string
+      time:
+        type: string
+      totalAmount:
+        type: number
+    type: object
+  github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingsResponse:
+    properties:
+      bookings:
+        items:
+          $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingView'
+        type: array
+    type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities:
     properties:
       big:
@@ -303,6 +355,8 @@ definitions:
       child:
         type: integer
       medium:
+        type: integer
+      small:
         type: integer
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.QuantitiesRequest:
@@ -313,6 +367,8 @@ definitions:
         type: integer
       medium:
         type: integer
+      small:
+        type: integer
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.SlotForDate:
     properties:
@@ -320,13 +376,19 @@ definitions:
         type: integer
       availableMedium:
         type: integer
+      availableSmall:
+        type: integer
       blocked:
         type: boolean
+      routeName:
+        type: string
       time:
         type: string
       totalBig:
         type: integer
       totalMedium:
+        type: integer
+      totalSmall:
         type: integer
     type: object
   github_com_harbour-wave_harbour-wave-backend_internal_model.SlotsForDateResponse:
@@ -542,12 +604,12 @@ paths:
       summary: Block an entire date
       tags:
       - admin
-  /admin/slots/{date}/{time}:
+  /admin/slots/{date}/{time}/{route}:
     put:
       consumes:
       - application/json
-      description: Admin endpoint to create a slot for a given date/time or update
-        its capacity.
+      description: Admin endpoint to create a slot for a given date/time/route or
+        update its capacities.
       parameters:
       - description: Date in YYYY-MM-DD format
         in: path
@@ -557,6 +619,11 @@ paths:
       - description: Time in HH:MM format
         in: path
         name: time
+        required: true
+        type: string
+      - description: Route name
+        in: path
+        name: route
         required: true
         type: string
       - description: Capacity payload
@@ -573,7 +640,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUpsertSlotResponse'
         "400":
-          description: Bad Request
+          description: INVALID_DATE, INVALID_TIME, INVALID_ROUTE, or INVALID_INPUT
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "403":
@@ -589,9 +656,10 @@ paths:
       summary: Create or update a slot
       tags:
       - admin
-  /admin/slots/{date}/{time}/block:
+  /admin/slots/{date}/{time}/{route}/block:
     delete:
-      description: Admin endpoint to remove a block on a specific date and time.
+      description: Admin endpoint to remove a block on a specific date, time, and
+        route.
       parameters:
       - description: Date in YYYY-MM-DD format
         in: path
@@ -603,6 +671,11 @@ paths:
         name: time
         required: true
         type: string
+      - description: Route name
+        in: path
+        name: route
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -611,7 +684,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminUnblockSlotResponse'
         "400":
-          description: Bad Request
+          description: INVALID_DATE, INVALID_TIME, or INVALID_ROUTE
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "403":
@@ -634,7 +707,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Admin endpoint to block bookings for a specific date and time.
+      description: Admin endpoint to block bookings for a specific date, time, and
+        route.
       parameters:
       - description: Date in YYYY-MM-DD format
         in: path
@@ -644,6 +718,11 @@ paths:
       - description: Time in HH:MM format
         in: path
         name: time
+        required: true
+        type: string
+      - description: Route name
+        in: path
+        name: route
         required: true
         type: string
       - description: Block reason
@@ -659,7 +738,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminBlockSlotResponse'
         "400":
-          description: Bad Request
+          description: INVALID_DATE, INVALID_TIME, or INVALID_ROUTE
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "403":
@@ -683,10 +762,10 @@ paths:
       summary: Block a specific slot
       tags:
       - admin
-  /admin/slots/{date}/{time}/bookings:
+  /admin/slots/{date}/{time}/{route}/bookings:
     get:
       description: Admin endpoint returning all bookings (any status) for a specific
-        date/time slot.
+        date/time/route slot.
       parameters:
       - description: Date in YYYY-MM-DD format
         in: path
@@ -698,6 +777,11 @@ paths:
         name: time
         required: true
         type: string
+      - description: Route name
+        in: path
+        name: route
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -706,7 +790,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AdminSlotBookingsResponse'
         "400":
-          description: Bad Request
+          description: INVALID_DATE, INVALID_TIME, or INVALID_ROUTE
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "403":
@@ -792,6 +876,29 @@ paths:
       tags:
       - availability
   /bookings:
+    get:
+      description: Returns all bookings (any status) belonging to the current user,
+        newest first.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: List the authenticated user's bookings
+      tags:
+      - bookings
     post:
       consumes:
       - application/json

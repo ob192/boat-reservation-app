@@ -22,6 +22,7 @@ const (
 type Quantities struct {
 	Big    int `json:"big"`
 	Medium int `json:"medium"`
+	Small  int `json:"small"`
 	Child  int `json:"child"`
 }
 
@@ -36,10 +37,12 @@ type Booking struct {
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index;uniqueIndex:idx_bookings_idem_user,priority:1" json:"userId"`
 	UserEmail string    `gorm:"type:varchar(255);not null" json:"userEmail"`
 
-	Date      pgtype.Date `gorm:"type:date;not null;index:idx_bookings_date_time" json:"-"`          // YYYY-MM-DD
-	Time      string      `gorm:"type:varchar(5);not null;index:idx_bookings_date_time" json:"time"` // HH:MM
+	Date      pgtype.Date `gorm:"type:date;not null;index:idx_bookings_date_time,priority:1" json:"-"`
+	Time      string      `gorm:"type:varchar(5);not null;index:idx_bookings_date_time,priority:2" json:"time"`
+	RouteName string      `gorm:"type:varchar(50);not null;index:idx_bookings_date_time,priority:3" json:"routeName"`
 	QtyBig    int         `gorm:"not null;default:0" json:"qtyBig"`
 	QtyMedium int         `gorm:"not null;default:0" json:"qtyMedium"`
+	QtySmall  int         `gorm:"not null;default:0" json:"qtySmall"`
 	QtyChild  int         `gorm:"not null;default:0" json:"qtyChild"`
 
 	FirstName string  `gorm:"type:varchar(50);not null" json:"firstName"`
@@ -75,7 +78,7 @@ func (Booking) TableName() string { return "bookings" }
 
 // Quantities returns the request-shaped Quantities for this booking.
 func (b *Booking) Quantities() Quantities {
-	return Quantities{Big: b.QtyBig, Medium: b.QtyMedium, Child: b.QtyChild}
+	return Quantities{Big: b.QtyBig, Medium: b.QtyMedium, Small: b.QtySmall, Child: b.QtyChild}
 }
 
 // EffectiveAmount returns price_override if set, otherwise total_amount.

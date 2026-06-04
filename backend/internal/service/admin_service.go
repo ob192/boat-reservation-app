@@ -31,14 +31,9 @@ type AdminService interface {
 		reason string,
 	) (*model.AdminPriceOverrideResponse, error)
 
-	BlockSlot(
-		ctx context.Context,
-		date, time string,
-		adminID uuid.UUID,
-		reason string,
-	) (*model.AdminBlockSlotResponse, error)
+	BlockSlot(ctx context.Context, date, time, route string, adminID uuid.UUID, reason string) (*model.AdminBlockSlotResponse, error)
 
-	UnblockSlot(ctx context.Context, date, time string) (*model.AdminUnblockSlotResponse, error)
+	UnblockSlot(ctx context.Context, date, time, route string) (*model.AdminUnblockSlotResponse, error)
 
 	BlockDate(
 		ctx context.Context,
@@ -63,17 +58,9 @@ type AdminService interface {
 		reason string,
 	) (*model.AdminCancelBookingResponse, error)
 
-	UpsertSlot(
-		ctx context.Context,
-		date, time string,
-		capacityBig, capacityMedium int,
-		adminID uuid.UUID,
-	) (*model.AdminUpsertSlotResponse, error)
+	UpsertSlot(ctx context.Context, date, time, route string, capacityBig, capacityMedium, capacitySmall int, adminID uuid.UUID) (*model.AdminUpsertSlotResponse, error)
 
-	GetSlotBookings(
-		ctx context.Context,
-		date, time string,
-	) (*model.AdminSlotBookingsResponse, error)
+	GetSlotBookings(ctx context.Context, date, time, route string) (*model.AdminSlotBookingsResponse, error)
 }
 
 type adminService struct {
@@ -165,18 +152,17 @@ func (s *adminService) OverridePrice(
 
 func (s *adminService) BlockSlot(
 	ctx context.Context,
-	date, time string,
+	date, time, route string,
 	adminID uuid.UUID,
 	reason string,
 ) (*model.AdminBlockSlotResponse, error) {
-	slot, err := s.slots.FindByDateTime(ctx, date, time)
+	slot, err := s.slots.FindByDateTime(ctx, date, time, route)
 	if errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrSlotNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
-
 	if slot.Blocked {
 		return nil, ErrAlreadyBlocked
 	}
@@ -185,11 +171,11 @@ func (s *adminService) BlockSlot(
 	if r := strings.TrimSpace(reason); r != "" {
 		reasonPtr = &r
 	}
-	if err := s.slots.Block(ctx, date, time, adminID, reasonPtr); err != nil {
+	if err := s.slots.Block(ctx, date, time, route, adminID, reasonPtr); err != nil {
 		return nil, err
 	}
 
-	updated, err := s.slots.FindByDateTime(ctx, date, time)
+	updated, err := s.slots.FindByDateTime(ctx, date, time, route)
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +186,7 @@ func (s *adminService) BlockSlot(
 	return &model.AdminBlockSlotResponse{
 		Date:      date,
 		Time:      time,
+		RouteName: route,
 		Blocked:   true,
 		Reason:    updated.BlockReason,
 		BlockedAt: blockedAt,
@@ -208,18 +195,18 @@ func (s *adminService) BlockSlot(
 
 func (s *adminService) UnblockSlot(
 	ctx context.Context,
-	date, time string,
+	date, time, route string,
 ) (*model.AdminUnblockSlotResponse, error) {
-	if _, err := s.slots.FindByDateTime(ctx, date, time); err != nil {
+	if _, err := s.slots.FindByDateTime(ctx, date, time, route); err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrSlotNotFound
 		}
 		return nil, err
 	}
-	if err := s.slots.Unblock(ctx, date, time); err != nil {
+	if err := s.slots.Unblock(ctx, date, time, route); err != nil {
 		return nil, err
 	}
-	return &model.AdminUnblockSlotResponse{Date: date, Time: time, Blocked: false}, nil
+	return &model.AdminUnblockSlotResponse{Date: date, Time: time, RouteName: route, Blocked: false}, nil
 }
 
 // ----------------------------------------------------------------------------
@@ -348,11 +335,10 @@ func (s *adminService) CancelBooking(
 
 func (s *adminService) UpsertSlot(
 	ctx context.Context,
-	date, slotTime string,
-	capacityBig, capacityMedium int,
+	date, slotTime, route string,
+	capacityBig, capacityMedium, capacitySmall int,
 	adminID uuid.UUID,
 ) (*model.AdminUpsertSlotResponse, error) {
-
 	t, err := time.Parse("2006-01-02", date)
 	if err != nil {
 		return nil, fmt.Errorf("invalid date %q: %w", date, err)
@@ -360,8 +346,10 @@ func (s *adminService) UpsertSlot(
 	row := model.Slot{
 		Date:           pgtype.Date{Time: t, Valid: true},
 		Time:           slotTime,
+		RouteName:      route,
 		CapacityBig:    capacityBig,
 		CapacityMedium: capacityMedium,
+		CapacitySmall:  capacitySmall,
 	}
 	final, created, err := s.slots.Upsert(ctx, row)
 	if err != nil {
@@ -370,8 +358,10 @@ func (s *adminService) UpsertSlot(
 	return &model.AdminUpsertSlotResponse{
 		Date:           final.Date.Time.UTC().Format("2006-01-02"),
 		Time:           final.Time,
+		RouteName:      final.RouteName,
 		CapacityBig:    final.CapacityBig,
 		CapacityMedium: final.CapacityMedium,
+		CapacitySmall:  final.CapacitySmall,
 		Blocked:        final.Blocked,
 		Created:        created,
 	}, nil
@@ -379,18 +369,16 @@ func (s *adminService) UpsertSlot(
 
 func (s *adminService) GetSlotBookings(
 	ctx context.Context,
-	date, slotTime string,
+	date, slotTime, route string,
 ) (*model.AdminSlotBookingsResponse, error) {
-	// Verify the slot exists so we return 404 rather than an empty list for a
-	// nonsense (date, time) pair.
-	if _, err := s.slots.FindByDateTime(ctx, date, slotTime); err != nil {
+	if _, err := s.slots.FindByDateTime(ctx, date, slotTime, route); err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrSlotNotFound
 		}
 		return nil, err
 	}
 
-	bookings, err := s.bookings.FindBySlot(ctx, date, slotTime)
+	bookings, err := s.bookings.FindBySlot(ctx, date, slotTime, route)
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +387,7 @@ func (s *adminService) GetSlotBookings(
 	for _, b := range bookings {
 		entries = append(entries, model.AdminBookingListEntry{
 			ID:                          b.ID.String(),
+			RouteName:                   b.RouteName,
 			UserEmail:                   b.UserEmail,
 			FirstName:                   b.FirstName,
 			LastName:                    b.LastName,
@@ -414,8 +403,9 @@ func (s *adminService) GetSlotBookings(
 	}
 
 	return &model.AdminSlotBookingsResponse{
-		Date:     date,
-		Time:     slotTime,
-		Bookings: entries,
+		Date:      date,
+		Time:      slotTime,
+		RouteName: route,
+		Bookings:  entries,
 	}, nil
 }

@@ -3,29 +3,41 @@ package main
 
 import (
 	"context"
-	"github.com/harbour-wave/harbour-wave-backend/internal/model"
-	"github.com/jackc/pgx/v5/pgtype"
-	"gorm.io/gorm/clause"
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"github.com/harbour-wave/harbour-wave-backend/internal/model"
+	"github.com/harbour-wave/harbour-wave-backend/internal/service"
 )
 
 var seedSlotTimes = []string{"08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"}
 
-// seedSlots inserts the standard daily slots for the given date range.
-// Uses ON CONFLICT DO NOTHING, so it is safe to run on every startup.
-func seedSlots(ctx context.Context, db *gorm.DB, log *slog.Logger, start, end time.Time, capacityBig, capacityMedium int) error {
+// seedSlots inserts the standard daily slots (one per route) for the date range.
+// ON CONFLICT DO NOTHING on the (date, time, route_name) PK, so it is safe to re-run.
+func seedSlots(
+	ctx context.Context,
+	db *gorm.DB,
+	log *slog.Logger,
+	start, end time.Time,
+	capacityBig, capacityMedium, capacitySmall int,
+) error {
 	var all []model.Slot
 	for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 		for _, t := range seedSlotTimes {
-			all = append(all, model.Slot{
-				Date:           pgtype.Date{Time: d, Valid: true},
-				Time:           t,
-				CapacityBig:    capacityBig,
-				CapacityMedium: capacityMedium,
-			})
+			for _, route := range service.AllRoutes() {
+				all = append(all, model.Slot{
+					Date:           pgtype.Date{Time: d, Valid: true},
+					Time:           t,
+					RouteName:      route,
+					CapacityBig:    capacityBig,
+					CapacityMedium: capacityMedium,
+					CapacitySmall:  capacitySmall,
+				})
+			}
 		}
 	}
 	if len(all) == 0 {

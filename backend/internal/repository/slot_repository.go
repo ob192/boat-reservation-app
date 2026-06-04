@@ -15,16 +15,14 @@ import (
 
 // SlotRepository persists fleet capacity and per-slot block state.
 type SlotRepository interface {
-	FindByDateTime(ctx context.Context, date, time string) (*model.Slot, error)
+	FindByDateTime(ctx context.Context, date, time, route string) (*model.Slot, error)
 	FindByDate(ctx context.Context, date string) ([]model.Slot, error)
 	FindByMonth(ctx context.Context, monthStart, monthEnd time.Time) ([]model.Slot, error)
 
-	// LockForUpdate runs SELECT ... FOR UPDATE on the slot row. Must be called
-	// inside a transaction. Returns ErrNotFound if no row exists.
-	LockForUpdate(ctx context.Context, date, time string) (*model.Slot, error)
+	LockForUpdate(ctx context.Context, date, time, route string) (*model.Slot, error)
 
-	Block(ctx context.Context, date, time string, adminID uuid.UUID, reason *string) error
-	Unblock(ctx context.Context, date, time string) error
+	Block(ctx context.Context, date, time, route string, adminID uuid.UUID, reason *string) error
+	Unblock(ctx context.Context, date, time, route string) error
 
 	Upsert(ctx context.Context, s model.Slot) (result *model.Slot, created bool, err error)
 }
@@ -41,9 +39,11 @@ func (r *slotRepo) tx(ctx context.Context) *gorm.DB {
 	return platform.DBFromContext(ctx, r.db)
 }
 
-func (r *slotRepo) FindByDateTime(ctx context.Context, date, time string) (*model.Slot, error) {
+func (r *slotRepo) FindByDateTime(ctx context.Context, date, time, route string) (*model.Slot, error) {
 	var s model.Slot
-	err := r.tx(ctx).Where("date = ? AND time = ?", date, time).First(&s).Error
+	err := r.tx(ctx).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
+		First(&s).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
 	}
@@ -71,11 +71,11 @@ func (r *slotRepo) FindByMonth(ctx context.Context, monthStart, monthEnd time.Ti
 	return slots, err
 }
 
-func (r *slotRepo) LockForUpdate(ctx context.Context, date, time string) (*model.Slot, error) {
+func (r *slotRepo) LockForUpdate(ctx context.Context, date, time, route string) (*model.Slot, error) {
 	var s model.Slot
 	err := r.tx(ctx).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("date = ? AND time = ?", date, time).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
 		First(&s).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
@@ -86,11 +86,11 @@ func (r *slotRepo) LockForUpdate(ctx context.Context, date, time string) (*model
 	return &s, nil
 }
 
-func (r *slotRepo) Block(ctx context.Context, date, time string, adminID uuid.UUID, reason *string) error {
+func (r *slotRepo) Block(ctx context.Context, date, time, route string, adminID uuid.UUID, reason *string) error {
 	now := timeNow()
 	res := r.tx(ctx).
 		Model(&model.Slot{}).
-		Where("date = ? AND time = ?", date, time).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
 		Updates(map[string]any{
 			"blocked":      true,
 			"blocked_by":   adminID,
@@ -106,10 +106,10 @@ func (r *slotRepo) Block(ctx context.Context, date, time string, adminID uuid.UU
 	return nil
 }
 
-func (r *slotRepo) Unblock(ctx context.Context, date, time string) error {
+func (r *slotRepo) Unblock(ctx context.Context, date, time, route string) error {
 	res := r.tx(ctx).
 		Model(&model.Slot{}).
-		Where("date = ? AND time = ?", date, time).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
 		Updates(map[string]any{
 			"blocked":      false,
 			"blocked_by":   nil,
@@ -128,20 +128,19 @@ func (r *slotRepo) Unblock(ctx context.Context, date, time string) error {
 func (r *slotRepo) Upsert(ctx context.Context, s model.Slot) (*model.Slot, bool, error) {
 	res := r.tx(ctx).
 		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "date"}, {Name: "time"}},
+			Columns: []clause.Column{{Name: "date"}, {Name: "time"}, {Name: "route_name"}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"capacity_big",
 				"capacity_medium",
+				"capacity_small",
 			}),
 		}).
 		Create(&s)
 	if res.Error != nil {
 		return nil, false, res.Error
 	}
-	// RowsAffected == 1 for INSERT, 2 for UPDATE (Postgres reports 2 on upsert hit)
 	wasCreated := res.RowsAffected == 1
-	// Re-fetch so we always return the full, canonical row (preserves block state etc.)
-	final, err := r.FindByDateTime(ctx, s.DateString(), s.Time)
+	final, err := r.FindByDateTime(ctx, s.DateString(), s.Time, s.RouteName)
 	if err != nil {
 		return nil, wasCreated, err
 	}

@@ -34,6 +34,7 @@ const (
 	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 	CodeCannotReadBody     = "CANNOT_READ_BODY"
 	CodeWebhookFailed      = "WEBHOOK_PROCESSING_FAILED"
+	CodeInvalidRoute       = "INVALID_ROUTE"
 )
 
 // Issue describes a single field-level validation problem.

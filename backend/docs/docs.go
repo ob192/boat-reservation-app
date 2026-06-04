@@ -286,14 +286,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/slots/{date}/{time}": {
+        "/admin/slots/{date}/{time}/{route}": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin endpoint to create a slot for a given date/time or update its capacity.",
+                "description": "Admin endpoint to create a slot for a given date/time/route or update its capacities.",
                 "consumes": [
                     "application/json"
                 ],
@@ -320,6 +320,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Capacity payload",
                         "name": "request",
                         "in": "body",
@@ -337,7 +344,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_DATE, INVALID_TIME, INVALID_ROUTE, or INVALID_INPUT",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }
@@ -357,14 +364,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/slots/{date}/{time}/block": {
+        "/admin/slots/{date}/{time}/{route}/block": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin endpoint to block bookings for a specific date and time.",
+                "description": "Admin endpoint to block bookings for a specific date, time, and route.",
                 "consumes": [
                     "application/json"
                 ],
@@ -391,6 +398,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Block reason",
                         "name": "request",
                         "in": "body",
@@ -407,7 +421,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }
@@ -444,7 +458,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin endpoint to remove a block on a specific date and time.",
+                "description": "Admin endpoint to remove a block on a specific date, time, and route.",
                 "produces": [
                     "application/json"
                 ],
@@ -466,6 +480,13 @@ const docTemplate = `{
                         "name": "time",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -476,7 +497,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }
@@ -502,14 +523,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/slots/{date}/{time}/bookings": {
+        "/admin/slots/{date}/{time}/{route}/bookings": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Admin endpoint returning all bookings (any status) for a specific date/time slot.",
+                "description": "Admin endpoint returning all bookings (any status) for a specific date/time/route slot.",
                 "produces": [
                     "application/json"
                 ],
@@ -531,6 +552,13 @@ const docTemplate = `{
                         "name": "time",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -541,7 +569,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }
@@ -671,6 +699,41 @@ const docTemplate = `{
             }
         },
         "/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all bookings (any status) belonging to the current user, newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "List the authenticated user's bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1053,6 +1116,9 @@ const docTemplate = `{
                 "reason": {
                     "type": "string"
                 },
+                "routeName": {
+                    "type": "string"
+                },
                 "time": {
                     "type": "string"
                 }
@@ -1079,8 +1145,17 @@ const docTemplate = `{
                 "phone": {
                     "type": "string"
                 },
+                "posterIncomingOrderId": {
+                    "type": "integer"
+                },
+                "posterIncomingTransactionId": {
+                    "type": "integer"
+                },
                 "quantities": {
                     "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities"
+                },
+                "routeName": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -1198,6 +1273,9 @@ const docTemplate = `{
                 "date": {
                     "type": "string"
                 },
+                "routeName": {
+                    "type": "string"
+                },
                 "time": {
                     "type": "string"
                 }
@@ -1223,6 +1301,9 @@ const docTemplate = `{
                 "date": {
                     "type": "string"
                 },
+                "routeName": {
+                    "type": "string"
+                },
                 "time": {
                     "type": "string"
                 }
@@ -1232,7 +1313,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "capacityBig",
-                "capacityMedium"
+                "capacityMedium",
+                "capacitySmall"
             ],
             "properties": {
                 "capacityBig": {
@@ -1240,6 +1322,10 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "capacityMedium": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "capacitySmall": {
                     "type": "integer",
                     "minimum": 0
                 }
@@ -1257,11 +1343,16 @@ const docTemplate = `{
                 "capacityMedium": {
                     "type": "integer"
                 },
+                "capacitySmall": {
+                    "type": "integer"
+                },
                 "created": {
-                    "description": "true = new row, false = updated",
                     "type": "boolean"
                 },
                 "date": {
+                    "type": "string"
+                },
+                "routeName": {
                     "type": "string"
                 },
                 "time": {
@@ -1325,6 +1416,9 @@ const docTemplate = `{
                 },
                 "quantities": {
                     "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities"
+                },
+                "routeName": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -1396,6 +1490,7 @@ const docTemplate = `{
                 "contact",
                 "date",
                 "quantities",
+                "routeName",
                 "time"
             ],
             "properties": {
@@ -1407,6 +1502,9 @@ const docTemplate = `{
                 },
                 "quantities": {
                     "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.QuantitiesRequest"
+                },
+                "routeName": {
+                    "type": "string"
                 },
                 "time": {
                     "type": "string"
@@ -1453,6 +1551,49 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingView": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quantities": {
+                    "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities"
+                },
+                "routeName": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "totalAmount": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingsResponse": {
+            "type": "object",
+            "properties": {
+                "bookings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.MyBookingView"
+                    }
+                }
+            }
+        },
         "github_com_harbour-wave_harbour-wave-backend_internal_model.Quantities": {
             "type": "object",
             "properties": {
@@ -1463,6 +1604,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "medium": {
+                    "type": "integer"
+                },
+                "small": {
                     "type": "integer"
                 }
             }
@@ -1478,6 +1622,9 @@ const docTemplate = `{
                 },
                 "medium": {
                     "type": "integer"
+                },
+                "small": {
+                    "type": "integer"
                 }
             }
         },
@@ -1490,8 +1637,14 @@ const docTemplate = `{
                 "availableMedium": {
                     "type": "integer"
                 },
+                "availableSmall": {
+                    "type": "integer"
+                },
                 "blocked": {
                     "type": "boolean"
+                },
+                "routeName": {
+                    "type": "string"
                 },
                 "time": {
                     "type": "string"
@@ -1500,6 +1653,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "totalMedium": {
+                    "type": "integer"
+                },
+                "totalSmall": {
                     "type": "integer"
                 }
             }

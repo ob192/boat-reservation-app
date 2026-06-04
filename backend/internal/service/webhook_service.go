@@ -95,7 +95,7 @@ func (s *webhookService) createPosterOrder(ctx context.Context, booking *model.B
 	}
 
 	products := []provider.PosterProduct{
-		{ProductID: 1, Count: booking.QtyBig + booking.QtyMedium},
+		{ProductID: 1, Count: booking.QtyBig + booking.QtyMedium + booking.QtySmall},
 	}
 	if booking.QtyChild > 0 {
 		products = append(products, provider.PosterProduct{ProductID: 6, Count: booking.QtyChild})

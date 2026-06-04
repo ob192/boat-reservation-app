@@ -19,14 +19,22 @@ var ErrNotFound = errors.New("not found")
 type BookedQty struct {
 	Big    int
 	Medium int
+	Small  int
+}
+
+// SlotKey identifies a slot within a date by (time, route).
+type SlotKey struct {
+	Time  string
+	Route string
 }
 
 // BookingRepository is the persistence boundary for bookings.
 type BookingRepository interface {
 	Create(ctx context.Context, b *model.Booking) error
+	FindByUserID(ctx context.Context, userID uuid.UUID) ([]model.Booking, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
 	FindByPaymentSessionID(ctx context.Context, sessionID string) (*model.Booking, error)
-	FindByIdempotencyKey(ctx context.Context, userID uuid.UUID, key string, date string, time string) (*model.Booking, error)
+	FindByIdempotencyKey(ctx context.Context, userID uuid.UUID, key, date, time, route string) (*model.Booking, error)
 	SetStatus(ctx context.Context, id uuid.UUID, status model.BookingStatus) error
 	SetPaymentSessionID(ctx context.Context, id uuid.UUID, sessionID string) error
 	SetPriceOverride(ctx context.Context, id uuid.UUID, override *float64, reason *string, adminID *uuid.UUID) error
@@ -35,11 +43,11 @@ type BookingRepository interface {
 	// SumActiveQuantitiesForSlot returns booked_big and booked_medium for a slot,
 	// counting only confirmed bookings or pending bookings whose hold has not expired.
 	// MUST be called inside a transaction that has already SELECT...FOR UPDATE'd the slot row.
-	SumActiveQuantitiesForSlot(ctx context.Context, date, time string) (bookedBig, bookedMedium int, err error)
+	SumActiveQuantitiesForSlot(ctx context.Context, date, time, route string) (bookedBig, bookedMedium, bookedSmall int, err error)
 
 	// SumActiveQuantitiesForDate returns total booked counts grouped by time
 	// across an entire date — used by the per-date availability endpoint.
-	SumActiveQuantitiesForDate(ctx context.Context, date string) (map[string]struct{ Big, Medium int }, error)
+	SumActiveQuantitiesForDate(ctx context.Context, date string) (map[SlotKey]BookedQty, error)
 
 	// SumActiveQuantitiesForRange aggregates booked quantities for every (date, time)
 	// in the half-open interval [startDate, endDate) — used by the monthly availability
@@ -47,14 +55,14 @@ type BookingRepository interface {
 	//
 	// Returns a nested map: out[date][time] = {Big, Medium}. Dates / times with no
 	// active bookings are simply absent from the map (caller must treat as zero).
-	SumActiveQuantitiesForRange(ctx context.Context, startDate, endDate string) (map[string]map[string]BookedQty, error)
+	SumActiveQuantitiesForRange(ctx context.Context, startDate, endDate string) (map[string]map[SlotKey]BookedQty, error)
 
 	// ExpirePending sets all stale pending bookings to expired and returns how many rows changed.
 	ExpirePending(ctx context.Context, now time.Time) (int64, error)
 
 	// FindBySlot returns all bookings for a given (date, time) pair, ordered by creation time.
 	// No status filter — admin sees everything.
-	FindBySlot(ctx context.Context, date, time string) ([]model.Booking, error)
+	FindBySlot(ctx context.Context, date, time, route string) ([]model.Booking, error)
 
 	SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, txID int64) error
 }
@@ -102,13 +110,12 @@ func (r *bookingRepo) FindByPaymentSessionID(ctx context.Context, sessionID stri
 func (r *bookingRepo) FindByIdempotencyKey(
 	ctx context.Context,
 	userID uuid.UUID,
-	key string,
-	date string,
-	time string,
+	key, date, time, route string,
 ) (*model.Booking, error) {
 	var b model.Booking
 	err := r.tx(ctx).
-		Where("user_id = ? AND idempotency_key = ? AND date = ? AND time = ?", userID, key, date, time).
+		Where("user_id = ? AND idempotency_key = ? AND date = ? AND time = ? AND route_name = ?",
+			userID, key, date, time, route).
 		First(&b).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
@@ -166,52 +173,58 @@ func (r *bookingRepo) Cancel(ctx context.Context, id uuid.UUID, adminID uuid.UUI
 
 func (r *bookingRepo) SumActiveQuantitiesForSlot(
 	ctx context.Context,
-	date, time_ string,
-) (int, int, error) {
+	date, time_, route string,
+) (int, int, int, error) {
 	var result struct {
 		BookedBig    int
 		BookedMedium int
+		BookedSmall  int
 	}
 	err := r.tx(ctx).
 		Table("bookings").
-		Select(`COALESCE(SUM(qty_big), 0) AS booked_big,
-		        COALESCE(SUM(qty_medium), 0) AS booked_medium`).
-		Where("date = ? AND time = ?", date, time_).
+		Select(`COALESCE(SUM(qty_big), 0)    AS booked_big,
+		        COALESCE(SUM(qty_medium), 0) AS booked_medium,
+		        COALESCE(SUM(qty_small), 0)  AS booked_small`).
+		Where("date = ? AND time = ? AND route_name = ?", date, time_, route).
 		Where("status = ? OR (status = ? AND expires_at > NOW())",
 			model.StatusConfirmed, model.StatusPending).
 		Scan(&result).Error
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
-	return result.BookedBig, result.BookedMedium, nil
+	return result.BookedBig, result.BookedMedium, result.BookedSmall, nil
 }
 
 func (r *bookingRepo) SumActiveQuantitiesForDate(
 	ctx context.Context,
 	date string,
-) (map[string]struct{ Big, Medium int }, error) {
+) (map[SlotKey]BookedQty, error) {
 	type row struct {
 		Time         string
+		RouteName    string
 		BookedBig    int
 		BookedMedium int
+		BookedSmall  int
 	}
 	var rows []row
 	err := r.tx(ctx).
 		Table("bookings").
-		Select(`time,
-		        COALESCE(SUM(qty_big), 0) AS booked_big,
-		        COALESCE(SUM(qty_medium), 0) AS booked_medium`).
+		Select(`time, route_name,
+		        COALESCE(SUM(qty_big), 0)    AS booked_big,
+		        COALESCE(SUM(qty_medium), 0) AS booked_medium,
+		        COALESCE(SUM(qty_small), 0)  AS booked_small`).
 		Where("date = ?", date).
 		Where("status = ? OR (status = ? AND expires_at > NOW())",
 			model.StatusConfirmed, model.StatusPending).
-		Group("time").
+		Group("time, route_name").
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	out := make(map[string]struct{ Big, Medium int }, len(rows))
-	for _, r := range rows {
-		out[r.Time] = struct{ Big, Medium int }{r.BookedBig, r.BookedMedium}
+	out := make(map[SlotKey]BookedQty, len(rows))
+	for _, rw := range rows {
+		out[SlotKey{Time: rw.Time, Route: rw.RouteName}] =
+			BookedQty{Big: rw.BookedBig, Medium: rw.BookedMedium, Small: rw.BookedSmall}
 	}
 	return out, nil
 }
@@ -222,40 +235,51 @@ func (r *bookingRepo) SumActiveQuantitiesForDate(
 func (r *bookingRepo) SumActiveQuantitiesForRange(
 	ctx context.Context,
 	startDate, endDate string,
-) (map[string]map[string]BookedQty, error) {
+) (map[string]map[SlotKey]BookedQty, error) {
 	type row struct {
-		Date         time.Time // DATE column -> driver returns time.Time
+		Date         time.Time
 		Time         string
+		RouteName    string
 		BookedBig    int
 		BookedMedium int
+		BookedSmall  int
 	}
 	var rows []row
 	err := r.tx(ctx).
 		Table("bookings").
-		Select(`date,
-		        time,
+		Select(`date, time, route_name,
 		        COALESCE(SUM(qty_big), 0)    AS booked_big,
-		        COALESCE(SUM(qty_medium), 0) AS booked_medium`).
+		        COALESCE(SUM(qty_medium), 0) AS booked_medium,
+		        COALESCE(SUM(qty_small), 0)  AS booked_small`).
 		Where("date >= ? AND date < ?", startDate, endDate).
 		Where("status = ? OR (status = ? AND expires_at > NOW())",
 			model.StatusConfirmed, model.StatusPending).
-		Group("date, time").
+		Group("date, time, route_name").
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-
-	out := make(map[string]map[string]BookedQty, len(rows))
+	out := make(map[string]map[SlotKey]BookedQty, len(rows))
 	for _, rw := range rows {
 		dateStr := rw.Date.UTC().Format("2006-01-02")
 		inner, ok := out[dateStr]
 		if !ok {
-			inner = make(map[string]BookedQty, 4) // typically 4 slot times per day
+			inner = make(map[SlotKey]BookedQty, 8)
 			out[dateStr] = inner
 		}
-		inner[rw.Time] = BookedQty{Big: rw.BookedBig, Medium: rw.BookedMedium}
+		inner[SlotKey{Time: rw.Time, Route: rw.RouteName}] =
+			BookedQty{Big: rw.BookedBig, Medium: rw.BookedMedium, Small: rw.BookedSmall}
 	}
 	return out, nil
+}
+
+func (r *bookingRepo) FindByUserID(ctx context.Context, userID uuid.UUID) ([]model.Booking, error) {
+	var bookings []model.Booking
+	err := r.tx(ctx).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Find(&bookings).Error
+	return bookings, err
 }
 
 func (r *bookingRepo) ExpirePending(ctx context.Context, now time.Time) (int64, error) {
@@ -266,10 +290,10 @@ func (r *bookingRepo) ExpirePending(ctx context.Context, now time.Time) (int64, 
 	return res.RowsAffected, res.Error
 }
 
-func (r *bookingRepo) FindBySlot(ctx context.Context, date, time_ string) ([]model.Booking, error) {
+func (r *bookingRepo) FindBySlot(ctx context.Context, date, time_, route string) ([]model.Booking, error) {
 	var bookings []model.Booking
 	err := r.tx(ctx).
-		Where("date = ? AND time = ?", date, time_).
+		Where("date = ? AND time = ? AND route_name = ?", date, time_, route).
 		Order("created_at ASC").
 		Find(&bookings).Error
 	return bookings, err

@@ -28,7 +28,7 @@ type AvailabilityService interface {
 
 	// GetSlotAvailability returns a fully-populated SlotAvailability for a single (date, time).
 	// Used by the booking flow to surface specific block reasons.
-	GetSlotAvailability(ctx context.Context, date, time string) (*model.SlotAvailability, error)
+	GetSlotAvailability(ctx context.Context, date, time, route string) (*model.SlotAvailability, error)
 }
 
 type availabilityService struct {
@@ -135,7 +135,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 	// Phase 2: only query bookings if the kill-switch lets days have availability.
 	// (If bookings are globally disabled we still expose date-block state, but every
 	// day reports 0 available slots regardless of bookings.)
-	var bookedByDateTime map[string]map[string]repository.BookedQty
+	var bookedByDateTime map[string]map[repository.SlotKey]repository.BookedQty
 	if settings.BookingsEnabled {
 		bookedByDateTime, err = s.bookings.SumActiveQuantitiesForRange(ctx, startStr, endStr)
 		if err != nil {
@@ -186,7 +186,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 			if sl.Blocked {
 				continue
 			}
-			b := bookedForDay[sl.Time] // zero value if missing — fine
+			b := bookedForDay[repository.SlotKey{Time: sl.Time, Route: sl.RouteName}]
 			availBig := sl.CapacityBig - b.Big
 			if availBig < 0 {
 				availBig = 0
@@ -195,7 +195,11 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 			if availMedium < 0 {
 				availMedium = 0
 			}
-			total := availBig + availMedium
+			availSmall := sl.CapacitySmall - b.Small
+			if availSmall < 0 {
+				availSmall = 0
+			}
+			total := availBig + availMedium + availSmall
 			if total > maxAvail {
 				maxAvail = total
 			}
@@ -240,7 +244,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 	var (
 		settings     *model.SystemSettings
 		slots        []model.Slot
-		bookedByTime map[string]struct{ Big, Medium int }
+		bookedByTime map[repository.SlotKey]repository.BookedQty
 		dateBlocked  bool
 	)
 
@@ -291,7 +295,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 
 	out := make([]model.SlotForDate, 0, len(slots))
 	for _, sl := range slots {
-		b := bookedByTime[sl.Time]
+		b := bookedByTime[repository.SlotKey{Time: sl.Time, Route: sl.RouteName}]
 		availBig := sl.CapacityBig - b.Big
 		if availBig < 0 {
 			availBig = 0
@@ -300,12 +304,19 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 		if availMedium < 0 {
 			availMedium = 0
 		}
+		availSmall := sl.CapacitySmall - b.Small
+		if availSmall < 0 {
+			availSmall = 0
+		}
 		out = append(out, model.SlotForDate{
 			Time:            sl.Time,
+			RouteName:       sl.RouteName,
 			AvailableBig:    availBig,
 			TotalBig:        sl.CapacityBig,
 			AvailableMedium: availMedium,
 			TotalMedium:     sl.CapacityMedium,
+			AvailableSmall:  availSmall,
+			TotalSmall:      sl.CapacitySmall,
 			Blocked:         sl.Blocked,
 		})
 	}
@@ -314,7 +325,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 	if !fullyBlocked {
 		anyOpen := false
 		for _, sl := range out {
-			if !sl.Blocked && (sl.AvailableBig > 0 || sl.AvailableMedium > 0) {
+			if !sl.Blocked && (sl.AvailableBig > 0 || sl.AvailableMedium > 0 || sl.AvailableSmall > 0) {
 				anyOpen = true
 				break
 			}
@@ -333,12 +344,13 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 
 // GetSlotAvailability — same parallel-fetch trick. Called inside the booking
 // path, so every millisecond shaved off helps under concurrent load.
-func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, time string) (*model.SlotAvailability, error) {
+func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, time, route string) (*model.SlotAvailability, error) {
 	var (
 		settings    *model.SystemSettings
 		slot        *model.Slot
 		bookedBig   int
 		bookedMed   int
+		bookedSmall int
 		dateBlocked bool
 	)
 
@@ -362,7 +374,7 @@ func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, tim
 		}
 	})
 	g.Go(func() error {
-		v, err := s.slots.FindByDateTime(gctx, date, time)
+		v, err := s.slots.FindByDateTime(gctx, date, time, route)
 		if err != nil {
 			return err
 		}
@@ -370,11 +382,11 @@ func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, tim
 		return nil
 	})
 	g.Go(func() error {
-		bb, bm, err := s.bookings.SumActiveQuantitiesForSlot(gctx, date, time)
+		bb, bm, bs, err := s.bookings.SumActiveQuantitiesForSlot(gctx, date, time, route)
 		if err != nil {
 			return fmt.Errorf("sum quantities: %w", err)
 		}
-		bookedBig, bookedMed = bb, bm
+		bookedBig, bookedMed, bookedSmall = bb, bm, bs
 		return nil
 	})
 	if err := g.Wait(); err != nil {
@@ -384,10 +396,13 @@ func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, tim
 	return &model.SlotAvailability{
 		Date:            date,
 		Time:            time,
+		RouteName:       route,
 		CapacityBig:     slot.CapacityBig,
 		CapacityMedium:  slot.CapacityMedium,
+		CapacitySmall:   slot.CapacitySmall,
 		BookedBig:       bookedBig,
 		BookedMedium:    bookedMed,
+		BookedSmall:     bookedSmall,
 		SlotBlocked:     slot.Blocked,
 		DateBlocked:     dateBlocked,
 		BookingsEnabled: settings.BookingsEnabled,

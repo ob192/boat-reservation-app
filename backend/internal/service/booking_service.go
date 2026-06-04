@@ -32,6 +32,7 @@ var (
 	ErrBookingExpired    = errors.New("BOOKING_EXPIRED")
 	ErrAlreadyConfirmed  = errors.New("ALREADY_CONFIRMED")
 	ErrForbidden         = errors.New("FORBIDDEN")
+	ErrInvalidRoute      = errors.New("INVALID_ROUTE")
 )
 
 // CreateBookingInput holds the validated, normalised inputs passed to the booking service.
@@ -43,11 +44,12 @@ type CreateBookingInput struct {
 
 	Date       string
 	Time       string
+	RouteName  string
 	Quantities model.Quantities
 
 	FirstName string
 	LastName  string
-	Phone     string // required per project decision
+	Phone     string
 }
 
 // BookingService is the orchestrator for booking creation and lookups.
@@ -56,6 +58,7 @@ type BookingService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
 	GetByIDForUser(ctx context.Context, id uuid.UUID, userID uuid.UUID) (*model.Booking, error)
 	GetBySession(ctx context.Context, sessionID string, userID uuid.UUID) (*model.Booking, error)
+	GetAllForUser(ctx context.Context, userID uuid.UUID) ([]model.Booking, error)
 
 	// ExpireStale runs the periodic expiry sweep.
 	ExpireStale(ctx context.Context) (int64, error)
@@ -119,43 +122,43 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 		return nil, fmt.Errorf("check date block: %w", err)
 	}
 
-	// (4) Idempotency: if a previous booking exists with this (user_id, idempotency_key),
-	// return it as-is. Safe because we never mutate it post-creation under the same key.
-	if existing, err := s.bookings.FindByIdempotencyKey(ctx, in.UserID, in.IdempotencyKey, in.Date, in.Time); err == nil {
+	// (4) Idempotency
+	if existing, err := s.bookings.FindByIdempotencyKey(ctx, in.UserID, in.IdempotencyKey, in.Date, in.Time, in.RouteName); err == nil {
 		return existing, nil
 	} else if !errors.Is(err, repository.ErrNotFound) {
 		return nil, fmt.Errorf("check idempotency: %w", err)
 	}
 
-	// (5) Capacity tx — pessimistic lock on the slot row.
-	total := s.pricing.ComputeTotal(in.Quantities)
+	// (5) Capacity tx
+	total := s.pricing.ComputeTotal(in.RouteName, in.Quantities)
 	now := s.clock.Now()
 	expiresAt := now.Add(HoldDuration)
 
 	var created *model.Booking
 	err = platform.WithTx(ctx, s.db, func(ctx context.Context) error {
-		slot, err := s.slots.LockForUpdate(ctx, in.Date, in.Time)
+		slot, err := s.slots.LockForUpdate(ctx, in.Date, in.Time, in.RouteName)
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrSlotNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("lock slot: %w", err)
 		}
-
 		if slot.Blocked {
 			return ErrSlotBlocked
 		}
 
-		bookedBig, bookedMedium, err := s.bookings.SumActiveQuantitiesForSlot(ctx, in.Date, in.Time)
+		bookedBig, bookedMedium, bookedSmall, err := s.bookings.SumActiveQuantitiesForSlot(ctx, in.Date, in.Time, in.RouteName)
 		if err != nil {
 			return fmt.Errorf("sum active qty: %w", err)
 		}
 
-		// Check big and medium independently — fleets are not interchangeable.
 		if in.Quantities.Big > (slot.CapacityBig - bookedBig) {
 			return ErrSlotTaken
 		}
 		if in.Quantities.Medium > (slot.CapacityMedium - bookedMedium) {
+			return ErrSlotTaken
+		}
+		if in.Quantities.Small > (slot.CapacitySmall - bookedSmall) {
 			return ErrSlotTaken
 		}
 
@@ -173,8 +176,10 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 			UserEmail:      in.UserEmail,
 			Date:           pgtype.Date{Time: t, Valid: true},
 			Time:           in.Time,
+			RouteName:      in.RouteName,
 			QtyBig:         in.Quantities.Big,
 			QtyMedium:      in.Quantities.Medium,
+			QtySmall:       in.Quantities.Small,
 			QtyChild:       in.Quantities.Child,
 			FirstName:      in.FirstName,
 			LastName:       in.LastName,
@@ -233,11 +238,18 @@ func (s *bookingService) ExpireStale(ctx context.Context) (int64, error) {
 	return s.bookings.ExpirePending(ctx, s.clock.Now())
 }
 
+func (s *bookingService) GetAllForUser(ctx context.Context, userID uuid.UUID) ([]model.Booking, error) {
+	return s.bookings.FindByUserID(ctx, userID)
+}
+
 // validateCreateInput enforces business rules that Gin's struct binding can't:
 // non-negative ints, child-without-big, sums ≥ 1, allowed time, date not in the past, etc.
 func validateCreateInput(in CreateBookingInput, now time.Time) error {
 
-	// Time slot whitelist.
+	if !IsValidRoute(in.RouteName) {
+		return fmt.Errorf("%w: unknown route %q", ErrInvalidRoute, in.RouteName)
+	}
+
 	if !IsValidSlotTime(in.Time) {
 		return fmt.Errorf("%w: invalid time %q", ErrInvalidInput, in.Time)
 	}
@@ -253,10 +265,10 @@ func validateCreateInput(in CreateBookingInput, now time.Time) error {
 	}
 
 	// Quantities — non-negative, sane combinations.
-	if in.Quantities.Big < 0 || in.Quantities.Medium < 0 || in.Quantities.Child < 0 {
+	if in.Quantities.Big < 0 || in.Quantities.Medium < 0 || in.Quantities.Small < 0 || in.Quantities.Child < 0 {
 		return fmt.Errorf("%w: quantities must be non-negative", ErrInvalidInput)
 	}
-	if in.Quantities.Big+in.Quantities.Medium < 1 {
+	if in.Quantities.Big+in.Quantities.Medium+in.Quantities.Small < 1 {
 		return fmt.Errorf("%w: at least one boat required", ErrValidationFailed)
 	}
 	if in.Quantities.Child > 0 && in.Quantities.Big == 0 {

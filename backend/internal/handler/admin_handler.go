@@ -77,24 +77,25 @@ func (h *AdminHandler) OverridePrice(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
-// BlockSlot PUT /admin/slots/:date/:time/block
+// BlockSlot PUT /admin/slots/:date/:time/:route/block
 //
 // @Summary      Block a specific slot
-// @Description  Admin endpoint to block bookings for a specific date and time.
+// @Description  Admin endpoint to block bookings for a specific date, time, and route.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        date path string true "Date in YYYY-MM-DD format"
 // @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
 // @Param        request body model.AdminBlockSlotRequest false "Block reason"
 // @Success      200  {object}  model.AdminBlockSlotResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE"
 // @Failure      403  {object}  httpx.ErrorBody
 // @Failure      404  {object}  httpx.ErrorBody
 // @Failure      409  {object}  httpx.ErrorBody
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /admin/slots/{date}/{time}/block [put]
+// @Router       /admin/slots/{date}/{time}/{route}/block [put]
 func (h *AdminHandler) BlockSlot(c *gin.Context) {
 	adminID, err := GetUserIDFromContext(c)
 	if err != nil {
@@ -111,12 +112,16 @@ func (h *AdminHandler) BlockSlot(c *gin.Context) {
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
 		return
 	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
 
 	var req model.AdminBlockSlotRequest
-	// Body is optional — treat any binding error as empty.
 	_ = c.ShouldBindJSON(&req)
 
-	resp, err := h.adminSvc.BlockSlot(c.Request.Context(), date, timeParam, adminID, req.Reason)
+	resp, err := h.adminSvc.BlockSlot(c.Request.Context(), date, timeParam, route, adminID, req.Reason)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrSlotNotFound):
@@ -132,21 +137,22 @@ func (h *AdminHandler) BlockSlot(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
-// UnblockSlot DELETE /admin/slots/:date/:time/block
+// UnblockSlot DELETE /admin/slots/:date/:time/:route/block
 //
 // @Summary      Unblock a specific slot
-// @Description  Admin endpoint to remove a block on a specific date and time.
+// @Description  Admin endpoint to remove a block on a specific date, time, and route.
 // @Tags         admin
 // @Produce      json
 // @Param        date path string true "Date in YYYY-MM-DD format"
 // @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
 // @Success      200  {object}  model.AdminUnblockSlotResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE"
 // @Failure      403  {object}  httpx.ErrorBody
 // @Failure      404  {object}  httpx.ErrorBody
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /admin/slots/{date}/{time}/block [delete]
+// @Router       /admin/slots/{date}/{time}/{route}/block [delete]
 func (h *AdminHandler) UnblockSlot(c *gin.Context) {
 	date := c.Param("date")
 	timeParam := c.Param("time")
@@ -158,7 +164,12 @@ func (h *AdminHandler) UnblockSlot(c *gin.Context) {
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
 		return
 	}
-	resp, err := h.adminSvc.UnblockSlot(c.Request.Context(), date, timeParam)
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+	resp, err := h.adminSvc.UnblockSlot(c.Request.Context(), date, timeParam, route)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrSlotNotFound):
@@ -331,22 +342,23 @@ func (h *AdminHandler) CancelBooking(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
-// UpsertSlot PUT /admin/slots/:date/:time
+// UpsertSlot PUT /admin/slots/:date/:time/:route
 //
 // @Summary      Create or update a slot
-// @Description  Admin endpoint to create a slot for a given date/time or update its capacity.
+// @Description  Admin endpoint to create a slot for a given date/time/route or update its capacities.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        date path string true "Date in YYYY-MM-DD format"
 // @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
 // @Param        request body model.AdminUpsertSlotRequest true "Capacity payload"
 // @Success      200  {object}  model.AdminUpsertSlotResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE, INVALID_TIME, INVALID_ROUTE, or INVALID_INPUT"
 // @Failure      403  {object}  httpx.ErrorBody
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /admin/slots/{date}/{time} [put]
+// @Router       /admin/slots/{date}/{time}/{route} [put]
 func (h *AdminHandler) UpsertSlot(c *gin.Context) {
 	date := c.Param("date")
 	timeParam := c.Param("time")
@@ -357,6 +369,11 @@ func (h *AdminHandler) UpsertSlot(c *gin.Context) {
 	}
 	if !service.IsValidSlotTime(timeParam) {
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
+		return
+	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
 		return
 	}
 
@@ -374,8 +391,8 @@ func (h *AdminHandler) UpsertSlot(c *gin.Context) {
 
 	resp, err := h.adminSvc.UpsertSlot(
 		c.Request.Context(),
-		date, timeParam,
-		*req.CapacityBig, *req.CapacityMedium,
+		date, timeParam, route,
+		*req.CapacityBig, *req.CapacityMedium, *req.CapacitySmall,
 		adminID,
 	)
 	if err != nil {
@@ -386,21 +403,22 @@ func (h *AdminHandler) UpsertSlot(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
-// GetSlotBookings GET /admin/slots/:date/:time/bookings
+// GetSlotBookings GET /admin/slots/:date/:time/:route/bookings
 //
 // @Summary      List bookings for a slot
-// @Description  Admin endpoint returning all bookings (any status) for a specific date/time slot.
+// @Description  Admin endpoint returning all bookings (any status) for a specific date/time/route slot.
 // @Tags         admin
 // @Produce      json
 // @Param        date path string true "Date in YYYY-MM-DD format"
 // @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
 // @Success      200  {object}  model.AdminSlotBookingsResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE"
 // @Failure      403  {object}  httpx.ErrorBody
 // @Failure      404  {object}  httpx.ErrorBody
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /admin/slots/{date}/{time}/bookings [get]
+// @Router       /admin/slots/{date}/{time}/{route}/bookings [get]
 func (h *AdminHandler) GetSlotBookings(c *gin.Context) {
 	date := c.Param("date")
 	timeParam := c.Param("time")
@@ -413,8 +431,13 @@ func (h *AdminHandler) GetSlotBookings(c *gin.Context) {
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
 		return
 	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
 
-	resp, err := h.adminSvc.GetSlotBookings(c.Request.Context(), date, timeParam)
+	resp, err := h.adminSvc.GetSlotBookings(c.Request.Context(), date, timeParam, route)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrSlotNotFound):
@@ -432,4 +455,12 @@ func (h *AdminHandler) GetSlotBookings(c *gin.Context) {
 func isValidDate(s string) bool {
 	_, err := time.Parse("2006-01-02", s)
 	return err == nil
+}
+
+func parseRoute(c *gin.Context) (string, bool) {
+	route := c.Param("route")
+	if !service.IsValidRoute(route) {
+		return "", false
+	}
+	return route, true
 }
