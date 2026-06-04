@@ -8,7 +8,6 @@ import { Modal } from '@/components/Modal';
 import { useUpsertSlot } from '@/hooks/useSlots';
 import { toast } from '@/hooks/useToast';
 import { ApiError } from '@/lib/api';
-import { ROUTES, RouteName, routeLabel } from '@/lib/routes';
 
 const schema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Оберіть час'),
@@ -226,12 +225,11 @@ export function SlotCreateModal({ open, onClose, date, route }: SlotCreateModalP
 
   const onSubmit = async (data: FormData) => {
     try {
-      await mutateAsync({ ...data, route });               // route added
+      await mutateAsync({ ...data, route });
       toast('Слот створено', 'success');
       reset();
       setHour(0);
       setMinute(0);
-      setRoute('Desna');                                   // NEW
       onClose();
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -262,24 +260,6 @@ export function SlotCreateModal({ open, onClose, date, route }: SlotCreateModalP
       >
         <input type="hidden" {...timeRest} ref={timeRef} />
 
-        {/* before the Час form-group */}
-        <div className="form-group">
-          <label className="form-label">Маршрут</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {ROUTES.map(r => (
-                <button
-                    key={r}
-                    type="button"
-                    className={`btn btn-sm ${route === r ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1, justifyContent: 'center' }}
-                    onClick={() => setRoute(r)}
-                >
-                  {routeLabel(r)}
-                </button>
-            ))}
-          </div>
-        </div>
-        
         <div className="form-group">
           <label className="form-label">Час</label>
 

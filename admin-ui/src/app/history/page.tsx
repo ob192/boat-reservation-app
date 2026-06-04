@@ -34,6 +34,22 @@ function boatsLine(q: Booking['quantities']) {
     return `В:${q.big} · С:${q.medium} · М:${q.small ?? 0} · Д:${q.child}`;
 }
 
+function PosterTags({ b, compact = false }: { b: Booking; compact?: boolean }) {
+    const hasOrder = b.posterIncomingOrderId != null;
+    const hasTxn = b.posterIncomingTransactionId != null;
+
+    if (!hasOrder && !hasTxn) {
+        return compact ? null : <span className="text-subtle">—</span>;
+    }
+
+    return (
+        <div className="text-subtle" style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
+            {hasOrder && <div>зам. <strong>#{b.posterIncomingOrderId}</strong></div>}
+            {hasTxn && <div>трз. <strong>#{b.posterIncomingTransactionId}</strong></div>}
+        </div>
+    );
+}
+
 // ── Desktop table row ─────────────────────────────────────────────
 function HistoryRow({ b }: { b: Booking }) {
     return (
@@ -47,6 +63,7 @@ function HistoryRow({ b }: { b: Booking }) {
             <td style={{ whiteSpace: 'nowrap' }} title="Великі · Середні · Малі · Діти">{boatsLine(b.quantities)}</td>
             <td className="booking-amount" style={{ whiteSpace: 'nowrap' }}>{b.effectiveAmount.toFixed(2)} ₴</td>
             <td><StatusBadge status={b.status} /></td>
+            <td style={{ whiteSpace: 'nowrap' }}><PosterTags b={b} /></td>
             <td style={{ whiteSpace: 'nowrap', color: 'var(--subtle)' }}>{fmtCreated(b.createdAt)}</td>
         </tr>
     );
@@ -73,6 +90,16 @@ function HistoryCard({ b }: { b: Booking }) {
                 <span className="text-subtle" title="Великі · Середні · Малі · Діти">{boatsLine(b.quantities)}</span>
                 <span className="booking-amount">{b.effectiveAmount.toFixed(2)} ₴</span>
             </div>
+
+            {(b.posterIncomingOrderId != null || b.posterIncomingTransactionId != null) && (
+                <div className="mt-4" style={{ fontSize: '0.78rem' }}>
+                    <span className="text-subtle">Poster: </span>
+                    {b.posterIncomingOrderId != null && <>зам. <strong>#{b.posterIncomingOrderId}</strong></>}
+                    {b.posterIncomingOrderId != null && b.posterIncomingTransactionId != null && <span> · </span>}
+                    {b.posterIncomingTransactionId != null && <>трз. <strong>#{b.posterIncomingTransactionId}</strong></>}
+                </div>
+            )}
+
             <div className="text-subtle mt-4" style={{ fontSize: '0.78rem' }}>
                 Створено: {fmtCreated(b.createdAt)}
             </div>
@@ -169,6 +196,7 @@ export default function HistoryPage() {
                                             <th title="Великі · Середні · Малі · Діти">Човни</th>
                                             <th>Сума</th>
                                             <th>Статус</th>
+                                            <th>Poster</th>
                                             <th>Створено</th>
                                         </tr>
                                         </thead>
