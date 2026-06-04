@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, DM_Sans } from 'next/font/google';
+import { Playfair_Display, DM_Sans, Oswald } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/shared/providers/QueryProvider';
 import { SupabaseProvider } from '@/shared/providers/SupabaseProvider';
@@ -19,6 +19,13 @@ const dmSans = DM_Sans({
   weight: ['300', '400', '500'],
 });
 
+const oswald = Oswald({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-oswald',
+  display: 'swap',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -34,19 +41,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${playfair.variable} ${dmSans.variable}`}>
-      <body>
-        <div className="bg-ocean" aria-hidden="true">
-          <div className="wave-layer" />
-          <div className="wave-layer" />
-          <div className="wave-layer" />
-        </div>
-        <QueryProvider>
-          <SupabaseProvider>
-            {children}
-          </SupabaseProvider>
-        </QueryProvider>
+      <html
+          lang="uk"
+          className={`${playfair.variable} ${dmSans.variable} ${oswald.variable}`}
+      >
+      <body style={{ fontFamily: 'var(--font-oswald), Oswald, sans-serif' }}>
+      <div className="bg-ocean" aria-hidden="true">
+        <div className="wave-layer" />
+        <div className="wave-layer" />
+        <div className="wave-layer" />
+      </div>
+      <QueryProvider>
+        <SupabaseProvider>
+          {children}
+        </SupabaseProvider>
+      </QueryProvider>
       </body>
-    </html>
+      </html>
   );
 }

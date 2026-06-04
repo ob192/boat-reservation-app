@@ -25,6 +25,7 @@ const SELF_CONTAINED = new Set<string>([
     '/book/time',
     '/book/boats',
     '/book/details',
+    '/book/success',
 ]);
 
 function WizardShell({ children }: { children: React.ReactNode }) {

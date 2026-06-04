@@ -15,8 +15,8 @@
     --rust: oklch(0.55 0.13 35);
     --hairline: oklch(0.20 0.012 60 / 0.14);
 
-    --serif: var(--bk-serif), 'Instrument Serif', serif;
-    --sans: var(--bk-sans), 'Inter Tight', sans-serif;
+    --serif: var(--font-oswald), 'Oswald', sans-serif;
+    --sans: var(--font-oswald), 'Oswald', sans-serif;
     --mono: var(--bk-mono), 'JetBrains Mono', monospace;
 
     min-height: 100dvh;
