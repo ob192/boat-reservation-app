@@ -18,7 +18,7 @@ export default function CancelledPage() {
       </p>
       <button
         className="btn-primary"
-        onClick={() => router.push('/book/date')}
+        onClick={() => router.push('/book/route')}
         type="button"
         style={{ margin: '0 auto', flex: '0 0 auto' }}
       >

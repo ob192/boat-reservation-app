@@ -1378,6 +1378,42 @@
     color: var(--ink-muted);
 }
 
+/* ── Route cards (Step 01) ── */
+.bk-routes { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.bk-route-card {
+    display: grid;
+    grid-template-columns: 1fr 36px;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 16px;
+    border-radius: 18px;
+    border: 1px solid var(--hairline);
+    background: oklch(1 0 0 / 0.55);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.bk-route-card:active { transform: scale(0.99); }
+.bk-route-card.selected { background: var(--ink); border-color: var(--ink); }
+.bk-route-body { min-width: 0; }
+.bk-route-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.bk-route-name { font-family: var(--serif); font-size: 22px; line-height: 1.05; color: var(--ink); }
+.bk-route-card.selected .bk-route-name { color: var(--paper); }
+.bk-route-badge {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-muted); border: 1px solid var(--hairline); border-radius: 20px;
+    padding: 3px 9px; white-space: nowrap;
+}
+.bk-route-card.selected .bk-route-badge { color: oklch(1 0 0 / 0.8); border-color: oklch(1 0 0 / 0.25); }
+.bk-route-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); }
+.bk-route-card.selected .bk-route-desc { color: oklch(1 0 0 / 0.6); }
+.bk-route-circ {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center; color: var(--ink); flex-shrink: 0;
+}
+.bk-route-card.selected .bk-route-circ {
+    background: oklch(1 0 0 / 0.12); border-color: oklch(1 0 0 / 0.25); color: var(--paper);
+}
+
 @media (hover: hover) {
     .bk-cal-chev:hover { background: var(--paper-2); border-color: var(--ink); }
     .bk-back:hover { border-color: var(--ink); }
@@ -1397,4 +1433,5 @@
     .bk-confirm-cta-outline:hover { border-color: var(--ink); }
     .bk-confirm-new-booking:hover { border-color: var(--ink); }
     .bk-map-link:hover { opacity: 0.7; }
+    .bk-route-card:not(.selected):hover { border-color: var(--ink); }
 }

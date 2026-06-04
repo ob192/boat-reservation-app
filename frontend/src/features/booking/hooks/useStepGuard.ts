@@ -8,9 +8,13 @@ type RequiredStep = 'date' | 'time' | 'boats';
 
 export function useStepGuard(requires: RequiredStep) {
   const router = useRouter();
-  const { selectedDate, selectedTime, quantities } = useBookingStore();
+  const { selectedRoute, selectedDate, selectedTime } = useBookingStore();
 
   useEffect(() => {
+    if (!selectedRoute) {
+      router.replace('/book/route');
+      return;
+    }
     if (requires === 'time' && !selectedDate) {
       router.replace('/book/date');
       return;
@@ -19,10 +23,5 @@ export function useStepGuard(requires: RequiredStep) {
       router.replace(!selectedDate ? '/book/date' : '/book/time');
       return;
     }
-    if (requires === 'boats') {
-      const hasBoats = quantities.big + quantities.medium > 0;
-      // Only check on details page — boats step itself populates this
-      void hasBoats;
-    }
-  }, [requires, selectedDate, selectedTime, quantities, router]);
+  }, [requires, selectedRoute, selectedDate, selectedTime, router]);
 }

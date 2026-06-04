@@ -5,6 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export default function BookPage() {
   const router = useRouter();
-  useEffect(() => { router.replace('/book/date'); }, [router]);
+  useEffect(() => { router.replace('/book/route'); }, [router]);
   return null;
 }

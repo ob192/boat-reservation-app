@@ -7,6 +7,7 @@ import { Calendar } from '@/features/booking/components/client/Calendar';
 import { WeatherPreview } from '@/features/booking/components/client/WeatherPreview';
 import { UserMenu } from '@/features/auth/components/UserMenu';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
+import { useStepGuard } from '@/features/booking/hooks/useStepGuard';
 
 const instrument = Instrument_Serif({
     subsets: ['latin'],
@@ -29,14 +30,16 @@ const jetbrains = JetBrains_Mono({
 });
 
 const STEPS = [
-    { n: '01', label: 'Дата' },
-    { n: '02', label: 'Час' },
-    { n: '03', label: 'Човни' },
-    { n: '04', label: 'Деталі' },
-    { n: '05', label: 'Готово' },
+    { n: '01', label: 'Маршрут' },
+    { n: '02', label: 'Дата' },
+    { n: '03', label: 'Час' },
+    { n: '04', label: 'Човни' },
+    { n: '05', label: 'Деталі' },
+    { n: '06', label: 'Готово' },
 ];
 
 export default function DatePage() {
+    useStepGuard('date');
     const { selectedDate } = useBookingStore();
     const router = useRouter();
 
@@ -67,8 +70,8 @@ export default function DatePage() {
                     {STEPS.map((s, i) => (
                         <div
                             key={s.n}
-                            className={`bk-seg ${i === 0 ? 'active' : ''}`}
-                            aria-current={i === 0 ? 'step' : undefined}
+                            className={`bk-seg ${i < 1 ? 'done' : ''} ${i === 1 ? 'active' : ''}`}
+                            aria-current={i === 1 ? 'step' : undefined}
                         >
                             <span className="bk-seg-bar" />
                             <span className="bk-seg-label">

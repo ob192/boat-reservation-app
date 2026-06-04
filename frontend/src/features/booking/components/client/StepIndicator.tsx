@@ -2,18 +2,19 @@
 
 import { MESSAGES } from '@/features/booking/messages';
 
-export type Step = 1 | 2 | 3 | 4 | 5;
+export type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface StepIndicatorProps {
   currentStep: Step;
 }
 
 const STEPS = [
-  { n: 1 as Step, label: MESSAGES.nav.date },
-  { n: 2 as Step, label: MESSAGES.nav.time },
-  { n: 3 as Step, label: MESSAGES.nav.boats },
-  { n: 4 as Step, label: MESSAGES.nav.details },
-  { n: 5 as Step, label: MESSAGES.nav.done },
+  { n: 1 as Step, label: MESSAGES.nav.route },
+  { n: 2 as Step, label: MESSAGES.nav.date },
+  { n: 3 as Step, label: MESSAGES.nav.time },
+  { n: 4 as Step, label: MESSAGES.nav.boats },
+  { n: 5 as Step, label: MESSAGES.nav.details },
+  { n: 6 as Step, label: MESSAGES.nav.done },
 ];
 
 export function StepIndicator({ currentStep }: StepIndicatorProps) {

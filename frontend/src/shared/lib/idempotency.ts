@@ -15,8 +15,8 @@ interface IdemRecord {
 // Contact edits (typo fix in phone) must NOT mint a new key, or you'd
 // double-hold the slot. Slot + quantities is the correct dedupe boundary.
 function fingerprint(body: CreateBookingBody): string {
-    const { date, time, quantities } = body;
-    return `${date}|${time}|${quantities.big}|${quantities.medium}|${quantities.child}`;
+    const { routeName, date, time, quantities } = body;
+    return `${routeName}|${date}|${time}|${quantities.big}|${quantities.medium}|${quantities.child}`;
 }
 
 /**

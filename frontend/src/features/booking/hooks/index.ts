@@ -23,21 +23,21 @@ export function useBookingSystemStatus() {
   });
 }
 
-export function useAvailability(month: string, enabled = true) {
+export function useAvailability(month: string, route: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['availability', month],
-    queryFn: () => apiFetch<AvailabilityResponse>(`/availability/${month}`),
+    queryKey: ['availability', month, route],
+    queryFn: () => apiFetch<AvailabilityResponse>(`/availability/${month}/${route}`),
     staleTime: 30_000,
-    enabled: !!month && enabled,
+    enabled: !!month && !!route && enabled,
   });
 }
 
-export function useSlots(date: string | null) {
+export function useSlots(date: string | null, route: string | null) {
   return useQuery({
-    queryKey: ['slots', date],
-    queryFn: () => apiFetch<SlotsResponse>(`/slots/${date}`),
+    queryKey: ['slots', date, route],
+    queryFn: () => apiFetch<SlotsResponse>(`/slots/${date}/${route}`),
     staleTime: 15_000,
-    enabled: !!date,
+    enabled: !!date && !!route,
   });
 }
 

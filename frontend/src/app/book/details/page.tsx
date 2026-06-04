@@ -11,7 +11,8 @@ import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useCreateBooking, useCreateCheckout } from '@/features/booking/hooks';
 import { contactSchema, type ContactFormValues } from '@/features/booking/schema/booking.schema';
 import { UserMenu } from '@/features/auth/components/UserMenu';
-import { MESSAGES, PRICES } from '@/features/booking/messages';
+import { MESSAGES } from '@/features/booking/messages';
+import { calculateBookingTotal } from '@/features/booking/pricing';
 import { formatCurrency } from '@/shared/lib/currency';
 import { ConsentAgreement } from '@/features/booking/components/client/ConsentAgreement';
 import { CONSENT_AGREEMENT, buildAgreementText } from '@/features/booking/consent-text';
@@ -38,11 +39,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 const STEPS = [
-    { n: '01', label: 'Дата' },
-    { n: '02', label: 'Час' },
-    { n: '03', label: 'Човни' },
-    { n: '04', label: 'Деталі' },
-    { n: '05', label: 'Готово' },
+    { n: '01', label: 'Маршрут' },
+    { n: '02', label: 'Дата' },
+    { n: '03', label: 'Час' },
+    { n: '04', label: 'Човни' },
+    { n: '05', label: 'Деталі' },
+    { n: '06', label: 'Готово' },
 ];
 
 function ChevronLeft() {
@@ -69,7 +71,7 @@ export default function DetailsPage() {
     const user = useUser();
     const router = useRouter();
     const {
-        selectedDate, selectedTime, quantities,
+        selectedRoute, selectedDate, selectedTime, quantities,
         contact, setContact, setBookingId, setSessionId,
     } = useBookingStore();
 
@@ -103,7 +105,7 @@ export default function DetailsPage() {
     }, [user, setValue]);
 
     const onSubmit = async (data: ContactFormValues) => {
-        if (!selectedDate || !selectedTime) return;
+        if (!selectedRoute || !selectedDate || !selectedTime) return;
         setContact(data);
         try {
             const consent = await buildConsentRecord({
@@ -118,6 +120,7 @@ export default function DetailsPage() {
             });
 
             const booking = await createBooking.mutateAsync({
+                routeName: selectedRoute,
                 date: selectedDate,
                 time: selectedTime,
                 quantities,
@@ -140,10 +143,7 @@ export default function DetailsPage() {
     const isLoading = createBooking.isPending || createCheckout.isPending;
     const apiError = createBooking.error ?? createCheckout.error;
 
-    const total =
-        quantities.big * PRICES.big +
-        quantities.medium * PRICES.medium +
-        quantities.child * PRICES.child;
+    const total = calculateBookingTotal(selectedRoute, quantities);
 
     const dateLabel = selectedDate
         ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('uk-UA', {

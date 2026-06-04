@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useBookingStatus } from '@/features/booking/hooks';
-import { MESSAGES, PRICES } from '@/features/booking/messages';
+import { MESSAGES } from '@/features/booking/messages';
+import { routeLabel } from '@/features/booking/routes';
 import { formatCurrency } from '@/shared/lib/currency';
 
 const instrument = Instrument_Serif({
@@ -223,15 +224,13 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
 
-    const total =
-        booking.quantities.big * PRICES.big +
-        booking.quantities.medium * PRICES.medium +
-        booking.quantities.child * PRICES.child;
+    const total = booking.totalAmount;
 
     // Build individual board lines for stacked display
     const boardLines: string[] = [];
     if (booking.quantities.big > 0) boardLines.push(`${booking.quantities.big}× великий`);
     if (booking.quantities.medium > 0) boardLines.push(`${booking.quantities.medium}× середній`);
+    if (booking.quantities.small > 0) boardLines.push(`${booking.quantities.small}× малий`);
     if (booking.quantities.child > 0) boardLines.push(`${booking.quantities.child}× дитина`);
 
     // Single comma-separated string for calendar/other uses
@@ -278,7 +277,7 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     }, [booking.id, total, boardParts, startDate, endDate]);
     const mapsOpenUrl = buildMapsOpenUrl(MARINA.lat, MARINA.lng, MARINA.placeId);
 
-    const handleNewBooking = () => { reset(); router.replace('/book/date'); };
+    const handleNewBooking = () => { reset(); router.replace('/book/route'); };
 
     return (
         <div className={`${instrument.variable} ${interTight.variable} ${jetbrains.variable} bk-root`}>
@@ -324,6 +323,12 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                         </span>
                     </div>
                     <div className="bk-order-rows">
+                        {booking.routeName && (
+                            <div className="bk-order-row">
+                                <span className="bk-order-key">Маршрут</span>
+                                <span className="bk-order-val">{routeLabel(booking.routeName)}</span>
+                            </div>
+                        )}
                         <div className="bk-order-row">
                             <span className="bk-order-key">Дата</span>
                             <span className="bk-order-val">{dateStr}</span>
@@ -498,7 +503,7 @@ export function SuccessPoller({ sessionId }: { sessionId: string }) {
                 <p style={{ color: 'var(--subtle)', fontSize: '0.85rem' }}>
                     Спробуйте ще раз або оберіть інший слот.
                 </p>
-                <a href="/book/date" className="btn-primary" style={{ marginTop: '1.5rem', textDecoration: 'none' }}>
+                <a href="/book/route" className="btn-primary" style={{ marginTop: '1.5rem', textDecoration: 'none' }}>
                     Спробувати знову
                 </a>
             </div>

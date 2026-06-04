@@ -20,10 +20,13 @@ export interface AvailabilityResponse {
 // Slots
 export interface TimeSlot {
   time: string;
+  routeName: string;        // NEW
   availableBig: number;
   availableMedium: number;
+  availableSmall: number;   // NEW
   totalBig: number;
   totalMedium: number;
+  totalSmall: number;       // NEW
   blocked: boolean;
 }
 
@@ -39,6 +42,7 @@ export interface SlotsResponse {
 export interface BookingQuantities {
   big: number;
   medium: number;
+  small: number;
   child: number;
 }
 
@@ -50,6 +54,7 @@ export interface BookingContact {
 }
 
 export interface CreateBookingBody {
+  routeName: string;        // NEW — required
   date: string;
   time: string;
   quantities: BookingQuantities;
@@ -80,6 +85,7 @@ export interface BookingDetail {
   id: string;
   date: string;
   time: string;
+  routeName: string;        // NEW
   quantities: BookingQuantities;
   contact: BookingContact;
   totalAmount: number;

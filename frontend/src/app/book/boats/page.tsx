@@ -7,7 +7,8 @@ import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useSlots } from '@/features/booking/hooks';
 import { useStepGuard } from '@/features/booking/hooks/useStepGuard';
 import { UserMenu } from '@/features/auth/components/UserMenu';
-import { MESSAGES, PRICES, MAX_BIG, MAX_MEDIUM } from '@/features/booking/messages';
+import { MESSAGES, MAX_BIG, MAX_MEDIUM, MAX_SMALL } from '@/features/booking/messages';
+import { getRoutePrices, calculateBookingTotal } from '@/features/booking/pricing';
 import { formatCurrency } from '@/shared/lib/currency';
 
 const instrument = Instrument_Serif({
@@ -31,11 +32,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 const STEPS = [
-    { n: '01', label: 'Дата' },
-    { n: '02', label: 'Час' },
-    { n: '03', label: 'Човни' },
-    { n: '04', label: 'Деталі' },
-    { n: '05', label: 'Готово' },
+    { n: '01', label: 'Маршрут' },
+    { n: '02', label: 'Дата' },
+    { n: '03', label: 'Час' },
+    { n: '04', label: 'Човни' },
+    { n: '05', label: 'Деталі' },
+    { n: '06', label: 'Готово' },
 ];
 
 function ChevronLeft() {
@@ -92,15 +94,16 @@ function QtyCounter({ value, onDecrement, onIncrement, disableDecrement, disable
 export default function BoatsPage() {
     useStepGuard('boats');
 
-    const { selectedDate, selectedTime, quantities, setQuantity } = useBookingStore();
-    const { data: slotsData } = useSlots(selectedDate);
+    const { selectedDate, selectedRoute, selectedTime, quantities, setQuantity } = useBookingStore();
+    const { data: slotsData } = useSlots(selectedDate, selectedRoute);
     const router = useRouter();
 
     const slotInfo = slotsData?.slots.find((s) => s.time === selectedTime);
     const availableBig = slotInfo?.availableBig ?? MAX_BIG;
     const availableMedium = slotInfo?.availableMedium ?? MAX_MEDIUM;
+    const availableSmall = slotInfo?.availableSmall ?? MAX_SMALL;
 
-    const change = (type: 'big' | 'medium' | 'child', delta: number) => {
+    const change = (type: 'big' | 'medium' | 'small' | 'child', delta: number) => {
         if (type === 'big') {
             const next = Math.max(0, Math.min(availableBig, quantities.big + delta));
             setQuantity('big', next);
@@ -108,22 +111,23 @@ export default function BoatsPage() {
             else setQuantity('child', Math.min(quantities.child, next));
         } else if (type === 'medium') {
             setQuantity('medium', Math.max(0, Math.min(availableMedium, quantities.medium + delta)));
+        } else if (type === 'small') {
+            setQuantity('small', Math.max(0, Math.min(availableSmall, quantities.small + delta)));
         } else {
             setQuantity('child', Math.max(0, Math.min(quantities.big, quantities.child + delta)));
         }
     };
 
-    const total =
-        quantities.big * PRICES.big +
-        quantities.medium * PRICES.medium +
-        quantities.child * PRICES.child;
+    const prices = getRoutePrices(selectedRoute);
+    const total = calculateBookingTotal(selectedRoute, quantities);
 
-    const totalPax = quantities.big * 2 + quantities.medium + quantities.child;
-    const canProceed = quantities.big + quantities.medium > 0;
+    const totalPax = quantities.big * 2 + quantities.medium + quantities.small + quantities.child;
+    const canProceed = quantities.big + quantities.medium + quantities.small > 0;
 
     const summaryParts: string[] = [];
     if (quantities.big > 0) summaryParts.push(`${quantities.big}× великий`);
     if (quantities.medium > 0) summaryParts.push(`${quantities.medium}× середній`);
+    if (quantities.small > 0) summaryParts.push(`${quantities.small}× малий`);
     if (quantities.child > 0) summaryParts.push(`${quantities.child}× дитина`);
 
     return (
@@ -168,7 +172,7 @@ export default function BoatsPage() {
                         Скільки <em>бордів?</em>
                     </h1>
                     <p className="bk-time-sub">
-                        {availableBig} великих та {availableMedium} середніх доступно
+                        {availableBig} великих, {availableMedium} середніх та {availableSmall} малих доступно
                     </p>
                 </section>
 
@@ -188,7 +192,7 @@ export default function BoatsPage() {
                         </div>
                         <div className="bk-board-footer">
                             <div className="bk-board-price-col">
-                                <span className="bk-board-price">{formatCurrency(PRICES.big)}</span>
+                                <span className="bk-board-price">{formatCurrency(prices.big)}</span>
                                 <span className="bk-board-per">за борд</span>
                             </div>
                             <QtyCounter
@@ -239,7 +243,7 @@ export default function BoatsPage() {
                         </div>
                         <div className="bk-board-footer">
                             <div className="bk-board-price-col">
-                                <span className="bk-board-price">{formatCurrency(PRICES.medium)}</span>
+                                <span className="bk-board-price">{formatCurrency(prices.medium)}</span>
                                 <span className="bk-board-per">за борд</span>
                             </div>
                             <QtyCounter
@@ -248,6 +252,32 @@ export default function BoatsPage() {
                                 onIncrement={() => change('medium', 1)}
                                 disableDecrement={quantities.medium === 0}
                                 disableIncrement={quantities.medium >= availableMedium}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Small board card */}
+                    <div className={`bk-board-card ${quantities.small > availableSmall ? 'bk-board-card--warn' : ''}`}>
+                        <div className="bk-board-info">
+                            <div className="bk-board-name-row">
+                                <span className="bk-board-name">Малий борд</span>
+                                <span className="bk-board-badge">1 особа</span>
+                            </div>
+                            <p className="bk-board-desc">
+                                Найлегший і маневрений. Підходить для підлітків від 45 кг та райдерів меншої ваги.
+                            </p>
+                        </div>
+                        <div className="bk-board-footer">
+                            <div className="bk-board-price-col">
+                                <span className="bk-board-price">{formatCurrency(prices.small)}</span>
+                                <span className="bk-board-per">за борд</span>
+                            </div>
+                            <QtyCounter
+                                value={quantities.small}
+                                onDecrement={() => change('small', -1)}
+                                onIncrement={() => change('small', 1)}
+                                disableDecrement={quantities.small === 0}
+                                disableIncrement={quantities.small >= availableSmall}
                             />
                         </div>
                     </div>

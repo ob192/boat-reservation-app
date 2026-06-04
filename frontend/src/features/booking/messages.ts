@@ -1,5 +1,6 @@
 export const MESSAGES = {
   nav: {
+    route: 'Маршрут',
     date: 'Дата',
     time: 'Час',
     boats: 'Човни',
@@ -102,7 +103,8 @@ export const MESSAGES = {
   },
 };
 
-export const PRICES = { big: 400, medium: 400, child: 200 };
+export const PRICES = { big: 450, medium: 450, child: 225 };
 
 export const MAX_BIG = 30;
 export const MAX_MEDIUM = 30;
+export const MAX_SMALL = 30;

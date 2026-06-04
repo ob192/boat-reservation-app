@@ -30,11 +30,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 const STEPS = [
-    { n: '01', label: 'Дата' },
-    { n: '02', label: 'Час' },
-    { n: '03', label: 'Човни' },
-    { n: '04', label: 'Деталі' },
-    { n: '05', label: 'Готово' },
+    { n: '01', label: 'Маршрут' },
+    { n: '02', label: 'Дата' },
+    { n: '03', label: 'Час' },
+    { n: '04', label: 'Човни' },
+    { n: '05', label: 'Деталі' },
+    { n: '06', label: 'Готово' },
 ];
 
 function ChevronLeft() {
@@ -101,8 +102,8 @@ function isSlotInPast(date: string, time: string): boolean {
 export default function TimePage() {
     useStepGuard('time');
 
-    const { selectedDate, selectedTime, setTime } = useBookingStore();
-    const { data: slotsData, isLoading, isError } = useSlots(selectedDate);
+    const { selectedDate, selectedRoute, selectedTime, setTime } = useBookingStore();
+    const { data: slotsData, isLoading, isError } = useSlots(selectedDate, selectedRoute);
     const router = useRouter();
 
     const dateLabel = selectedDate
@@ -210,7 +211,7 @@ export default function TimePage() {
                     <div className="bk-slots" role="group" aria-label="Доступні часові слоти">
                         {visibleSlots.map((s) => {
                             const isBlocked = dateBlocked || s.blocked;
-                            const isFull = !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0;
+                            const isFull = !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0 && s.availableSmall <= 0;
                             const isUnavailable = isBlocked || isFull;
                             const isSel = selectedTime === s.time;
                             const pct = s.totalBig > 0
@@ -247,7 +248,7 @@ export default function TimePage() {
                                             <span className="bk-slot-avail">{MESSAGES.time.fullTag}</span>
                                         ) : (
                                             <span className="bk-slot-avail">
-                                                {s.availableBig} великих · {s.availableMedium} середніх
+                                                {s.availableBig} великих · {s.availableMedium} середніх · {s.availableSmall} малих
                                             </span>
                                         )}
                                         {!isBlocked && (

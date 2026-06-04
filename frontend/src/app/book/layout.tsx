@@ -9,18 +9,18 @@ import { MESSAGES } from '@/features/booking/messages';
 import type { Step } from '@/features/booking/components/client/StepIndicator';
 
 const STEP_MAP: Record<string, Step> = {
-    '/book/date': 1,
-    '/book/time': 2,
-    '/book/boats': 3,
-    '/book/details': 4,
-    '/book/processing': 4,
-    '/book/success': 5,
+    '/book/route': 1,
+    '/book/date': 2,
+    '/book/time': 3,
+    '/book/boats': 4,
+    '/book/details': 5,
+    '/book/processing': 5,
+    '/book/success': 6,
     '/book/cancelled': 1,
 };
 
-// Routes that render their own full editorial chrome (brand bar, stepper, dock).
-// These bypass WizardShell while still being protected by AuthGuard.
 const SELF_CONTAINED = new Set<string>([
+    '/book/route',
     '/book/date',
     '/book/time',
     '/book/boats',

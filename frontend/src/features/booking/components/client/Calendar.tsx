@@ -35,7 +35,7 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
 }
 
 export function Calendar() {
-    const { selectedDate, setDate } = useBookingStore();
+    const { selectedDate, selectedRoute, setDate } = useBookingStore();
     const [calYear, setCalYear] = useState(() => new Date().getFullYear());
     const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
 
@@ -47,7 +47,7 @@ export function Calendar() {
         data: availability,
         isLoading: availLoading,
         isError,
-    } = useAvailability(month, !statusLoading && bookingsEnabled);
+    } = useAvailability(month, selectedRoute, !statusLoading && bookingsEnabled);
 
     const availabilityMap = new Map<string, { slots: number; blocked: boolean }>();
     availability?.days.forEach((d) =>
