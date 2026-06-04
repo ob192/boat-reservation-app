@@ -8,21 +8,24 @@ import { Calendar } from '@/components/Calendar';
 import { ConfirmInline } from '@/components/ConfirmInline';
 import { Modal } from '@/components/Modal';
 import { useSlots, useBlockSlot, useUnblockSlot } from '@/hooks/useSlots';
-import { useAvailability } from '@/hooks/useAvailability';
 import { toast } from '@/hooks/useToast';
 import { adminFetch, formatDate, formatMonth } from '@/lib/api';
 import { ApiError } from '@/lib/api';
 import { DayAvailability } from '@/lib/types';
+import { routeLabel } from '@/lib/routes';
+import { RouteSelector } from '@/components/RouteSelector';
+import { RouteName, ROUTES } from '@/lib/routes';
 
 // ── Tab A: Slot Blocking ─────────────────────────────────────────
 interface SlotBlockRowProps {
   date: string;
   time: string;
+  route: string;            // NEW
   blocked: boolean;
   blockReason?: string;
 }
 
-function SlotBlockRow({ date, time, blocked, blockReason }: SlotBlockRowProps) {
+function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowProps) {
   const [action, setAction] = useState<'block' | 'unblock' | null>(null);
   const [reason, setReason] = useState('');
   const { mutateAsync: blockSlot, isPending: blocking } = useBlockSlot(date);
@@ -31,7 +34,7 @@ function SlotBlockRow({ date, time, blocked, blockReason }: SlotBlockRowProps) {
 
   const handleBlock = async () => {
     try {
-      await blockSlot({ time, reason: reason || undefined });
+      await blockSlot({ time, route, reason: reason || undefined });   // route added
       toast('Слот заблоковано', 'success');
       setAction(null);
       setReason('');
@@ -43,7 +46,7 @@ function SlotBlockRow({ date, time, blocked, blockReason }: SlotBlockRowProps) {
 
   const handleUnblock = async () => {
     try {
-      await unblockSlot({ time });
+      await unblockSlot({ time, route });                              // route added
       toast('Слот розблоковано', 'success');
       setAction(null);
     } catch (e) {
@@ -112,34 +115,39 @@ function SlotBlockRow({ date, time, blocked, blockReason }: SlotBlockRowProps) {
 function SlotBlockingTab() {
   const today = formatDate(new Date());
   const [date, setDate] = useState(today);
-  const { data, isLoading } = useSlots(date);
+  const [route, setRoute] = useState<RouteName>('Desna');
+  const { data, isLoading } = useSlots(date, route);
 
   return (
-      <div className="two-panel">
-        <div>
-          <Calendar selected={date} onSelect={setDate} />
+      <>
+        <RouteSelector value={route} onChange={setRoute} />
+        <div className="two-panel">
+          <div>
+            <Calendar selected={date} onSelect={setDate} route={route} />
+          </div>
+          <div className="card card-body">
+            <h3 style={{ fontFamily: 'Playfair Display, serif', marginBottom: 16 }}>Слоти на {date}</h3>
+            {isLoading && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 48 }} />)}
+                </div>
+            )}
+            {data?.slots.map(slot => (
+                <SlotBlockRow
+                    key={slot.time}
+                    date={date}
+                    time={slot.time}
+                    route={route}
+                    blocked={slot.blocked}
+                    blockReason={slot.blockReason}
+                />
+            ))}
+            {data?.slots.length === 0 && (
+                <div className="empty-state">Немає слотів для цієї дати</div>
+            )}
+          </div>
         </div>
-        <div className="card card-body">
-          <h3 style={{ fontFamily: 'Playfair Display, serif', marginBottom: 16 }}>Слоти на {date}</h3>
-          {isLoading && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 48 }} />)}
-              </div>
-          )}
-          {data?.slots.map(slot => (
-              <SlotBlockRow
-                  key={slot.time}
-                  date={date}
-                  time={slot.time}
-                  blocked={slot.blocked}
-                  blockReason={slot.blockReason}
-              />
-          ))}
-          {data?.slots.length === 0 && (
-              <div className="empty-state">Немає слотів для цієї дати</div>
-          )}
-        </div>
-      </div>
+      </>
   );
 }
 
@@ -166,7 +174,7 @@ function DateBlockingTab() {
     const allDays: DayAvailability[] = [];
     await Promise.all(months.map(async m => {
       try {
-        const data = await adminFetch<{ days: DayAvailability[] }>(`/availability/${m}`);
+        const data = await adminFetch<{ days: DayAvailability[] }>(`/availability/${m}/${ROUTES[0]}`);
         allDays.push(...data.days.filter(d => d.blocked));
       } catch { /* ignore */ }
     }));

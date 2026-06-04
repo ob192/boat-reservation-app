@@ -18,15 +18,16 @@ function getFirstDayOfWeek(year: number, month: number) {
 interface CalendarProps {
   selected: string;
   onSelect: (date: string) => void;
+  route: string;            // NEW
 }
 
-export function Calendar({ selected, onSelect }: CalendarProps) {
+export function Calendar({ selected, onSelect, route }: CalendarProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
   const monthStr = formatMonth(new Date(viewYear, viewMonth, 1));
-  const { data: avail } = useAvailability(monthStr);
+  const { data: avail } = useAvailability(monthStr, route);   // route added
 
   const availMap = useMemo(() => {
     const m: Record<string, { availableSlots: number; blocked: boolean }> = {};

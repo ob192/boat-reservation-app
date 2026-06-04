@@ -8,11 +8,16 @@ import { Modal } from '@/components/Modal';
 import { useUpsertSlot } from '@/hooks/useSlots';
 import { toast } from '@/hooks/useToast';
 import { ApiError } from '@/lib/api';
+import { ROUTES, RouteName, routeLabel } from '@/lib/routes';
 
 const schema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Оберіть час'),
-  capacityBig: z.coerce.number().int().min(1, 'Мін. 1'),
-  capacityMedium: z.coerce.number().int().min(1, 'Мін. 1'),
+  capacityBig: z.coerce.number().int().min(0, 'Мін. 0'),
+  capacityMedium: z.coerce.number().int().min(0, 'Мін. 0'),
+  capacitySmall: z.coerce.number().int().min(0, 'Мін. 0'),
+}).refine(d => d.capacityBig + d.capacityMedium + d.capacitySmall > 0, {
+  message: 'Хоча б одна місткість має бути > 0',
+  path: ['capacityBig'],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -200,16 +205,17 @@ interface SlotCreateModalProps {
   open: boolean;
   onClose: () => void;
   date: string;
+  route: string;            // NEW
 }
 
-export function SlotCreateModal({ open, onClose, date }: SlotCreateModalProps) {
+export function SlotCreateModal({ open, onClose, date, route }: SlotCreateModalProps) {
   const { mutateAsync, isPending } = useUpsertSlot(date);
   const [hour, setHour] = useState(0);
   const [minute, setMinute] = useState(0);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { time: '00:00', capacityBig: 1, capacityMedium: 1 },
+    defaultValues: { time: '00:00', capacityBig: 1, capacityMedium: 1, capacitySmall: 1 },
   });
 
   useEffect(() => {
@@ -220,11 +226,12 @@ export function SlotCreateModal({ open, onClose, date }: SlotCreateModalProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await mutateAsync(data);
+      await mutateAsync({ ...data, route });               // route added
       toast('Слот створено', 'success');
       reset();
       setHour(0);
       setMinute(0);
+      setRoute('Desna');                                   // NEW
       onClose();
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -255,6 +262,24 @@ export function SlotCreateModal({ open, onClose, date }: SlotCreateModalProps) {
       >
         <input type="hidden" {...timeRest} ref={timeRef} />
 
+        {/* before the Час form-group */}
+        <div className="form-group">
+          <label className="form-label">Маршрут</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {ROUTES.map(r => (
+                <button
+                    key={r}
+                    type="button"
+                    className={`btn btn-sm ${route === r ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={() => setRoute(r)}
+                >
+                  {routeLabel(r)}
+                </button>
+            ))}
+          </div>
+        </div>
+        
         <div className="form-group">
           <label className="form-label">Час</label>
 
@@ -312,6 +337,18 @@ export function SlotCreateModal({ open, onClose, date }: SlotCreateModalProps) {
               min={1}
           />
           {errors.capacityMedium && <span className="form-error">{errors.capacityMedium.message}</span>}
+        </div>
+
+        {/* after the "середні човни" form-group */}
+        <div className="form-group">
+          <label className="form-label">Місткість (малі човни)</label>
+          <input
+              type="number"
+              className={`form-input${errors.capacitySmall ? ' error' : ''}`}
+              {...register('capacitySmall')}
+              min={0}
+          />
+          {errors.capacitySmall && <span className="form-error">{errors.capacitySmall.message}</span>}
         </div>
       </Modal>
   );

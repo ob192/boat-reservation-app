@@ -6,9 +6,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
-  { href: '/slots',  label: 'Слоти' },
-  { href: '/blocks', label: 'Блокування' },
-  { href: '/system', label: 'Система' },
+  { href: '/slots',   label: 'Слоти' },
+  { href: '/blocks',  label: 'Блокування' },
+  { href: '/history', label: 'Історія' },   // NEW
+  { href: '/system',  label: 'Система' },
 ];
 
 export function Header() {

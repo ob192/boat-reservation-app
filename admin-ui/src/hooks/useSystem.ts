@@ -1,16 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminFetch, todayStr } from '@/lib/api';
 import { SlotsResponse, SystemState } from '@/lib/types';
+import { ROUTES } from '@/lib/routes';
 
 export function useSystem() {
   return useQuery<SystemState>({
     queryKey: ['system'],
     queryFn: async () => {
       const today = todayStr();
-      const data = await adminFetch<SlotsResponse>(`/slots/${today}`);
-      return {
-        bookingsEnabled: data.bookingsEnabled,
-      };
+      const data = await adminFetch<SlotsResponse>(`/slots/${today}/${ROUTES[0]}`);
+      return { bookingsEnabled: data.bookingsEnabled };
     },
     staleTime: 10_000,
   });

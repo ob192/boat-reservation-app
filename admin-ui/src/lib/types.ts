@@ -2,10 +2,13 @@ export type BookingStatus = 'pending' | 'confirmed' | 'failed' | 'expired' | 'ca
 
 export interface SlotInfo {
   time: string;
+  routeName: string;
   availableBig: number;
   totalBig: number;
   availableMedium: number;
   totalMedium: number;
+  availableSmall: number;   // now confirmed always present
+  totalSmall: number;       // now confirmed always present
   blocked: boolean;
   blockReason?: string;
 }
@@ -14,6 +17,7 @@ export interface SlotsResponse {
   date: string;
   dateBlocked: boolean;
   bookingsEnabled: boolean;
+  fullyBlocked: boolean;    // NEW
   slots: SlotInfo[];
 }
 
@@ -30,6 +34,9 @@ export interface AvailabilityResponse {
 
 export interface Booking {
   id: string;
+  date?: string;                // NEW (present on slot-bookings + history)
+  time?: string;                // NEW
+  routeName?: string;           // NEW
   userEmail: string;
   firstName: string;
   lastName: string;
@@ -37,6 +44,7 @@ export interface Booking {
   quantities: {
     big: number;
     medium: number;
+    small: number;              // NEW
     child: number;
   };
   totalAmount: number;
@@ -50,6 +58,11 @@ export interface Booking {
 export interface SlotBookingsResponse {
   date: string;
   time: string;
+  routeName: string;            // NEW
+  bookings: Booking[];
+}
+
+export interface BookingHistoryResponse {   // NEW
   bookings: Booking[];
 }
 
