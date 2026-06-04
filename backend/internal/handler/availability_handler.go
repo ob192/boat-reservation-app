@@ -22,55 +22,66 @@ func NewAvailabilityHandler(svc service.AvailabilityService, log *slog.Logger) *
 	return &AvailabilityHandler{svc: svc, log: log}
 }
 
-// GetAvailability handles GET /availability/:month
+// GetAvailability handles GET /availability/:month/:route
 //
-// @Summary      Get monthly availability
-// @Description  Returns daily availability for a given month
+// @Summary      Get monthly availability for a route
+// @Description  Returns daily availability for a given month and route
 // @Tags         availability
 // @Produce      json
 // @Param        month path string true "Month in YYYY-MM format"
+// @Param        route path string true "Route name"
 // @Success      200  {object}  model.AvailabilityMonthResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_MONTH or INVALID_ROUTE"
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /availability/{month} [get]
+// @Router       /availability/{month}/{route} [get]
 func (h *AvailabilityHandler) GetAvailability(c *gin.Context) {
 	month := c.Param("month")
-	resp, err := h.svc.GetMonth(c.Request.Context(), month)
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+	resp, err := h.svc.GetMonth(c.Request.Context(), month, route)
 	if err != nil {
-		// ParseMonth-style invalid input → 400 INVALID_MONTH; everything else is a 503.
 		if isInvalidInput(err) {
 			httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidMonth, err.Error())
 			return
 		}
-		h.log.Error("availability/month", "err", err, "month", month)
+		h.log.Error("availability/month", "err", err, "month", month, "route", route)
 		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
 		return
 	}
 	httpx.OK(c, resp)
 }
 
-// GetSlots handles GET /slots/:date
+// GetSlots handles GET /slots/:date/:route
 //
-// @Summary      Get slots for a date
-// @Description  Returns all available and blocked slots for a specific date
+// @Summary      Get slots for a date and route
+// @Description  Returns all available and blocked slots for a specific date and route
 // @Tags         availability
 // @Produce      json
 // @Param        date path string true "Date in YYYY-MM-DD format"
+// @Param        route path string true "Route name"
 // @Success      200  {object}  model.SlotsForDateResponse
-// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE or INVALID_ROUTE"
 // @Failure      503  {object}  httpx.ErrorBody
 // @Security     BearerAuth
-// @Router       /slots/{date} [get]
+// @Router       /slots/{date}/{route} [get]
 func (h *AvailabilityHandler) GetSlots(c *gin.Context) {
 	date := c.Param("date")
-	resp, err := h.svc.GetDate(c.Request.Context(), date)
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+	resp, err := h.svc.GetDate(c.Request.Context(), date, route)
 	if err != nil {
 		if isInvalidInput(err) {
 			httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, err.Error())
 			return
 		}
-		h.log.Error("slots/date", "err", err, "date", date)
+		h.log.Error("slots/date", "err", err, "date", date, "route", route)
 		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
 		return
 	}

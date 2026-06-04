@@ -250,6 +250,8 @@ type AdminSlotBookingsResponse struct {
 
 type AdminBookingListEntry struct {
 	ID                          string     `json:"id"`
+	Date                        string     `json:"date"`
+	Time                        string     `json:"time"`
 	RouteName                   string     `json:"routeName"`
 	UserEmail                   string     `json:"userEmail"`
 	FirstName                   string     `json:"firstName"`
@@ -262,6 +264,11 @@ type AdminBookingListEntry struct {
 	CreatedAt                   time.Time  `json:"createdAt"`
 	PosterIncomingOrderID       *int64     `json:"posterIncomingOrderId,omitempty"`
 	PosterIncomingTransactionID *int64     `json:"posterIncomingTransactionId,omitempty"`
+}
+
+// GET /admin/bookings
+type AdminBookingHistoryResponse struct {
+	Bookings []AdminBookingListEntry `json:"bookings"`
 }
 
 type BookingStatusResponse struct {

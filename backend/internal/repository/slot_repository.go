@@ -16,8 +16,8 @@ import (
 // SlotRepository persists fleet capacity and per-slot block state.
 type SlotRepository interface {
 	FindByDateTime(ctx context.Context, date, time, route string) (*model.Slot, error)
-	FindByDate(ctx context.Context, date string) ([]model.Slot, error)
-	FindByMonth(ctx context.Context, monthStart, monthEnd time.Time) ([]model.Slot, error)
+	FindByDate(ctx context.Context, date, route string) ([]model.Slot, error)
+	FindByMonth(ctx context.Context, monthStart, monthEnd time.Time, route string) ([]model.Slot, error)
 
 	LockForUpdate(ctx context.Context, date, time, route string) (*model.Slot, error)
 
@@ -53,19 +53,23 @@ func (r *slotRepo) FindByDateTime(ctx context.Context, date, time, route string)
 	return &s, nil
 }
 
-func (r *slotRepo) FindByDate(ctx context.Context, date string) ([]model.Slot, error) {
+func (r *slotRepo) FindByDate(ctx context.Context, date, route string) ([]model.Slot, error) {
 	var slots []model.Slot
-	err := r.tx(ctx).Where("date = ?", date).Order("time ASC").Find(&slots).Error
+	err := r.tx(ctx).
+		Where("date = ? AND route_name = ?", date, route).
+		Order("time ASC").
+		Find(&slots).Error
 	if err != nil {
 		return nil, err
 	}
 	return slots, nil
 }
 
-func (r *slotRepo) FindByMonth(ctx context.Context, monthStart, monthEnd time.Time) ([]model.Slot, error) {
+func (r *slotRepo) FindByMonth(ctx context.Context, monthStart, monthEnd time.Time, route string) ([]model.Slot, error) {
 	var slots []model.Slot
 	err := r.tx(ctx).
-		Where("date >= ? AND date < ?", monthStart.Format("2006-01-02"), monthEnd.Format("2006-01-02")).
+		Where("date >= ? AND date < ? AND route_name = ?",
+			monthStart.Format("2006-01-02"), monthEnd.Format("2006-01-02"), route).
 		Order("date ASC, time ASC").
 		Find(&slots).Error
 	return slots, err

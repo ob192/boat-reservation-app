@@ -652,26 +652,33 @@ const docTemplate = `{
                 }
             }
         },
-        "/availability/{month}": {
+        "/availability/{month}/{route}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns daily availability for a given month",
+                "description": "Returns daily availability for a given month and route",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "availability"
                 ],
-                "summary": "Get monthly availability",
+                "summary": "Get monthly availability for a route",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Month in YYYY-MM format",
                         "name": "month",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
                         "in": "path",
                         "required": true
                     }
@@ -684,7 +691,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_MONTH or INVALID_ROUTE",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }
@@ -989,26 +996,33 @@ const docTemplate = `{
                 }
             }
         },
-        "/slots/{date}": {
+        "/slots/{date}/{route}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all available and blocked slots for a specific date",
+                "description": "Returns all available and blocked slots for a specific date and route",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "availability"
                 ],
-                "summary": "Get slots for a date",
+                "summary": "Get slots for a date and route",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Date in YYYY-MM-DD format",
                         "name": "date",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Route name",
+                        "name": "route",
                         "in": "path",
                         "required": true
                     }
@@ -1021,7 +1035,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "INVALID_DATE or INVALID_ROUTE",
                         "schema": {
                             "$ref": "#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody"
                         }

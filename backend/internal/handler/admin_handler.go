@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -449,6 +450,58 @@ func (h *AdminHandler) GetSlotBookings(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, resp)
+}
+
+// ListBookings GET /admin/bookings
+//
+// @Summary      List booking history
+// @Description  Admin endpoint returning bookings of any status, newest first (created_at DESC). Optional filters.
+// @Tags         admin
+// @Produce      json
+// @Param        date   query string false "Filter by slot date (YYYY-MM-DD)"
+// @Param        status query string false "Filter by status: pending, confirmed, failed, expired, cancelled"
+// @Param        limit  query int    false "Max rows (default 50, max 200)"
+// @Param        offset query int    false "Rows to skip (default 0)"
+// @Success      200  {object}  model.AdminBookingHistoryResponse
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE or INVALID_INPUT"
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/bookings [get]
+func (h *AdminHandler) ListBookings(c *gin.Context) {
+	date := c.Query("date")
+	if date != "" && !isValidDate(date) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, "")
+		return
+	}
+
+	status := c.Query("status")
+	if status != "" && !model.IsValidBookingStatus(status) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, "unknown status")
+		return
+	}
+
+	limit := parseIntDefault(c.Query("limit"), 0) // 0 → service default
+	offset := parseIntDefault(c.Query("offset"), 0)
+
+	resp, err := h.adminSvc.ListBookings(c.Request.Context(), date, status, limit, offset)
+	if err != nil {
+		h.log.Error("admin list bookings", "err", err)
+		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		return
+	}
+	httpx.OK(c, resp)
+}
+
+func parseIntDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 {
+		return def
+	}
+	return n
 }
 
 // isValidDate accepts YYYY-MM-DD strictly.

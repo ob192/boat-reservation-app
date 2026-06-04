@@ -23,11 +23,9 @@ func IsValidSlotTime(t string) bool {
 // AvailabilityService provides per-day and per-slot availability views.
 type AvailabilityService interface {
 	GetStatus(ctx context.Context) (*model.BookingStatusResponse, error)
-	GetMonth(ctx context.Context, month string) (*model.AvailabilityMonthResponse, error)
-	GetDate(ctx context.Context, date string) (*model.SlotsForDateResponse, error)
+	GetMonth(ctx context.Context, month, route string) (*model.AvailabilityMonthResponse, error)
+	GetDate(ctx context.Context, date, route string) (*model.SlotsForDateResponse, error)
 
-	// GetSlotAvailability returns a fully-populated SlotAvailability for a single (date, time).
-	// Used by the booking flow to surface specific block reasons.
 	GetSlotAvailability(ctx context.Context, date, time, route string) (*model.SlotAvailability, error)
 }
 
@@ -81,7 +79,7 @@ func ParseDate(s string) (time.Time, error) {
 //     (SumActiveQuantitiesForRange), not N queries-per-day.
 //   - When the global kill-switch is OFF we skip the booked-sum query entirely
 //     since every day will report zero anyway.
-func (s *availabilityService) GetMonth(ctx context.Context, month string) (*model.AvailabilityMonthResponse, error) {
+func (s *availabilityService) GetMonth(ctx context.Context, month, route string) (*model.AvailabilityMonthResponse, error) {
 	start, end, err := ParseMonth(month)
 	if err != nil {
 		return nil, err
@@ -108,7 +106,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month string) (*mode
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.slots.FindByMonth(gctx, start, end)
+		v, err := s.slots.FindByMonth(gctx, start, end, route)
 		if err != nil {
 			return fmt.Errorf("find slots: %w", err)
 		}
@@ -236,7 +234,7 @@ func (s *availabilityService) GetStatus(ctx context.Context) (*model.BookingStat
 // GetDate runs settings, date-block, slots, and booked-sum reads concurrently.
 // This endpoint fires every time the user picks a day on the calendar, so
 // parallelizing the 4 independent queries trims real latency.
-func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.SlotsForDateResponse, error) {
+func (s *availabilityService) GetDate(ctx context.Context, date, route string) (*model.SlotsForDateResponse, error) {
 	if _, err := ParseDate(date); err != nil {
 		return nil, err
 	}
@@ -268,7 +266,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date string) (*model.
 		}
 	})
 	g.Go(func() error {
-		v, err := s.slots.FindByDate(gctx, date)
+		v, err := s.slots.FindByDate(gctx, date, route)
 		if err != nil {
 			return fmt.Errorf("find slots: %w", err)
 		}

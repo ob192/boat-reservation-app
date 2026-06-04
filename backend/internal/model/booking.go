@@ -92,3 +92,13 @@ func (b *Booking) EffectiveAmount() float64 {
 func (b *Booking) DateFormatted() string {
 	return b.Date.Time.UTC().Format("2006-01-02")
 }
+
+// IsValidBookingStatus reports whether s is one of the known booking statuses.
+func IsValidBookingStatus(s string) bool {
+	switch BookingStatus(s) {
+	case StatusPending, StatusConfirmed, StatusFailed, StatusExpired, StatusCancelled:
+		return true
+	default:
+		return false
+	}
+}

@@ -61,6 +61,8 @@ type AdminService interface {
 	UpsertSlot(ctx context.Context, date, time, route string, capacityBig, capacityMedium, capacitySmall int, adminID uuid.UUID) (*model.AdminUpsertSlotResponse, error)
 
 	GetSlotBookings(ctx context.Context, date, time, route string) (*model.AdminSlotBookingsResponse, error)
+
+	ListBookings(ctx context.Context, date, status string, limit, offset int) (*model.AdminBookingHistoryResponse, error)
 }
 
 type adminService struct {
@@ -385,21 +387,7 @@ func (s *adminService) GetSlotBookings(
 
 	entries := make([]model.AdminBookingListEntry, 0, len(bookings))
 	for _, b := range bookings {
-		entries = append(entries, model.AdminBookingListEntry{
-			ID:                          b.ID.String(),
-			RouteName:                   b.RouteName,
-			UserEmail:                   b.UserEmail,
-			FirstName:                   b.FirstName,
-			LastName:                    b.LastName,
-			Phone:                       b.Phone,
-			Quantities:                  b.Quantities(),
-			TotalAmount:                 b.TotalAmount,
-			EffectiveAmount:             s.pricing.EffectiveAmount(b.TotalAmount, b.PriceOverride),
-			Status:                      string(b.Status),
-			CreatedAt:                   b.CreatedAt,
-			PosterIncomingOrderID:       b.PosterIncomingOrderID,
-			PosterIncomingTransactionID: b.PosterIncomingTransactionID,
-		})
+		entries = append(entries, s.toAdminEntry(b))
 	}
 
 	return &model.AdminSlotBookingsResponse{
@@ -408,4 +396,45 @@ func (s *adminService) GetSlotBookings(
 		RouteName: route,
 		Bookings:  entries,
 	}, nil
+}
+
+func (s *adminService) ListBookings(
+	ctx context.Context,
+	date, status string,
+	limit, offset int,
+) (*model.AdminBookingHistoryResponse, error) {
+	bookings, err := s.bookings.FindAllForAdmin(ctx, repository.BookingHistoryFilter{
+		Date:   date,
+		Status: status,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]model.AdminBookingListEntry, 0, len(bookings))
+	for _, b := range bookings {
+		entries = append(entries, s.toAdminEntry(b))
+	}
+	return &model.AdminBookingHistoryResponse{Bookings: entries}, nil
+}
+
+func (s *adminService) toAdminEntry(b model.Booking) model.AdminBookingListEntry {
+	return model.AdminBookingListEntry{
+		ID:                          b.ID.String(),
+		Date:                        b.DateFormatted(),
+		Time:                        b.Time,
+		RouteName:                   b.RouteName,
+		UserEmail:                   b.UserEmail,
+		FirstName:                   b.FirstName,
+		LastName:                    b.LastName,
+		Phone:                       b.Phone,
+		Quantities:                  b.Quantities(),
+		TotalAmount:                 b.TotalAmount,
+		EffectiveAmount:             s.pricing.EffectiveAmount(b.TotalAmount, b.PriceOverride),
+		Status:                      string(b.Status),
+		CreatedAt:                   b.CreatedAt,
+		PosterIncomingOrderID:       b.PosterIncomingOrderID,
+		PosterIncomingTransactionID: b.PosterIncomingTransactionID,
+	}
 }

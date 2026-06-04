@@ -104,8 +104,8 @@ func ProvideRouter(
 	protected := r.Group("/api", handler.AuthMiddleware(authSvc))
 	{
 		protected.GET("/status", availabilityH.GetStatus)
-		protected.GET("/availability/:month", availabilityH.GetAvailability)
-		protected.GET("/slots/:date", availabilityH.GetSlots)
+		protected.GET("/availability/:month/:route", availabilityH.GetAvailability)
+		protected.GET("/slots/:date/:route", availabilityH.GetSlots)
 		protected.POST("/bookings", bookingH.CreateBooking)
 		protected.POST("/checkout", checkoutH.CreateCheckout)
 		protected.GET("/bookings/by-session/:sessionId", bookingH.GetBySession)
@@ -114,6 +114,7 @@ func ProvideRouter(
 
 	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware(adminRepo))
 	{
+		admin.GET("/bookings", adminH.ListBookings)
 		admin.GET("/slots/:date/:time/:route/bookings", adminH.GetSlotBookings)
 		admin.PUT("/slots/:date/:time/:route", adminH.UpsertSlot)
 		admin.PATCH("/bookings/:bookingId/price", adminH.OverridePrice)

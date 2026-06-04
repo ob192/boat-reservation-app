@@ -846,13 +846,18 @@ paths:
       summary: Toggle global booking kill-switch
       tags:
       - admin
-  /availability/{month}:
+  /availability/{month}/{route}:
     get:
-      description: Returns daily availability for a given month
+      description: Returns daily availability for a given month and route
       parameters:
       - description: Month in YYYY-MM format
         in: path
         name: month
+        required: true
+        type: string
+      - description: Route name
+        in: path
+        name: route
         required: true
         type: string
       produces:
@@ -863,7 +868,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.AvailabilityMonthResponse'
         "400":
-          description: Bad Request
+          description: INVALID_MONTH or INVALID_ROUTE
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "503":
@@ -872,7 +877,7 @@ paths:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
       security:
       - BearerAuth: []
-      summary: Get monthly availability
+      summary: Get monthly availability for a route
       tags:
       - availability
   /bookings:
@@ -1065,13 +1070,19 @@ paths:
       summary: Payment gateway webhook
       tags:
       - webhooks
-  /slots/{date}:
+  /slots/{date}/{route}:
     get:
-      description: Returns all available and blocked slots for a specific date
+      description: Returns all available and blocked slots for a specific date and
+        route
       parameters:
       - description: Date in YYYY-MM-DD format
         in: path
         name: date
+        required: true
+        type: string
+      - description: Route name
+        in: path
+        name: route
         required: true
         type: string
       produces:
@@ -1082,7 +1093,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_internal_model.SlotsForDateResponse'
         "400":
-          description: Bad Request
+          description: INVALID_DATE or INVALID_ROUTE
           schema:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
         "503":
@@ -1091,7 +1102,7 @@ paths:
             $ref: '#/definitions/github_com_harbour-wave_harbour-wave-backend_pkg_httpx.ErrorBody'
       security:
       - BearerAuth: []
-      summary: Get slots for a date
+      summary: Get slots for a date and route
       tags:
       - availability
   /status:

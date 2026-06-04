@@ -28,6 +28,20 @@ type SlotKey struct {
 	Route string
 }
 
+// BookingHistoryFilter parameterises the admin history query.
+// Empty Date / Status mean "no filter on that field".
+type BookingHistoryFilter struct {
+	Date   string // slot date, YYYY-MM-DD; "" = all dates
+	Status string // "" = all statuses
+	Limit  int    // <= 0 → repository default; capped at maxBookingHistoryLimit
+	Offset int
+}
+
+const (
+	defaultBookingHistoryLimit = 50
+	maxBookingHistoryLimit     = 200
+)
+
 // BookingRepository is the persistence boundary for bookings.
 type BookingRepository interface {
 	Create(ctx context.Context, b *model.Booking) error
@@ -65,6 +79,8 @@ type BookingRepository interface {
 	FindBySlot(ctx context.Context, date, time, route string) ([]model.Booking, error)
 
 	SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, txID int64) error
+
+	FindAllForAdmin(ctx context.Context, f BookingHistoryFilter) ([]model.Booking, error)
 }
 
 type bookingRepo struct {
@@ -307,4 +323,34 @@ func (r *bookingRepo) SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, t
 			"poster_incoming_order_id":       orderID,
 			"poster_incoming_transaction_id": txID,
 		}).Error
+}
+
+func (r *bookingRepo) FindAllForAdmin(ctx context.Context, f BookingHistoryFilter) ([]model.Booking, error) {
+	q := r.tx(ctx).Model(&model.Booking{})
+	if f.Date != "" {
+		q = q.Where("date = ?", f.Date)
+	}
+	if f.Status != "" {
+		q = q.Where("status = ?", f.Status)
+	}
+
+	limit := f.Limit
+	if limit <= 0 {
+		limit = defaultBookingHistoryLimit
+	}
+	if limit > maxBookingHistoryLimit {
+		limit = maxBookingHistoryLimit
+	}
+	offset := f.Offset
+	if offset < 0 {
+		offset = 0
+	}
+
+	var bookings []model.Booking
+	err := q.
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&bookings).Error
+	return bookings, err
 }
