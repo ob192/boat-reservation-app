@@ -226,6 +226,8 @@ func mapBookingError(c *gin.Context, err error, log *slog.Logger) {
 		httpx.Err(c, http.StatusNotFound, httpx.CodeBookingNotFound, "")
 	case errors.Is(err, service.ErrInvalidRoute):
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, err.Error())
+	case errors.Is(err, service.ErrSlotCancelled):
+		httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodeSlotCancelled, "")
 	default:
 		log.Error("booking error", "err", err)
 		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")

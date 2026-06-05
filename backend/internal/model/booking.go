@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
+	"gorm.io/gorm"
 	"time"
 
 	"github.com/google/uuid"
@@ -101,4 +102,9 @@ func IsValidBookingStatus(s string) bool {
 	default:
 		return false
 	}
+}
+
+func (b *Booking) BeforeUpdate(tx *gorm.DB) error {
+	tx.Statement.SetColumn("updated_at", time.Now().UTC())
+	return nil
 }

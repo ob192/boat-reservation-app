@@ -81,6 +81,10 @@ type BookingRepository interface {
 	SetPosterIDs(ctx context.Context, id uuid.UUID, orderID, txID int64) error
 
 	FindAllForAdmin(ctx context.Context, f BookingHistoryFilter) ([]model.Booking, error)
+
+	// CancelBySlot cancels every active (pending/confirmed) booking for a slot,
+	// returning how many rows changed. Terminal-state bookings are left untouched.
+	CancelBySlot(ctx context.Context, date, time, route string, adminID uuid.UUID, reason string) (int64, error)
 }
 
 type bookingRepo struct {
@@ -348,9 +352,24 @@ func (r *bookingRepo) FindAllForAdmin(ctx context.Context, f BookingHistoryFilte
 
 	var bookings []model.Booking
 	err := q.
-		Order("created_at DESC").
+		Order("updated_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&bookings).Error
 	return bookings, err
+}
+
+func (r *bookingRepo) CancelBySlot(ctx context.Context, date, time_, route string, adminID uuid.UUID, reason string) (int64, error) {
+	now := time.Now().UTC()
+	res := r.tx(ctx).
+		Model(&model.Booking{}).
+		Where("date = ? AND time = ? AND route_name = ?", date, time_, route).
+		Where("status IN ?", []model.BookingStatus{model.StatusPending, model.StatusConfirmed}).
+		Updates(map[string]any{
+			"status":        model.StatusCancelled,
+			"cancelled_by":  adminID,
+			"cancelled_at":  now,
+			"cancel_reason": reason,
+		})
+	return res.RowsAffected, res.Error
 }

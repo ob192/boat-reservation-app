@@ -493,6 +493,112 @@ func (h *AdminHandler) ListBookings(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
+// CancelSlot PUT /admin/slots/:date/:time/:route/cancel
+//
+// @Summary      Cancel a specific slot
+// @Description  Admin endpoint to cancel a slot and cascade-cancel all its bookings.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        date path string true "Date in YYYY-MM-DD format"
+// @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
+// @Param        request body model.AdminCancelSlotRequest false "Cancel reason"
+// @Success      200  {object}  model.AdminCancelSlotResponse
+// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      404  {object}  httpx.ErrorBody
+// @Failure      409  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/slots/{date}/{time}/{route}/cancel [put]
+func (h *AdminHandler) CancelSlot(c *gin.Context) {
+	adminID, err := GetUserIDFromContext(c)
+	if err != nil {
+		httpx.Err(c, http.StatusForbidden, httpx.CodeForbidden, "")
+		return
+	}
+	date := c.Param("date")
+	timeParam := c.Param("time")
+	if !isValidDate(date) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, "")
+		return
+	}
+	if !service.IsValidSlotTime(timeParam) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
+		return
+	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+
+	var req model.AdminCancelSlotRequest
+	_ = c.ShouldBindJSON(&req)
+
+	resp, err := h.adminSvc.CancelSlot(c.Request.Context(), date, timeParam, route, adminID, req.Reason)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrSlotNotFound):
+			httpx.Err(c, http.StatusNotFound, httpx.CodeSlotNotFound, "")
+		case errors.Is(err, service.ErrAlreadyCancelled):
+			httpx.Err(c, http.StatusConflict, httpx.CodeAlreadyCancelled, "")
+		default:
+			h.log.Error("admin cancel slot", "err", err)
+			httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		}
+		return
+	}
+	httpx.OK(c, resp)
+}
+
+// UncancelSlot DELETE /admin/slots/:date/:time/:route/cancel
+//
+// @Summary      Un-cancel a specific slot
+// @Description  Re-opens a cancelled slot for booking. Does not reinstate already-cancelled bookings.
+// @Tags         admin
+// @Produce      json
+// @Param        date path string true "Date in YYYY-MM-DD format"
+// @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
+// @Success      200  {object}  model.AdminUncancelSlotResponse
+// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      404  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/slots/{date}/{time}/{route}/cancel [delete]
+func (h *AdminHandler) UncancelSlot(c *gin.Context) {
+	date := c.Param("date")
+	timeParam := c.Param("time")
+	if !isValidDate(date) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, "")
+		return
+	}
+	if !service.IsValidSlotTime(timeParam) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
+		return
+	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+	resp, err := h.adminSvc.UncancelSlot(c.Request.Context(), date, timeParam, route)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrSlotNotFound):
+			httpx.Err(c, http.StatusNotFound, httpx.CodeSlotNotFound, "")
+		default:
+			h.log.Error("admin uncancel slot", "err", err)
+			httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		}
+		return
+	}
+	httpx.OK(c, resp)
+}
+
 func parseIntDefault(s string, def int) int {
 	if s == "" {
 		return def

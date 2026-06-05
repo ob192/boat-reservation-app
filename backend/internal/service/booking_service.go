@@ -23,6 +23,7 @@ var (
 	ErrBookingsDisabled  = errors.New("BOOKINGS_DISABLED")
 	ErrDateBlocked       = errors.New("DATE_BLOCKED")
 	ErrSlotBlocked       = errors.New("SLOT_BLOCKED")
+	ErrSlotCancelled     = errors.New("SLOT_CANCELLED")
 	ErrSlotTaken         = errors.New("SLOT_TAKEN")
 	ErrSlotNotFound      = errors.New("SLOT_NOT_FOUND")
 	ErrInvalidInput      = errors.New("INVALID_INPUT")
@@ -146,6 +147,9 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 		if slot.Blocked {
 			return ErrSlotBlocked
 		}
+		if slot.Cancelled {
+			return ErrSlotCancelled
+		}
 
 		bookedBig, bookedMedium, bookedSmall, err := s.bookings.SumActiveQuantitiesForSlot(ctx, in.Date, in.Time, in.RouteName)
 		if err != nil {
@@ -188,6 +192,8 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 			Status:         model.StatusPending,
 			IdempotencyKey: in.IdempotencyKey,
 			ExpiresAt:      expiresAt,
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		}
 		if err := s.bookings.Create(ctx, b); err != nil {
 			return fmt.Errorf("insert booking: %w", err)

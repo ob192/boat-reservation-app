@@ -24,6 +24,9 @@ type SlotRepository interface {
 	Block(ctx context.Context, date, time, route string, adminID uuid.UUID, reason *string) error
 	Unblock(ctx context.Context, date, time, route string) error
 
+	Cancel(ctx context.Context, date, time, route string, adminID uuid.UUID, reason *string) error
+	Uncancel(ctx context.Context, date, time, route string) error
+
 	Upsert(ctx context.Context, s model.Slot) (result *model.Slot, created bool, err error)
 }
 
@@ -119,6 +122,45 @@ func (r *slotRepo) Unblock(ctx context.Context, date, time, route string) error 
 			"blocked_by":   nil,
 			"blocked_at":   nil,
 			"block_reason": nil,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *slotRepo) Cancel(ctx context.Context, date, time, route string, adminID uuid.UUID, reason *string) error {
+	now := timeNow()
+	res := r.tx(ctx).
+		Model(&model.Slot{}).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
+		Updates(map[string]any{
+			"cancelled":     true,
+			"cancelled_by":  adminID,
+			"cancelled_at":  now,
+			"cancel_reason": reason,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *slotRepo) Uncancel(ctx context.Context, date, time, route string) error {
+	res := r.tx(ctx).
+		Model(&model.Slot{}).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
+		Updates(map[string]any{
+			"cancelled":     false,
+			"cancelled_by":  nil,
+			"cancelled_at":  nil,
+			"cancel_reason": nil,
 		})
 	if res.Error != nil {
 		return res.Error

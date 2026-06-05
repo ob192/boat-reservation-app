@@ -22,6 +22,11 @@ type Slot struct {
 	BlockedBy   *uuid.UUID `gorm:"type:uuid" json:"blockedBy,omitempty"`
 	BlockedAt   *time.Time `json:"blockedAt,omitempty"`
 	BlockReason *string    `gorm:"type:varchar(255)" json:"blockReason,omitempty"`
+
+	Cancelled    bool       `gorm:"not null;default:false" json:"cancelled"`
+	CancelledBy  *uuid.UUID `gorm:"type:uuid" json:"cancelledBy,omitempty"`
+	CancelledAt  *time.Time `json:"cancelledAt,omitempty"`
+	CancelReason *string    `gorm:"type:varchar(255)" json:"cancelReason,omitempty"`
 }
 
 func (Slot) TableName() string { return "slots" }
@@ -52,8 +57,16 @@ type SlotAvailability struct {
 	BookedMedium    int
 	BookedSmall     int
 	SlotBlocked     bool
+	SlotCancelled   bool
 	DateBlocked     bool
 	BookingsEnabled bool
+}
+
+func (s SlotAvailability) FullyUnavailable() bool {
+	if !s.BookingsEnabled || s.DateBlocked || s.SlotBlocked || s.SlotCancelled {
+		return true
+	}
+	return s.AvailableBig() == 0 && s.AvailableMedium() == 0 && s.AvailableSmall() == 0
 }
 
 func (s SlotAvailability) AvailableBig() int {
@@ -75,11 +88,4 @@ func (s SlotAvailability) AvailableSmall() int {
 		return 0
 	}
 	return s.CapacitySmall - s.BookedSmall
-}
-
-func (s SlotAvailability) FullyUnavailable() bool {
-	if !s.BookingsEnabled || s.DateBlocked || s.SlotBlocked {
-		return true
-	}
-	return s.AvailableBig() == 0 && s.AvailableMedium() == 0 && s.AvailableSmall() == 0
 }

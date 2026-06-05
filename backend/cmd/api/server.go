@@ -118,6 +118,8 @@ func ProvideRouter(
 		admin.GET("/slots/:date/:time/:route/bookings", adminH.GetSlotBookings)
 		admin.PUT("/slots/:date/:time/:route", adminH.UpsertSlot)
 		admin.PATCH("/bookings/:bookingId/price", adminH.OverridePrice)
+		admin.PUT("/slots/:date/:time/:route/cancel", adminH.CancelSlot)
+		admin.DELETE("/slots/:date/:time/:route/cancel", adminH.UncancelSlot)
 		admin.PUT("/slots/:date/:time/:route/block", adminH.BlockSlot)
 		admin.DELETE("/slots/:date/:time/:route/block", adminH.UnblockSlot)
 		admin.PUT("/dates/:date/block", adminH.BlockDate)

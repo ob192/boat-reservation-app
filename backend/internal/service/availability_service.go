@@ -181,7 +181,7 @@ func (s *availabilityService) GetMonth(ctx context.Context, month, route string)
 		// Per spec: availableSlots = MAX over unblocked time slots of (avail_big + avail_medium).
 		maxAvail := 0
 		for _, sl := range daySlots {
-			if sl.Blocked {
+			if sl.Blocked || sl.Cancelled {
 				continue
 			}
 			b := bookedForDay[repository.SlotKey{Time: sl.Time, Route: sl.RouteName}]
@@ -316,6 +316,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date, route string) (
 			AvailableSmall:  availSmall,
 			TotalSmall:      sl.CapacitySmall,
 			Blocked:         sl.Blocked,
+			Cancelled:       sl.Cancelled,
 		})
 	}
 
@@ -323,7 +324,7 @@ func (s *availabilityService) GetDate(ctx context.Context, date, route string) (
 	if !fullyBlocked {
 		anyOpen := false
 		for _, sl := range out {
-			if !sl.Blocked && (sl.AvailableBig > 0 || sl.AvailableMedium > 0 || sl.AvailableSmall > 0) {
+			if !sl.Blocked && !sl.Cancelled && (sl.AvailableBig > 0 || sl.AvailableMedium > 0 || sl.AvailableSmall > 0) {
 				anyOpen = true
 				break
 			}
@@ -402,6 +403,7 @@ func (s *availabilityService) GetSlotAvailability(ctx context.Context, date, tim
 		BookedMedium:    bookedMed,
 		BookedSmall:     bookedSmall,
 		SlotBlocked:     slot.Blocked,
+		SlotCancelled:   slot.Cancelled,
 		DateBlocked:     dateBlocked,
 		BookingsEnabled: settings.BookingsEnabled,
 	}, nil

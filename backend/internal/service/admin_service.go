@@ -18,7 +18,8 @@ import (
 
 // ErrAlreadyBlocked Admin-specific typed errors.
 var (
-	ErrAlreadyBlocked = errors.New("ALREADY_BLOCKED")
+	ErrAlreadyBlocked   = errors.New("ALREADY_BLOCKED")
+	ErrAlreadyCancelled = errors.New("ALREADY_CANCELLED")
 )
 
 // AdminService implements all /admin/* business logic.
@@ -57,6 +58,10 @@ type AdminService interface {
 		adminID uuid.UUID,
 		reason string,
 	) (*model.AdminCancelBookingResponse, error)
+
+	CancelSlot(ctx context.Context, date, time, route string, adminID uuid.UUID, reason string) (*model.AdminCancelSlotResponse, error)
+
+	UncancelSlot(ctx context.Context, date, time, route string) (*model.AdminUncancelSlotResponse, error)
 
 	UpsertSlot(ctx context.Context, date, time, route string, capacityBig, capacityMedium, capacitySmall int, adminID uuid.UUID) (*model.AdminUpsertSlotResponse, error)
 
@@ -417,6 +422,83 @@ func (s *adminService) ListBookings(
 		entries = append(entries, s.toAdminEntry(b))
 	}
 	return &model.AdminBookingHistoryResponse{Bookings: entries}, nil
+}
+
+func (s *adminService) CancelSlot(
+	ctx context.Context,
+	date, slotTime, route string,
+	adminID uuid.UUID,
+	reason string,
+) (*model.AdminCancelSlotResponse, error) {
+	var resp *model.AdminCancelSlotResponse
+
+	err := platform.WithTx(ctx, s.db, func(ctx context.Context) error {
+		slot, err := s.slots.LockForUpdate(ctx, date, slotTime, route)
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrSlotNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if slot.Cancelled {
+			return ErrAlreadyCancelled
+		}
+
+		var reasonPtr *string
+		if r := strings.TrimSpace(reason); r != "" {
+			reasonPtr = &r
+		}
+		if err := s.slots.Cancel(ctx, date, slotTime, route, adminID, reasonPtr); err != nil {
+			return err
+		}
+
+		// Cascade: cancel all active bookings on this slot.
+		cancelledCount, err := s.bookings.CancelBySlot(ctx, date, slotTime, route, adminID, reason)
+		if err != nil {
+			return err
+		}
+
+		updated, err := s.slots.FindByDateTime(ctx, date, slotTime, route)
+		if err != nil {
+			return err
+		}
+		cancelledAt := s.clock.Now()
+		if updated.CancelledAt != nil {
+			cancelledAt = *updated.CancelledAt
+		}
+		resp = &model.AdminCancelSlotResponse{
+			Date:              date,
+			Time:              slotTime,
+			RouteName:         route,
+			Cancelled:         true,
+			Reason:            updated.CancelReason,
+			CancelledAt:       cancelledAt,
+			CancelledBookings: cancelledCount,
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// UncancelSlot re-opens the slot for booking. It does NOT reinstate bookings
+// that were cancelled by a previous CancelSlot — those stay cancelled.
+func (s *adminService) UncancelSlot(
+	ctx context.Context,
+	date, slotTime, route string,
+) (*model.AdminUncancelSlotResponse, error) {
+	if _, err := s.slots.FindByDateTime(ctx, date, slotTime, route); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrSlotNotFound
+		}
+		return nil, err
+	}
+	if err := s.slots.Uncancel(ctx, date, slotTime, route); err != nil {
+		return nil, err
+	}
+	return &model.AdminUncancelSlotResponse{Date: date, Time: slotTime, RouteName: route, Cancelled: false}, nil
 }
 
 func (s *adminService) toAdminEntry(b model.Booking) model.AdminBookingListEntry {

@@ -121,6 +121,7 @@ type SlotForDate struct {
 	AvailableSmall  int    `json:"availableSmall"`
 	TotalSmall      int    `json:"totalSmall"`
 	Blocked         bool   `json:"blocked"`
+	Cancelled       bool   `json:"cancelled"`
 }
 
 // ============================================================================
@@ -269,6 +270,29 @@ type AdminBookingListEntry struct {
 // GET /admin/bookings
 type AdminBookingHistoryResponse struct {
 	Bookings []AdminBookingListEntry `json:"bookings"`
+}
+
+// PUT /admin/slots/:date/:time/:route/cancel
+type AdminCancelSlotRequest struct {
+	Reason string `json:"reason"`
+}
+
+type AdminCancelSlotResponse struct {
+	Date              string    `json:"date"`
+	Time              string    `json:"time"`
+	RouteName         string    `json:"routeName"`
+	Cancelled         bool      `json:"cancelled"`
+	Reason            *string   `json:"reason,omitempty"`
+	CancelledAt       time.Time `json:"cancelledAt"`
+	CancelledBookings int64     `json:"cancelledBookings"`
+}
+
+// DELETE /admin/slots/:date/:time/:route/cancel
+type AdminUncancelSlotResponse struct {
+	Date      string `json:"date"`
+	Time      string `json:"time"`
+	RouteName string `json:"routeName"`
+	Cancelled bool   `json:"cancelled"`
 }
 
 type BookingStatusResponse struct {
