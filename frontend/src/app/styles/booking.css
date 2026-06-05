@@ -475,6 +475,17 @@
     background: transparent;
 }
 
+.bk-slot.cancelled {
+    background: oklch(0.97 0.018 35 / 0.6);
+    border-color: oklch(0.62 0.13 35 / 0.25);
+}
+
+.bk-slot-avail--cancelled {
+    color: var(--terracotta);
+    font-weight: 500;
+}
+
+
 /* Left column */
 .bk-slot-left {
     display: flex;

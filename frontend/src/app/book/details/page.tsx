@@ -310,9 +310,11 @@ export default function DetailsPage() {
                         <div className="bk-banner bk-banner--error" role="alert" style={{ marginTop: 16 }}>
                             {(apiError as { message?: string }).message === 'SLOT_TAKEN'
                                 ? MESSAGES.errors.slotTaken
-                                : (apiError as { message?: string }).message === 'BACKEND_UNAVAILABLE'
-                                    ? MESSAGES.errors.backendUnavailable
-                                    : MESSAGES.errors.bookingFailed}
+                                : (apiError as { message?: string }).message === 'SLOT_CANCELLED'
+                                    ? MESSAGES.errors.slotCancelled
+                                    : (apiError as { message?: string }).message === 'BACKEND_UNAVAILABLE'
+                                        ? MESSAGES.errors.backendUnavailable
+                                        : MESSAGES.errors.bookingFailed}
                         </div>
                     )}
 

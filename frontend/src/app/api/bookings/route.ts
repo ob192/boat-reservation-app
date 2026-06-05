@@ -17,8 +17,8 @@ export async function POST(req: Request) {
   const parsed = bookingSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
-      { message: 'INVALID_INPUT', issues: parsed.error.issues },
-      { status: 400 },
+        { message: 'INVALID_INPUT', issues: parsed.error.issues },
+        { status: 400 },
     );
   }
 
@@ -40,7 +40,14 @@ export async function POST(req: Request) {
     if (!res.ok) {
       if (res.status === 409) return Response.json({ message: 'SLOT_TAKEN' }, { status: 409 });
       if (res.status === 401) return Response.json({ message: 'SESSION_EXPIRED' }, { status: 401 });
-      if (res.status === 422) return Response.json({ message: 'VALIDATION_FAILED', detail: data }, { status: 422 });
+      if (res.status === 422) {
+        // Distinguish cancellation from other validation failures
+        const msg = (data as { message?: string }).message;
+        if (msg === 'SLOT_CANCELLED') {
+          return Response.json({ message: 'SLOT_CANCELLED' }, { status: 422 });
+        }
+        return Response.json({ message: 'VALIDATION_FAILED', detail: data }, { status: 422 });
+      }
       return Response.json({ message: 'BOOKING_FAILED' }, { status: 500 });
     }
 

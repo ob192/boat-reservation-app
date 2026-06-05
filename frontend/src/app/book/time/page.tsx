@@ -62,14 +62,6 @@ function CheckIcon() {
     );
 }
 
-function SparkleIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        </svg>
-    );
-}
-
 const TIME_PERIOD: Record<string, string> = {
     '08:00': 'Ранок',
     '10:00': 'Ранок',
@@ -210,9 +202,10 @@ export default function TimePage() {
                 {!isLoading && !isError && !fullyBlocked && visibleSlots.length > 0 && (
                     <div className="bk-slots" role="group" aria-label="Доступні часові слоти">
                         {visibleSlots.map((s) => {
-                            const isBlocked = dateBlocked || s.blocked;
-                            const isFull = !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0 && s.availableSmall <= 0;
-                            const isUnavailable = isBlocked || isFull;
+                            const isCancelled = s.cancelled;
+                            const isBlocked = !isCancelled && (dateBlocked || s.blocked);
+                            const isFull = !isCancelled && !isBlocked && s.availableBig <= 0 && s.availableMedium <= 0 && s.availableSmall <= 0;
+                            const isUnavailable = isCancelled || isBlocked || isFull;
                             const isSel = selectedTime === s.time;
                             const pct = s.totalBig > 0
                                 ? Math.round(((s.totalBig - s.availableBig) / s.totalBig) * 100)
@@ -224,7 +217,13 @@ export default function TimePage() {
                             return (
                                 <div
                                     key={s.time}
-                                    className={`bk-slot ${isSel ? 'selected' : ''} ${isUnavailable ? 'unavailable' : ''} ${s.time === '18:00' && !isUnavailable ? 'popular' : ''}`}
+                                    className={[
+                                        'bk-slot',
+                                        isSel ? 'selected' : '',
+                                        isUnavailable ? 'unavailable' : '',
+                                        isCancelled ? 'cancelled' : '',
+                                        s.time === '18:00' && !isUnavailable ? 'popular' : '',
+                                    ].filter(Boolean).join(' ')}
                                     onClick={!isUnavailable ? () => setTime(s.time) : undefined}
                                     role="radio"
                                     aria-checked={isSel}
@@ -242,7 +241,11 @@ export default function TimePage() {
 
                                     {/* Middle: availability + bar */}
                                     <div className="bk-slot-mid">
-                                        {isBlocked ? (
+                                        {isCancelled ? (
+                                            <span className="bk-slot-avail bk-slot-avail--cancelled">
+                                                {MESSAGES.time.cancelledTag}
+                                            </span>
+                                        ) : isBlocked ? (
                                             <span className="bk-slot-avail">{MESSAGES.time.blockedTag}</span>
                                         ) : isFull ? (
                                             <span className="bk-slot-avail">{MESSAGES.time.fullTag}</span>
@@ -251,7 +254,7 @@ export default function TimePage() {
                                                 {s.availableBig} великих · {s.availableMedium} середніх · {s.availableSmall} малих
                                             </span>
                                         )}
-                                        {!isBlocked && (
+                                        {!isBlocked && !isCancelled && (
                                             <div className="bk-slot-bar">
                                                 <div
                                                     className="bk-slot-bar-fill"
@@ -260,6 +263,7 @@ export default function TimePage() {
                                             </div>
                                         )}
                                     </div>
+
                                     {/* Right: circle button */}
                                     <div className="bk-slot-circ" aria-hidden="true">
                                         {isSel ? <CheckIcon /> : <ArrowRight />}
@@ -269,20 +273,6 @@ export default function TimePage() {
                         })}
                     </div>
                 )}
-
-                {/* ── Instructor tip ── */}
-                {/*<div className="bk-tip" role="note">*/}
-                {/*    <div className="bk-tip-icon">*/}
-                {/*        <SparkleIcon />*/}
-                {/*    </div>*/}
-                {/*    <div className="bk-tip-body">*/}
-                {/*        <p className="bk-tip-serif">Порада від інструктора —</p>*/}
-                {/*        <p className="bk-tip-sans">*/}
-                {/*            Ранкові слоти (08:00–10:00) найспокійніші: вода ще тиха, туристів мало.*/}
-                {/*            Ідеально для початківців і тих, хто хоче насолодитися тишею на Десні.*/}
-                {/*        </p>*/}
-                {/*    </div>*/}
-                {/*</div>*/}
 
                 <div className="bk-dock-spacer" />
             </div>

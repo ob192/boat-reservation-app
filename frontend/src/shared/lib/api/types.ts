@@ -20,14 +20,15 @@ export interface AvailabilityResponse {
 // Slots
 export interface TimeSlot {
   time: string;
-  routeName: string;        // NEW
+  routeName: string;
   availableBig: number;
   availableMedium: number;
-  availableSmall: number;   // NEW
+  availableSmall: number;
   totalBig: number;
   totalMedium: number;
-  totalSmall: number;       // NEW
+  totalSmall: number;
   blocked: boolean;
+  cancelled: boolean; // NEW — slot cancelled by admin, cascades to bookings
 }
 
 export interface SlotsResponse {
@@ -54,7 +55,7 @@ export interface BookingContact {
 }
 
 export interface CreateBookingBody {
-  routeName: string;        // NEW — required
+  routeName: string;
   date: string;
   time: string;
   quantities: BookingQuantities;
@@ -85,7 +86,7 @@ export interface BookingDetail {
   id: string;
   date: string;
   time: string;
-  routeName: string;        // NEW
+  routeName: string;
   quantities: BookingQuantities;
   contact: BookingContact;
   totalAmount: number;
@@ -113,4 +114,26 @@ export interface ConsentRecord {
     screen: string;
   };
   clientTimestamp: string;
+}
+
+// Admin — Slot cancellation
+export interface SlotCancelBody {
+  reason?: string;
+}
+
+export interface SlotCancelResponse {
+  date: string;
+  time: string;
+  routeName: string;
+  cancelled: true;
+  reason?: string;
+  cancelledAt: string;
+  cancelledBookings: number;
+}
+
+export interface SlotUncancelResponse {
+  date: string;
+  time: string;
+  routeName: string;
+  cancelled: false;
 }

@@ -28,6 +28,7 @@ export const MESSAGES = {
     subtitle: 'Оберіть час відправлення',
     fullTag: 'Зайнято',
     blockedTag: 'Недоступно',
+    cancelledTag: 'Скасовано', // NEW
     noSlots: 'Місць немає',
     bigAvailable: (n: number) => `Великі: ${n}`,
     mediumAvailable: (n: number) => `Середні: ${n}`,
@@ -91,6 +92,7 @@ export const MESSAGES = {
   },
   errors: {
     slotTaken: 'Цей часовий слот щойно зайняли. Будь ласка, оберіть інший.',
+    slotCancelled: 'Цей слот більше не доступний. Будь ласка, оберіть інший час.', // NEW
     bookingFailed: 'Не вдалося створити бронювання. Спробуйте ще раз.',
     backendUnavailable: 'Сервіс тимчасово недоступний. Спробуйте пізніше.',
     paymentFailed: 'Оплата не пройшла.',
