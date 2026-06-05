@@ -12,7 +12,6 @@ import { toast } from '@/hooks/useToast';
 import { adminFetch, formatDate, formatMonth } from '@/lib/api';
 import { ApiError } from '@/lib/api';
 import { DayAvailability } from '@/lib/types';
-import { routeLabel } from '@/lib/routes';
 import { RouteSelector } from '@/components/RouteSelector';
 import { RouteName, ROUTES } from '@/lib/routes';
 
@@ -20,12 +19,13 @@ import { RouteName, ROUTES } from '@/lib/routes';
 interface SlotBlockRowProps {
   date: string;
   time: string;
-  route: string;            // NEW
+  route: string;
   blocked: boolean;
   blockReason?: string;
+  cancelled?: boolean;
 }
 
-function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowProps) {
+function SlotBlockRow({ date, time, route, blocked, blockReason, cancelled }: SlotBlockRowProps) {
   const [action, setAction] = useState<'block' | 'unblock' | null>(null);
   const [reason, setReason] = useState('');
   const { mutateAsync: blockSlot, isPending: blocking } = useBlockSlot(date);
@@ -34,7 +34,7 @@ function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowP
 
   const handleBlock = async () => {
     try {
-      await blockSlot({ time, route, reason: reason || undefined });   // route added
+      await blockSlot({ time, route, reason: reason || undefined });
       toast('Слот заблоковано', 'success');
       setAction(null);
       setReason('');
@@ -46,7 +46,7 @@ function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowP
 
   const handleUnblock = async () => {
     try {
-      await unblockSlot({ time, route });                              // route added
+      await unblockSlot({ time, route });
       toast('Слот розблоковано', 'success');
       setAction(null);
     } catch (e) {
@@ -55,7 +55,7 @@ function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowP
   };
 
   return (
-      <div style={{ padding: '14px 0', borderBottom: '1px solid var(--mist)' }}>
+      <div style={{ padding: '14px 0', borderBottom: '1px solid var(--mist)', opacity: cancelled ? 0.65 : 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: '1.05rem' }}>{time}</span>
@@ -64,10 +64,15 @@ function SlotBlockRow({ date, time, route, blocked, blockReason }: SlotBlockRowP
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className={`badge ${blocked ? 'badge-blocked' : 'badge-available'}`}>
-            {blocked ? 'Заблоковано' : 'Доступний'}
-          </span>
-            {!action && (
+            {cancelled ? (
+                <span className="badge badge-cancelled-slot">🚫 Скасовано</span>
+            ) : (
+                <span className={`badge ${blocked ? 'badge-blocked' : 'badge-available'}`}>
+                  {blocked ? 'Заблоковано' : 'Доступний'}
+                </span>
+            )}
+            {/* Don't show block/unblock actions for cancelled slots */}
+            {!cancelled && !action && (
                 blocked
                     ? <button className="btn btn-sm" style={{ borderColor: 'var(--teal)', color: 'var(--teal)' }}
                               onClick={() => setAction('unblock')}>Розблокувати</button>
@@ -140,6 +145,7 @@ function SlotBlockingTab() {
                     route={route}
                     blocked={slot.blocked}
                     blockReason={slot.blockReason}
+                    cancelled={slot.cancelled}
                 />
             ))}
             {data?.slots.length === 0 && (

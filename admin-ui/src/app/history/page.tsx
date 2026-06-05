@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useBookingHistory } from '@/hooks/useBookingHistory';
 import { routeLabel } from '@/lib/routes';
 import { Booking, BookingStatus } from '@/lib/types';
+import { PosterCopy, CopyText } from '@/components/PosterCopy';
 
 const STATUS_OPTIONS: { value: '' | BookingStatus; label: string }[] = [
     { value: '', label: 'Усі статуси' },
@@ -34,36 +35,22 @@ function boatsLine(q: Booking['quantities']) {
     return `В:${q.big} · С:${q.medium} · М:${q.small ?? 0} · Д:${q.child}`;
 }
 
-function PosterTags({ b, compact = false }: { b: Booking; compact?: boolean }) {
-    const hasOrder = b.posterIncomingOrderId != null;
-    const hasTxn = b.posterIncomingTransactionId != null;
-
-    if (!hasOrder && !hasTxn) {
-        return compact ? null : <span className="text-subtle">—</span>;
-    }
-
-    return (
-        <div className="text-subtle" style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
-            {hasOrder && <div>зам. <strong>#{b.posterIncomingOrderId}</strong></div>}
-            {hasTxn && <div>трз. <strong>#{b.posterIncomingTransactionId}</strong></div>}
-        </div>
-    );
-}
 
 // ── Desktop table row ─────────────────────────────────────────────
 function HistoryRow({ b }: { b: Booking }) {
+    const isCancelled = b.status === 'cancelled';
     return (
-        <tr>
+        <tr style={isCancelled ? { opacity: 0.7 } : undefined}>
             <td style={{ whiteSpace: 'nowrap' }}>{fmtSlot(b.date, b.time)}</td>
             <td><span className="badge badge-route">{b.routeName ? routeLabel(b.routeName) : '—'}</span></td>
             <td>
                 <div className="booking-name">{b.firstName} {b.lastName}</div>
-                <div className="booking-contact">{b.userEmail}{b.phone ? ` · ${b.phone}` : ''}</div>
+                <div className="booking-contact">{b.userEmail}{b.phone && <><span style={{color:'var(--mist)',margin:'0 4px'}}>·</span><CopyText value={b.phone} /></>}</div>
             </td>
             <td style={{ whiteSpace: 'nowrap' }} title="Великі · Середні · Малі · Діти">{boatsLine(b.quantities)}</td>
             <td className="booking-amount" style={{ whiteSpace: 'nowrap' }}>{b.effectiveAmount.toFixed(2)} ₴</td>
             <td><StatusBadge status={b.status} /></td>
-            <td style={{ whiteSpace: 'nowrap' }}><PosterTags b={b} /></td>
+            <td style={{ whiteSpace: 'nowrap' }}><PosterCopy orderId={b.posterIncomingOrderId} transactionId={b.posterIncomingTransactionId} layout="cell" /></td>
             <td style={{ whiteSpace: 'nowrap', color: 'var(--subtle)' }}>{fmtCreated(b.createdAt)}</td>
         </tr>
     );
@@ -71,8 +58,9 @@ function HistoryRow({ b }: { b: Booking }) {
 
 // ── Mobile card ───────────────────────────────────────────────────
 function HistoryCard({ b }: { b: Booking }) {
+    const isCancelled = b.status === 'cancelled';
     return (
-        <div className="history-card">
+        <div className="history-card" style={isCancelled ? { opacity: 0.75 } : undefined}>
             <div className="history-card-top">
                 <div>
                     <div className="history-card-slot">{fmtSlot(b.date, b.time)}</div>
@@ -84,21 +72,17 @@ function HistoryCard({ b }: { b: Booking }) {
             </div>
 
             <div className="booking-name">{b.firstName} {b.lastName}</div>
-            <div className="booking-contact">{b.userEmail}{b.phone ? ` · ${b.phone}` : ''}</div>
+            <div className="booking-contact">{b.userEmail}{b.phone && <><span style={{color:'var(--mist)',margin:'0 4px'}}>·</span><CopyText value={b.phone} /></>}</div>
 
             <div className="history-card-footer">
                 <span className="text-subtle" title="Великі · Середні · Малі · Діти">{boatsLine(b.quantities)}</span>
                 <span className="booking-amount">{b.effectiveAmount.toFixed(2)} ₴</span>
             </div>
 
-            {(b.posterIncomingOrderId != null || b.posterIncomingTransactionId != null) && (
-                <div className="mt-4" style={{ fontSize: '0.78rem' }}>
-                    <span className="text-subtle">Poster: </span>
-                    {b.posterIncomingOrderId != null && <>зам. <strong>#{b.posterIncomingOrderId}</strong></>}
-                    {b.posterIncomingOrderId != null && b.posterIncomingTransactionId != null && <span> · </span>}
-                    {b.posterIncomingTransactionId != null && <>трз. <strong>#{b.posterIncomingTransactionId}</strong></>}
-                </div>
-            )}
+            <PosterCopy
+                orderId={b.posterIncomingOrderId}
+                transactionId={b.posterIncomingTransactionId}
+            />
 
             <div className="text-subtle mt-4" style={{ fontSize: '0.78rem' }}>
                 Створено: {fmtCreated(b.createdAt)}
@@ -121,8 +105,10 @@ export default function HistoryPage() {
     });
 
     const bookings = data?.bookings ?? [];
-    const hasNext = bookings.length === limit;  // no total count from backend (per API doc)
+    const hasNext = bookings.length === limit;
     const hasPrev = offset > 0;
+
+    const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
 
     const onFilter = (fn: () => void) => { fn(); setOffset(0); };
 
@@ -161,6 +147,25 @@ export default function HistoryPage() {
                             </button>
                         )}
                     </div>
+
+                    {/* Cancelled bookings count note */}
+                    {cancelledCount > 0 && !isLoading && (
+                        <div style={{
+                            background: 'rgba(224,90,78,0.06)',
+                            border: '1px solid rgba(224,90,78,0.2)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '8px 14px',
+                            marginBottom: 14,
+                            fontSize: '0.82rem',
+                            color: 'var(--coral)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                        }}>
+                            <span>🚫</span>
+                            <span>На цій сторінці {cancelledCount} скасованих бронювань (включно зі скасуванням слоту)</span>
+                        </div>
+                    )}
 
                     <div className="card" style={{ opacity: isFetching && !isLoading ? 0.6 : 1, transition: 'opacity 150ms' }}>
                         {isLoading && (

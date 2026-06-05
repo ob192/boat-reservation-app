@@ -9,6 +9,7 @@ import { toast } from '@/hooks/useToast';
 import { Booking } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { routeLabel } from '@/lib/routes';
+import { PosterCopy, CopyText } from '@/components/PosterCopy';
 
 interface BookingsDrawerProps {
   open: boolean;
@@ -16,14 +17,21 @@ interface BookingsDrawerProps {
   date: string;
   time: string;
   route: string;
+  slotCancelled?: boolean;
 }
 
-function BookingRow({ booking, date, time, route }: { booking: Booking; date: string; time: string; route: string }) {
+function BookingRow({ booking, date, time, route, slotCancelled }: {
+  booking: Booking;
+  date: string;
+  time: string;
+  route: string;
+  slotCancelled?: boolean;
+}) {
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState('');
   const { mutateAsync, isPending } = useCancelBooking(date, time, route);
 
-  const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+  const canCancel = !slotCancelled && (booking.status === 'pending' || booking.status === 'confirmed');
 
   const handleCancel = async () => {
     if (!reason.trim()) return;
@@ -42,24 +50,15 @@ function BookingRow({ booking, date, time, route }: { booking: Booking; date: st
           <div>
             <div className="booking-name">{booking.firstName} {booking.lastName}</div>
             <div className="booking-contact">
-              {booking.userEmail}{booking.phone ? ` · ${booking.phone}` : ''}
+              {booking.userEmail}{booking.phone && <><span style={{color:'var(--mist)',margin:'0 4px'}}>·</span><CopyText value={booking.phone} /></>}
             </div>
             <div className="booking-quantities mt-4">
               Великих: {booking.quantities.big} · Середніх: {booking.quantities.medium} · Малих: {booking.quantities.small ?? 0} · Дітей: {booking.quantities.child}
             </div>
-            {(booking.posterIncomingOrderId != null || booking.posterIncomingTransactionId != null) && (
-                <div className="text-subtle mt-4" style={{ fontSize: '0.78rem' }}>
-                  {booking.posterIncomingOrderId != null && (
-                      <span>Poster замовлення: <strong>#{booking.posterIncomingOrderId}</strong></span>
-                  )}
-                  {booking.posterIncomingOrderId != null && booking.posterIncomingTransactionId != null && (
-                      <span> · </span>
-                  )}
-                  {booking.posterIncomingTransactionId != null && (
-                      <span>транзакція: <strong>#{booking.posterIncomingTransactionId}</strong></span>
-                  )}
-                </div>
-            )}
+            <PosterCopy
+                orderId={booking.posterIncomingOrderId}
+                transactionId={booking.posterIncomingTransactionId}
+            />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
             <StatusBadge status={booking.status} />
@@ -97,20 +96,47 @@ function BookingRow({ booking, date, time, route }: { booking: Booking; date: st
   );
 }
 
-export function BookingsDrawer({ open, onClose, date, time, route }: BookingsDrawerProps) {
+export function BookingsDrawer({ open, onClose, date, time, route, slotCancelled }: BookingsDrawerProps) {
   const { data, isLoading, isError } = useSlotBookings(date, time, route, open);
 
   const formattedDate = date
       ? new Date(date + 'T00:00:00').toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })
       : '';
 
+  const totalCount = data?.bookings.length ?? 0;
+  const cancelledCount = data?.bookings.filter(b => b.status === 'cancelled').length ?? 0;
+
+  const subtitleParts: string[] = [];
+  if (totalCount > 0) subtitleParts.push(`${totalCount} бронювань`);
+  if (cancelledCount > 0) subtitleParts.push(`${cancelledCount} скасовано`);
+
   return (
       <Drawer
           open={open}
           onClose={onClose}
           title={`${formattedDate} · ${time} · ${routeLabel(route)}`}
-          subtitle={data ? `${data.bookings.length} бронювань` : undefined}
+          subtitle={subtitleParts.join(' · ') || undefined}
       >
+        {/* Banner for cancelled slot */}
+        {slotCancelled && (
+            <div style={{
+              background: 'rgba(224,90,78,0.08)',
+              border: '1px solid rgba(224,90,78,0.25)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 14px',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: '0.82rem',
+              color: 'var(--coral)',
+              fontWeight: 500,
+            }}>
+              <span>🚫</span>
+              <span>Цей слот скасовано — нові бронювання неможливі</span>
+            </div>
+        )}
+
         {isLoading && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[1, 2, 3].map(i => (
@@ -138,7 +164,14 @@ export function BookingsDrawer({ open, onClose, date, time, route }: BookingsDra
         )}
 
         {data?.bookings.map(b => (
-            <BookingRow key={b.id} booking={b} date={date} time={time} route={route} />
+            <BookingRow
+                key={b.id}
+                booking={b}
+                date={date}
+                time={time}
+                route={route}
+                slotCancelled={slotCancelled}
+            />
         ))}
       </Drawer>
   );

@@ -7,17 +7,20 @@ export interface SlotInfo {
   totalBig: number;
   availableMedium: number;
   totalMedium: number;
-  availableSmall: number;   // now confirmed always present
-  totalSmall: number;       // now confirmed always present
+  availableSmall: number;
+  totalSmall: number;
   blocked: boolean;
   blockReason?: string;
+  cancelled: boolean;          // NEW
+  cancelReason?: string;       // NEW
+  cancelledAt?: string;        // NEW
 }
 
 export interface SlotsResponse {
   date: string;
   dateBlocked: boolean;
   bookingsEnabled: boolean;
-  fullyBlocked: boolean;    // NEW
+  fullyBlocked: boolean;
   slots: SlotInfo[];
 }
 
@@ -34,9 +37,9 @@ export interface AvailabilityResponse {
 
 export interface Booking {
   id: string;
-  date?: string;                // NEW (present on slot-bookings + history)
-  time?: string;                // NEW
-  routeName?: string;           // NEW
+  date?: string;
+  time?: string;
+  routeName?: string;
   userEmail: string;
   firstName: string;
   lastName: string;
@@ -44,7 +47,7 @@ export interface Booking {
   quantities: {
     big: number;
     medium: number;
-    small: number;              // NEW
+    small: number;
     child: number;
   };
   totalAmount: number;
@@ -58,11 +61,11 @@ export interface Booking {
 export interface SlotBookingsResponse {
   date: string;
   time: string;
-  routeName: string;            // NEW
+  routeName: string;
   bookings: Booking[];
 }
 
-export interface BookingHistoryResponse {   // NEW
+export interface BookingHistoryResponse {
   bookings: Booking[];
 }
 
@@ -70,4 +73,22 @@ export interface SystemState {
   bookingsEnabled: boolean;
   reason?: string;
   updatedAt?: string;
+}
+
+// Cancel slot responses
+export interface CancelSlotResponse {
+  date: string;
+  time: string;
+  routeName: string;
+  cancelled: true;
+  reason?: string;
+  cancelledAt: string;
+  cancelledBookings: number;
+}
+
+export interface UncancelSlotResponse {
+  date: string;
+  time: string;
+  routeName: string;
+  cancelled: false;
 }

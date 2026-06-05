@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminFetch } from '@/lib/api';
-import { SlotsResponse } from '@/lib/types';
+import { SlotsResponse, CancelSlotResponse, UncancelSlotResponse } from '@/lib/types';
 
 export function useSlots(date: string, route: string) {
   return useQuery<SlotsResponse>({
@@ -49,6 +49,35 @@ export function useUnblockSlot(date: string) {
   return useMutation({
     mutationFn: ({ time, route }: { time: string; route: string }) =>
         adminFetch(`/admin/slots/${date}/${time}/${route}/block`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['slots', date] });
+    },
+  });
+}
+
+export function useCancelSlot(date: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ time, route, reason }: { time: string; route: string; reason?: string }) =>
+        adminFetch<CancelSlotResponse>(`/admin/slots/${date}/${time}/${route}/cancel`, {
+          method: 'PUT',
+          body: JSON.stringify({ reason }),
+        }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['slots', date] });
+      qc.invalidateQueries({ queryKey: ['slot-bookings'] });
+      qc.invalidateQueries({ queryKey: ['booking-history'] });
+    },
+  });
+}
+
+export function useUncancelSlot(date: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ time, route }: { time: string; route: string }) =>
+        adminFetch<UncancelSlotResponse>(`/admin/slots/${date}/${time}/${route}/cancel`, {
+          method: 'DELETE',
+        }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['slots', date] });
     },
