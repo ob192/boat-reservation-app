@@ -266,6 +266,34 @@
     display: inline-block;
 }
 
+/* Per-route block inside the FAQ answer */
+.ed-faq-route {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+}
+.ed-faq-route:first-of-type {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: none;
+}
+.ed-faq-route-title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0 0 6px;
+}
+.ed-faq-route-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    margin: 4px 0 10px;
+}
+
 /* ── Instagram card ── */
 .ed-ig-sec { padding: 26px 0 8px; }
 .ed-ig {

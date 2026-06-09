@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
+import {Instrument_Serif, Inter_Tight, JetBrains_Mono} from 'next/font/google';
 import Script from 'next/script';
 
 // ─── Fonts (scoped to this page via the .ed-root variable classes) ──────────
@@ -30,10 +30,16 @@ const PHONE_DISPLAY = '+38 (050) 367-66-70';
 const PHONE_HREF = 'tel:+380503676670';
 
 // ─── Departure point (Google Maps) ──────────────────────────────────────────
-const MAPS_EMBED_SRC =
-    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2483.129752207899!2d31.354777700000003!3d51.5108355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5484aca07d961%3A0xdc3b564198209bee!2sKyryla%20Rozumovskoho%20St%2C%205%2C%20Chernihiv%2C%20Chernihivs%27ka%20oblast%2C%2014000!5e0!3m2!1sen!2sua!4v1779964836720!5m2!1sen!2sua';
-const MAPS_OPEN_URL =
-    'https://www.google.com/maps/search/?api=1&query=51.51083547181443,31.35220277765311&query_place_id=0x46d5484aca07d961:0xdc3b564198209bee';
+// ─── Desna route — start (base) and finish ──────────────────────────────────
+const DESNA_START_EMBED =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1220.806632518116!2d31.35466982996041!3d51.50937928244668!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5490079167cf9%3A0x9c86ca7f773c93ad!2ssup_che!5e0!3m2!1sen!2sua!4v1780663713931!5m2!1sen!2sua';
+const DESNA_END_URL = 'https://maps.app.goo.gl/j5qfTenHVyyuTfwh8';
+
+// ─── Snov route — MOCK points, replace before launch ────────────────────────
+const SNOV_START_EMBED =
+    'https://www.google.com/maps?q=Klochkiv,+Chernihiv,+Ukraine&output=embed';
+const SNOV_END_URL =
+    'https://www.google.com/maps/search/?api=1&query=Snovyanka%2C+Chernihiv+Oblast';
 
 // ─── Instagram ───────────────────────────────────────────────────────────────
 const IG_URL = 'https://www.instagram.com/supboard_che/';
@@ -90,20 +96,20 @@ export default function HomePage() {
                     <span className="ed-season">Сезон 2026</span>
                 </header>
 
-                <div className="ed-rule" />
+                <div className="ed-rule"/>
 
                 {/* ── Hero / Intro ─────────────────────────────────────────── */}
                 <section className="ed-hero">
                     <p className="ed-eyebrow ed-eyebrow--lead">
-                        <span className="ed-eyebrow-rule" />
+                        <span className="ed-eyebrow-rule"/>
                         № 01 — Десна, Чернігів
                     </p>
 
                     <h1 className="ed-headline">
                         Відчуйте
-                        <br />
+                        <br/>
                         свободу
-                        <br />
+                        <br/>
                         <em>на воді.</em>
                     </h1>
 
@@ -129,7 +135,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <div className="ed-rule" />
+                <div className="ed-rule"/>
 
                 {/* ── Contact row ──────────────────────────────────────────── */}
                 <section className="ed-contact">
@@ -152,12 +158,12 @@ export default function HomePage() {
                     <a href={PHONE_HREF} className="ed-call-link">Дзвінок →</a>
                 </section>
 
-                <div className="ed-rule" />
+                <div className="ed-rule"/>
 
                 {/* ── FAQ ──────────────────────────────────────────────────── */}
                 <section className="ed-faq">
                     <p className="ed-eyebrow ed-eyebrow--lead">
-                        <span className="ed-eyebrow-rule" />
+                        <span className="ed-eyebrow-rule"/>
                         Усе, що варто знати
                     </p>
 
@@ -170,6 +176,7 @@ export default function HomePage() {
 
                     <div className="ed-faq-list">
                         {/* Item 01 — start/finish, with embedded map */}
+                        {/* Item 01 — start/finish for both routes */}
                         <details className="ed-faq-item">
                             <summary className="ed-faq-q">
                                 <span className="ed-faq-qtext">Де старт і фініш?</span>
@@ -177,27 +184,57 @@ export default function HomePage() {
                             </summary>
                             <div className="ed-faq-a">
                                 <p>
-                                    Старт і фініш — на нашій базі на вулиці Кирила Розумовського, 5. Маршрут
-                                    пролягає вздовж Десни й повертається до тієї самої точки, тож загубитися
-                                    неможливо.
+                                    Точки старту й фінішу залежать від обраного маршруту. Точну адресу
+                                    збору ви отримаєте у листі-підтвердженні разом із квитком.
                                 </p>
-                                <div className="ed-faq-map">
-                                    <iframe
-                                        title="Місце старту та фінішу"
-                                        src={MAPS_EMBED_SRC}
-                                        loading="lazy"
-                                        allowFullScreen
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                    />
+
+                                {/* Route — Desna */}
+                                <div className="ed-faq-route">
+                                    <h4 className="ed-faq-route-title">Сплав по Десні</h4>
+                                    <p className="ed-faq-route-label">
+                                        Старт — наша база, вул. Кирила Розумовського, 5
+                                    </p>
+                                    <div className="ed-faq-map">
+                                        <iframe
+                                            title="Старт — Сплав по Десні"
+                                            src={DESNA_START_EMBED}
+                                            loading="lazy"
+                                            allowFullScreen
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                        />
+                                    </div>
+                                    <a
+                                        href={DESNA_END_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="ed-faq-maplink"
+                                    >
+                                        Відкрити точку фінішу ↗
+                                    </a>
                                 </div>
-                                <a
-                                    href={MAPS_OPEN_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ed-faq-maplink"
-                                >
-                                    Відкрити маршрут ↗
-                                </a>
+
+                                {/* Route — Snov (mock, replace before launch) */}
+                                <div className="ed-faq-route">
+                                    <h4 className="ed-faq-route-title">Сплав по Снову</h4>
+                                    <p className="ed-faq-route-label">Старт — район Клочків</p>
+                                    <div className="ed-faq-map">
+                                        <iframe
+                                            title="Старт — Сплав по Снову"
+                                            src={SNOV_START_EMBED}
+                                            loading="lazy"
+                                            allowFullScreen
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                        />
+                                    </div>
+                                    <a
+                                        href={SNOV_END_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="ed-faq-maplink"
+                                    >
+                                        Відкрити точку фінішу — Сновянка ↗
+                                    </a>
+                                </div>
                             </div>
                         </details>
 
@@ -216,16 +253,16 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <div className="ed-rule" />
+                <div className="ed-rule"/>
 
                 {/* ── Instagram card ───────────────────────────────────────── */}
                 <section className="ed-ig-sec">
                     <p className="ed-eyebrow ed-eyebrow--lead">
-                        <span className="ed-eyebrow-rule" />
+                        <span className="ed-eyebrow-rule"/>
                         Свіже з води
                     </p>
 
-                    <div style={{ marginTop: 16 }}>
+                    <div style={{marginTop: 16}}>
                         <blockquote
                             className="instagram-media"
                             data-instgrm-captioned
@@ -255,7 +292,7 @@ export default function HomePage() {
                     <span className="ed-foot-link">© 2026 SUP Chernihiv</span>
                 </footer>
 
-                <div className="ed-dock-spacer" />
+                <div className="ed-dock-spacer"/>
             </div>
 
             {/* ── Sticky bottom dock ─────────────────────────────────────── */}
@@ -263,7 +300,7 @@ export default function HomePage() {
                 <Link href="/book" className="ed-cta">Забронювати зараз</Link>
             </div>
 
-            <Script async src="https://www.instagram.com/embed.js" strategy="lazyOnload" />
+            <Script async src="https://www.instagram.com/embed.js" strategy="lazyOnload"/>
         </div>
     );
 }
