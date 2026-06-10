@@ -26,8 +26,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 // ─── Contact constants ──────────────────────────────────────────────────────
-const PHONE_DISPLAY = '+38 (050) 367-66-70';
-const PHONE_HREF = 'tel:+380503676670';
+const PHONE_DISPLAY = '+38 (073) 169-69-09';
+const PHONE_HREF = 'tel:+380731696909';
 
 // ─── Departure point (Google Maps) ──────────────────────────────────────────
 // ─── Desna route — start (base) and finish ──────────────────────────────────
@@ -122,7 +122,7 @@ export default function HomePage() {
                 {/* ── Stats strip ──────────────────────────────────────────── */}
                 <section className="ed-stats">
                     <div className="ed-stat">
-                        <span className="ed-stat-num">15</span>
+                        <span className="ed-stat-num">18</span>
                         <span className="ed-eyebrow">бордів</span>
                     </div>
                     <div className="ed-stat">
@@ -130,7 +130,7 @@ export default function HomePage() {
                         <span className="ed-eyebrow">мінімум</span>
                     </div>
                     <div className="ed-stat">
-                        <span className="ed-stat-num">₴400</span>
+                        <span className="ed-stat-num">₴450</span>
                         <span className="ed-eyebrow">за борд</span>
                     </div>
                 </section>

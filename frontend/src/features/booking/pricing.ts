@@ -11,8 +11,8 @@ export interface RoutePrices {
 // only — the backend's `totalAmount` is always authoritative for the actual
 // charge. Keep this table in sync with the backend route/price config.
 export const ROUTE_PRICES: Record<RouteId, RoutePrices> = {
-    Desna:    { big: 450, medium: 350, small: 250, child: 225 },
-    Klochkov: { big: 600, medium: 480, small: 340, child: 300 },
+    Desna:    { big: 450, medium: 450, small: 450, child: 225 },
+    Klochkov: { big: 99999, medium: 99999, small: 99999, child: 99999 },
 };
 
 // Used before/if a route is somehow missing (the step guard prevents this in
