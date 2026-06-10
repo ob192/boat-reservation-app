@@ -17,8 +17,8 @@ type RoutePricing struct {
 
 // routePrices is the single source of truth for route costs.
 var routePrices = map[string]RoutePricing{
-	RouteDesna:    {Big: 450.00, Medium: 350.00, Small: 250.00, Child: 225.00},
-	RouteKlochkov: {Big: 600.00, Medium: 480.00, Small: 340.00, Child: 300.00},
+	RouteDesna:    {Big: 450.00, Medium: 450.00, Small: 450.00, Child: 225.00},
+	RouteKlochkov: {Big: 99999.00, Medium: 99999.00, Small: 99999.00, Child: 99999.00},
 }
 
 // AllRoutes returns the route catalog in a deterministic order (used by seeding).
