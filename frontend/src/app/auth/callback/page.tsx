@@ -3,6 +3,19 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/features/auth/lib/supabase';
+import { fbqTrack } from '@/shared/lib/fbq';
+
+const REGISTERED_FLAG = 'sup-fb-registered';
+
+function trackRegistrationOnce() {
+  try {
+    if (localStorage.getItem(REGISTERED_FLAG)) return;
+    fbqTrack('CompleteRegistration', { content_name: 'Google Sign-In' });
+    localStorage.setItem(REGISTERED_FLAG, '1');
+  } catch {
+    fbqTrack('CompleteRegistration', { content_name: 'Google Sign-In' });
+  }
+}
 
 function CallbackContent() {
   const router = useRouter();
@@ -16,7 +29,6 @@ function CallbackContent() {
     const next = params.get('next') ?? '/book';
 
     async function exchange() {
-      // 1. Try to exchange the PKCE code (flowType: 'pkce') if present in URL
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -24,29 +36,28 @@ function CallbackContent() {
           router.replace('/signin?error=auth_failed');
           return;
         }
+        trackRegistrationOnce();
         router.replace(next);
         return;
       }
 
-      // 2. For implicit flow: Supabase auto-processes the hash fragment
-      //    but we need to wait for the auth state change to fire.
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        trackRegistrationOnce();
         router.replace(next);
         return;
       }
 
-      // 3. If neither, give the auth state change listener a moment to fire
       const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
         listener.subscription.unsubscribe();
         if (session) {
+          trackRegistrationOnce();
           router.replace(next);
         } else {
           router.replace('/signin?error=auth_failed');
         }
       });
 
-      // Fallback timeout — if nothing fires within 5 s, bail out
       const timeout = setTimeout(() => {
         listener.subscription.unsubscribe();
         router.replace('/signin?error=auth_failed');

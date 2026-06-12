@@ -17,6 +17,7 @@ import { formatCurrency } from '@/shared/lib/currency';
 import { ConsentAgreement } from '@/features/booking/components/client/ConsentAgreement';
 import { CONSENT_AGREEMENT, buildAgreementText } from '@/features/booking/consent-text';
 import { sha256Hex, buildConsentRecord } from '@/shared/lib/consent';
+import { fbqTrack } from '@/shared/lib/fbq';
 
 const instrument = Instrument_Serif({
     subsets: ['latin'],
@@ -134,6 +135,15 @@ export default function DetailsPage() {
                 resultUrl: `${origin}/book/success?session_id=${booking.bookingId}`,
             });
             setSessionId(checkout.sessionId);
+
+            fbqTrack('InitiateCheckout', {
+                value: total,
+                currency: 'UAH',
+                content_name: selectedRoute,
+                content_category: 'sup_booking',
+                num_items: quantities.big + quantities.medium + quantities.small,
+            });
+
             window.location.href = checkout.checkoutUrl;
         } catch (err: unknown) {
             console.error('Checkout error:', err);

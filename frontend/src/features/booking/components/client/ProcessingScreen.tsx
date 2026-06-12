@@ -10,6 +10,7 @@ import { useBookingStatus } from '@/features/booking/hooks';
 import { MESSAGES } from '@/features/booking/messages';
 import { routeLabel } from '@/features/booking/routes';
 import { formatCurrency } from '@/shared/lib/currency';
+import { fbqTrack } from '@/shared/lib/fbq';
 
 const instrument = Instrument_Serif({
     subsets: ['latin'],
@@ -217,6 +218,25 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     const router = useRouter();
     const isIOS = useIsIOS();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!booking) return;
+        try {
+            const key = `sup-fb-purchase-${booking.id}`;
+            if (localStorage.getItem(key)) return;
+            fbqTrack('Purchase', {
+                value: booking.totalAmount,
+                currency: 'UAH',
+                content_name: routeLabel(booking.routeName),
+                content_category: 'sup_booking',
+                content_ids: [booking.id],
+                contents: [{ id: booking.id, quantity: 1 }],
+            });
+            localStorage.setItem(key, '1');
+        } catch {
+            // best-effort
+        }
+    }, [booking]);
 
     if (!booking) return null;
 
