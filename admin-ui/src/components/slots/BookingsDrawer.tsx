@@ -20,6 +20,88 @@ interface BookingsDrawerProps {
   slotCancelled?: boolean;
 }
 
+// ── Copy-all button ───────────────────────────────────────────────
+function CopyAllButton({ bookings, date, time, route }: {
+  bookings: Booking[];
+  date: string;
+  time: string;
+  route: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const active = bookings.filter(b => b.status !== 'cancelled' && b.status !== 'expired' && b.status !== 'failed');
+
+  const buildText = () => {
+    const header = `${date} · ${time} · ${routeLabel(route)}`;
+    const divider = '─'.repeat(40);
+    const lines = active.map((b, i) => {
+      const name   = `${b.firstName} ${b.lastName}`;
+      const email  = b.userEmail;
+      const phone  = b.phone ?? '—';
+      const boats  = `В:${b.quantities.big}  С:${b.quantities.medium}  М:${b.quantities.small ?? 0}  Д:${b.quantities.child}`;
+      const amount = `${b.effectiveAmount.toFixed(2)} ₴`;
+      return [
+        `${i + 1}. ${name}`,
+        `   📧 ${email}`,
+        `   📞 ${phone}`,
+        `   🚣 ${boats}`,
+        `   💰 ${amount}`,
+      ].join('\n');
+    });
+
+    return [header, divider, ...lines, divider, `Всього: ${active.length}`].join('\n');
+  };
+
+  const handleCopy = async () => {
+    const text = buildText();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard.js–style fallback for restricted environments
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+    toast('Список клієнтів скопійовано', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (active.length === 0) return null;
+
+  return (
+      <button
+          onClick={handleCopy}
+          title="Скопіювати список клієнтів"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '5px 12px',
+            borderRadius: 99,
+            border: `1.5px solid ${copied ? 'rgba(14,124,123,0.45)' : 'rgba(168,213,209,0.5)'}`,
+            background: copied ? 'rgba(14,124,123,0.10)' : 'rgba(168,213,209,0.10)',
+            color: copied ? 'var(--teal)' : 'var(--subtle)',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 180ms ease',
+            fontFamily: 'DM Sans, sans-serif',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+      >
+        {copied ? '✓' : '⎘'} {copied ? 'Скопійовано' : `Копіювати (${active.length})`}
+      </button>
+  );
+}
+
+// ── Booking row ───────────────────────────────────────────────────
 function BookingRow({ booking, date, time, route, slotCancelled }: {
   booking: Booking;
   date: string;
@@ -50,7 +132,7 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
           <div>
             <div className="booking-name">{booking.firstName} {booking.lastName}</div>
             <div className="booking-contact">
-              {booking.userEmail}{booking.phone && <><span style={{color:'var(--mist)',margin:'0 4px'}}>·</span><CopyText value={booking.phone} /></>}
+              {booking.userEmail}{booking.phone && <><span style={{ color: 'var(--mist)', margin: '0 4px' }}>·</span><CopyText value={booking.phone} /></>}
             </div>
             <div className="booking-quantities mt-4">
               Великих: {booking.quantities.big} · Середніх: {booking.quantities.medium} · Малих: {booking.quantities.small ?? 0} · Дітей: {booking.quantities.child}
@@ -96,6 +178,7 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
   );
 }
 
+// ── Drawer ────────────────────────────────────────────────────────
 export function BookingsDrawer({ open, onClose, date, time, route, slotCancelled }: BookingsDrawerProps) {
   const { data, isLoading, isError } = useSlotBookings(date, time, route, open);
 
@@ -103,12 +186,12 @@ export function BookingsDrawer({ open, onClose, date, time, route, slotCancelled
       ? new Date(date + 'T00:00:00').toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })
       : '';
 
-  const totalCount = data?.bookings.length ?? 0;
+  const totalCount  = data?.bookings.length ?? 0;
   const cancelledCount = data?.bookings.filter(b => b.status === 'cancelled').length ?? 0;
 
   const subtitleParts: string[] = [];
-  if (totalCount > 0) subtitleParts.push(`${totalCount} бронювань`);
-  if (cancelledCount > 0) subtitleParts.push(`${cancelledCount} скасовано`);
+  if (totalCount > 0)      subtitleParts.push(`${totalCount} бронювань`);
+  if (cancelledCount > 0)  subtitleParts.push(`${cancelledCount} скасовано`);
 
   return (
       <Drawer
@@ -117,7 +200,7 @@ export function BookingsDrawer({ open, onClose, date, time, route, slotCancelled
           title={`${formattedDate} · ${time} · ${routeLabel(route)}`}
           subtitle={subtitleParts.join(' · ') || undefined}
       >
-        {/* Banner for cancelled slot */}
+        {/* Cancelled-slot banner */}
         {slotCancelled && (
             <div style={{
               background: 'rgba(224,90,78,0.08)',
@@ -134,6 +217,17 @@ export function BookingsDrawer({ open, onClose, date, time, route, slotCancelled
             }}>
               <span>🚫</span>
               <span>Цей слот скасовано — нові бронювання неможливі</span>
+            </div>
+        )}
+
+        {/* Copy-all toolbar — shown only when data is ready and non-empty */}
+        {data && data.bookings.length > 0 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: 12,
+            }}>
+              <CopyAllButton bookings={data.bookings} date={date} time={time} route={route} />
             </div>
         )}
 
