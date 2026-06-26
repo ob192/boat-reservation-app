@@ -599,6 +599,122 @@ func (h *AdminHandler) UncancelSlot(c *gin.Context) {
 	httpx.OK(c, resp)
 }
 
+// MoveBooking POST /admin/bookings/:bookingId/move
+//
+// @Summary      Move a booking to another slot
+// @Description  Admin endpoint to relocate a booking to a different date/time/route.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        bookingId path string true "Booking ID (UUID)"
+// @Param        request body model.AdminMoveBookingRequest true "Destination slot"
+// @Success      200  {object}  model.AdminMoveBookingResponse
+// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      404  {object}  httpx.ErrorBody
+// @Failure      409  {object}  httpx.ErrorBody
+// @Failure      422  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/bookings/{bookingId}/move [post]
+func (h *AdminHandler) MoveBooking(c *gin.Context) {
+	bookingID, err := uuid.Parse(c.Param("bookingId"))
+	if err != nil {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, "bookingId must be a UUID")
+		return
+	}
+	var req model.AdminMoveBookingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, err.Error())
+		return
+	}
+	if !isValidDate(req.Date) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, "")
+		return
+	}
+	if !service.IsValidSlotTime(req.Time) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
+		return
+	}
+	if !service.IsValidRoute(req.RouteName) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+
+	resp, err := h.adminSvc.MoveBooking(c.Request.Context(), bookingID, req.Date, req.Time, req.RouteName)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrBookingNotFound):
+			httpx.Err(c, http.StatusNotFound, httpx.CodeBookingNotFound, "")
+		case errors.Is(err, service.ErrBookingNotPending):
+			httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodeBookingNotPending, "")
+		case errors.Is(err, service.ErrSlotNotFound):
+			httpx.Err(c, http.StatusNotFound, httpx.CodeSlotNotFound, "")
+		case errors.Is(err, service.ErrSlotBlocked):
+			httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodeSlotBlocked, "")
+		case errors.Is(err, service.ErrSlotCancelled):
+			httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodeSlotCancelled, "")
+		case errors.Is(err, service.ErrSlotTaken):
+			httpx.Err(c, http.StatusConflict, httpx.CodeSlotTaken, "")
+		default:
+			h.log.Error("admin move booking", "err", err)
+			httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		}
+		return
+	}
+	httpx.OK(c, resp)
+}
+
+// DeleteSlot DELETE /admin/slots/:date/:time/:route
+//
+// @Summary      Delete a slot
+// @Description  Admin endpoint to delete a slot, only if it has no active bookings.
+// @Tags         admin
+// @Produce      json
+// @Param        date path string true "Date in YYYY-MM-DD format"
+// @Param        time path string true "Time in HH:MM format"
+// @Param        route path string true "Route name"
+// @Success      204
+// @Failure      400  {object}  httpx.ErrorBody "INVALID_DATE, INVALID_TIME, or INVALID_ROUTE"
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      404  {object}  httpx.ErrorBody
+// @Failure      409  {object}  httpx.ErrorBody "SLOT_NOT_EMPTY"
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/slots/{date}/{time}/{route} [delete]
+func (h *AdminHandler) DeleteSlot(c *gin.Context) {
+	date := c.Param("date")
+	timeParam := c.Param("time")
+	if !isValidDate(date) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidDate, "")
+		return
+	}
+	if !service.IsValidSlotTime(timeParam) {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidTime, "")
+		return
+	}
+	route, ok := parseRoute(c)
+	if !ok {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, "")
+		return
+	}
+
+	err := h.adminSvc.DeleteSlot(c.Request.Context(), date, timeParam, route)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrSlotNotFound):
+			httpx.Err(c, http.StatusNotFound, httpx.CodeSlotNotFound, "")
+		case errors.Is(err, service.ErrSlotNotEmpty):
+			httpx.Err(c, http.StatusConflict, httpx.CodeSlotNotEmpty, "")
+		default:
+			h.log.Error("admin delete slot", "err", err)
+			httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		}
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func parseIntDefault(s string, def int) int {
 	if s == "" {
 		return def

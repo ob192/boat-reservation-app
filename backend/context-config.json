@@ -1,0 +1,33 @@
+{
+  "root_dir": "./",
+  "output": "llm_context.txt",
+  "ignore_dirs": [
+    ".git",
+    "vendor",
+    "node_modules",
+    "docs"
+  ],
+  "ignore_files": [
+    ".env",
+    "go.sum",
+    "wire_gen.go",
+    "diff",
+    "llm_context.txt"
+  ],
+  "include_patterns": [
+    "*.go",
+    "*.sql",
+    "*.yaml",
+    "*.yml",
+    "*.mod",
+    "Makefile",
+    "Dockerfile",
+    "*.md"
+  ],
+  "max_file_size": 524288,
+  "include_tree": true,
+  "include_content": true,
+  "skip_binary": true,
+  "auto_convert": false,
+  "max_depth": null
+}

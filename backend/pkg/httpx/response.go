@@ -37,6 +37,7 @@ const (
 	CodeCannotReadBody     = "CANNOT_READ_BODY"
 	CodeWebhookFailed      = "WEBHOOK_PROCESSING_FAILED"
 	CodeInvalidRoute       = "INVALID_ROUTE"
+	CodeSlotNotEmpty       = "SLOT_NOT_EMPTY"
 )
 
 // Issue describes a single field-level validation problem.

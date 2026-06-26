@@ -44,13 +44,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	seedStart := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
-	seedEnd := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
-	if err := seedSlots(context.Background(), server.DB, server.Log, seedStart, seedEnd, 8, 10, 1); err != nil {
-		server.Log.Error("slot seeding failed", "err", err)
-		os.Exit(1)
-	}
-
 	// 4. Ensure system_settings singleton row exists at boot
 	if _, err := server.SystemRepo.Get(context.Background()); err != nil {
 		server.Log.Error("system settings init failed", "err", err)

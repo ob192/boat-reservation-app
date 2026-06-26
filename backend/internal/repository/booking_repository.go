@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
@@ -85,6 +86,8 @@ type BookingRepository interface {
 	// CancelBySlot cancels every active (pending/confirmed) booking for a slot,
 	// returning how many rows changed. Terminal-state bookings are left untouched.
 	CancelBySlot(ctx context.Context, date, time, route string, adminID uuid.UUID, reason string) (int64, error)
+
+	Move(ctx context.Context, id uuid.UUID, date, time, route string) error
 }
 
 type bookingRepo struct {
@@ -372,4 +375,23 @@ func (r *bookingRepo) CancelBySlot(ctx context.Context, date, time_, route strin
 			"cancel_reason": reason,
 		})
 	return res.RowsAffected, res.Error
+}
+
+func (r *bookingRepo) Move(ctx context.Context, id uuid.UUID, date, time_, route string) error {
+	t, err := timeParse(date)
+	if err != nil {
+		return err
+	}
+	return r.tx(ctx).
+		Model(&model.Booking{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"date":       pgtype.Date{Time: t, Valid: true},
+			"time":       time_,
+			"route_name": route,
+		}).Error
+}
+
+var timeParse = func(date string) (time.Time, error) {
+	return time.Parse("2006-01-02", date)
 }
