@@ -92,3 +92,12 @@ export interface UncancelSlotResponse {
   routeName: string;
   cancelled: false;
 }
+
+// Move booking response (POST /admin/bookings/:bookingId/move)
+export interface MoveBookingResponse {
+  bookingId: string;
+  date: string;
+  time: string;
+  routeName: string;
+  status: BookingStatus;
+}
