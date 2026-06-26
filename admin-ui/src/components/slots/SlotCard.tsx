@@ -5,7 +5,7 @@ import { CapacityBar } from '@/components/CapacityBar';
 import { ConfirmInline } from '@/components/ConfirmInline';
 import { SlotEditModal } from './SlotEditModal';
 import { BookingsDrawer } from './BookingsDrawer';
-import { useCancelSlot, useUncancelSlot } from '@/hooks/useSlots';
+import { useCancelSlot, useUncancelSlot, useDeleteSlot } from '@/hooks/useSlots';
 import { toast } from '@/hooks/useToast';
 import { ApiError } from '@/lib/api';
 import { SlotInfo } from '@/lib/types';
@@ -15,15 +15,18 @@ interface SlotCardProps {
     slot: SlotInfo;
 }
 
+type CardAction = 'cancel' | 'uncancel' | 'delete' | null;
+
 export function SlotCard({ date, slot }: SlotCardProps) {
     const [editOpen, setEditOpen] = useState(false);
     const [bookingsOpen, setBookingsOpen] = useState(false);
-    const [cancelAction, setCancelAction] = useState<'cancel' | 'uncancel' | null>(null);
+    const [cancelAction, setCancelAction] = useState<CardAction>(null);
     const [cancelReason, setCancelReason] = useState('');
 
     const { mutateAsync: cancelSlot, isPending: cancelling } = useCancelSlot(date);
     const { mutateAsync: uncancelSlot, isPending: uncancelling } = useUncancelSlot(date);
-    const isActionPending = cancelling || uncancelling;
+    const { mutateAsync: deleteSlot, isPending: deleting } = useDeleteSlot(date);
+    const isActionPending = cancelling || uncancelling || deleting;
 
     const handleCancel = async () => {
         try {
@@ -50,9 +53,35 @@ export function SlotCard({ date, slot }: SlotCardProps) {
         }
     };
 
+    const handleDelete = async () => {
+        try {
+            await deleteSlot({ time: slot.time, route: slot.routeName });
+            toast('Слот видалено', 'success');
+            setCancelAction(null);
+        } catch (e) {
+            // Slot has active bookings — route the admin to Cancel instead.
+            if (e instanceof ApiError && e.status === 409) {
+                if (slot.cancelled) {
+                    // A cancelled slot can't be deleted because of preserved active
+                    // records; nothing to cancel further, so just inform.
+                    toast('Слот має активні бронювання — видалення неможливе', 'error');
+                    setCancelAction(null);
+                } else {
+                    toast('Слот має активні бронювання. Скасуйте слот замість видалення.', 'error');
+                    setCancelAction('cancel');
+                }
+            } else if (e instanceof ApiError && e.status === 404) {
+                // Already gone — refresh will drop it from the list.
+                toast('Слот не знайдено', 'error');
+                setCancelAction(null);
+            } else {
+                toast(e instanceof ApiError ? e.message : 'Помилка сервера', 'error');
+            }
+        }
+    };
+
     const isCancelled = slot.cancelled;
     const isBlocked = slot.blocked;
-    const isUnavailable = isCancelled || isBlocked;
 
     return (
         <>
@@ -96,33 +125,74 @@ export function SlotCard({ date, slot }: SlotCardProps) {
 
                 {/* Actions row */}
                 {cancelAction === null && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {!isCancelled && (
-                            <button className="btn btn-secondary btn-sm" onClick={() => setEditOpen(true)}>
-                                ✏️ Редагувати
-                            </button>
-                        )}
-                        <button className="btn btn-ghost btn-sm" onClick={() => setBookingsOpen(true)}>
-                            📋 Бронювання
-                        </button>
-                        {isCancelled ? (
+                    isCancelled ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <button
-                                className="btn btn-sm"
-                                style={{ borderColor: 'var(--teal)', color: 'var(--teal)', marginLeft: 'auto' }}
+                                className="btn btn-sm w-full"
+                                style={{ borderColor: 'var(--teal)', color: 'var(--teal)', justifyContent: 'center' }}
                                 onClick={() => setCancelAction('uncancel')}
                             >
                                 Відновити слот
                             </button>
-                        ) : (
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ flex: 1, justifyContent: 'center' }}
+                                    onClick={() => setBookingsOpen(true)}
+                                >
+                                    📋 Бронювання
+                                </button>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ flex: 1, justifyContent: 'center', color: 'var(--coral)' }}
+                                    onClick={() => setCancelAction('delete')}
+                                >
+                                    🗑 Видалити
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setEditOpen(true)}>
+                                ✏️ Редагувати
+                            </button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setBookingsOpen(true)}>
+                                📋 Бронювання
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ color: 'var(--coral)', marginLeft: 'auto' }}
+                                onClick={() => setCancelAction('delete')}
+                            >
+                                🗑 Видалити
+                            </button>
                             <button
                                 className="btn btn-sm btn-danger"
-                                style={{ marginLeft: 'auto' }}
                                 onClick={() => setCancelAction('cancel')}
                             >
                                 Скасувати слот
                             </button>
-                        )}
-                    </div>
+                        </div>
+                    )
+                )}
+
+                {/* Delete confirmation */}
+                {cancelAction === 'delete' && (
+                    <ConfirmInline
+                        onConfirm={handleDelete}
+                        onCancel={() => setCancelAction(null)}
+                        loading={isActionPending}
+                        confirmLabel="Видалити слот"
+                    >
+                        <div style={{ padding: '2px 0 6px' }}>
+                            <p className="text-subtle" style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                Слот буде видалено повністю. Цю дію можна виконати лише для слотів без активних бронювань.
+                            </p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--subtle)', marginTop: 6 }}>
+                                Якщо в слоті є активні бронювання, скасуйте слот замість видалення.
+                            </p>
+                        </div>
+                    </ConfirmInline>
                 )}
 
                 {/* Cancel confirmation */}

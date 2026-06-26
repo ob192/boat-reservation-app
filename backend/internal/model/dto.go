@@ -319,3 +319,18 @@ type MyBookingView struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 	ExpiresAt   time.Time  `json:"expiresAt"`
 }
+
+// POST /admin/bookings/:bookingId/move
+type AdminMoveBookingRequest struct {
+	Date      string `json:"date"      binding:"required"`
+	Time      string `json:"time"      binding:"required"`
+	RouteName string `json:"routeName" binding:"required"`
+}
+
+type AdminMoveBookingResponse struct {
+	BookingID string `json:"bookingId"`
+	Date      string `json:"date"`
+	Time      string `json:"time"`
+	RouteName string `json:"routeName"`
+	Status    string `json:"status"`
+}

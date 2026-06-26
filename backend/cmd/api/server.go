@@ -1,13 +1,14 @@
 package main
 
 import (
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"log/slog"
 	"net/http"
 	"os"
 	_ "strings"
 	"time"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -114,6 +115,8 @@ func ProvideRouter(
 
 	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware(adminRepo))
 	{
+		admin.DELETE("/slots/:date/:time/:route", adminH.DeleteSlot)
+		admin.POST("/bookings/:bookingId/move", adminH.MoveBooking)
 		admin.GET("/bookings", adminH.ListBookings)
 		admin.GET("/slots/:date/:time/:route/bookings", adminH.GetSlotBookings)
 		admin.PUT("/slots/:date/:time/:route", adminH.UpsertSlot)

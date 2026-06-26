@@ -83,3 +83,18 @@ export function useUncancelSlot(date: string) {
     },
   });
 }
+
+export function useDeleteSlot(date: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ time, route }: { time: string; route: string }) =>
+        adminFetch<void>(`/admin/slots/${date}/${time}/${route}`, {
+          method: 'DELETE',
+          parseJson: false,
+        }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['slots', date] });
+      qc.invalidateQueries({ queryKey: ['availability'] });
+    },
+  });
+}

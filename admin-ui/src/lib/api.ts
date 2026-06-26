@@ -9,16 +9,20 @@ export class ApiError extends Error {
   }
 }
 
-export async function adminFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function adminFetch<T>(
+    path: string,
+    init: RequestInit & { parseJson?: boolean } = {},
+): Promise<T> {
+  const { parseJson = true, ...rest } = init;
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new ApiError(401, 'NOT_AUTHENTICATED');
 
-  const res = await fetch(`/api${path}`, {   // ← was `${BASE}/api${path}`
-    ...init,
+  const res = await fetch(`/api${path}`, {
+    ...rest,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
-      ...(init.headers as Record<string, string> ?? {}),
+      ...(rest.headers as Record<string, string> ?? {}),
     },
   });
 
@@ -27,6 +31,7 @@ export async function adminFetch<T>(path: string, init: RequestInit = {}): Promi
     throw new ApiError(res.status, err.message ?? 'Request failed');
   }
 
+  if (!parseJson || res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 

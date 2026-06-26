@@ -28,6 +28,8 @@ type SlotRepository interface {
 	Uncancel(ctx context.Context, date, time, route string) error
 
 	Upsert(ctx context.Context, s model.Slot) (result *model.Slot, created bool, err error)
+
+	Delete(ctx context.Context, date, time, route string) error
 }
 
 type slotRepo struct {
@@ -191,6 +193,19 @@ func (r *slotRepo) Upsert(ctx context.Context, s model.Slot) (*model.Slot, bool,
 		return nil, wasCreated, err
 	}
 	return final, wasCreated, nil
+}
+
+func (r *slotRepo) Delete(ctx context.Context, date, time, route string) error {
+	res := r.tx(ctx).
+		Where("date = ? AND time = ? AND route_name = ?", date, time, route).
+		Delete(&model.Slot{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // timeNow is a small indirection to allow injecting a clock in future tests.

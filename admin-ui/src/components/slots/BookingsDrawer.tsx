@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Drawer } from '@/components/Drawer';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ConfirmInline } from '@/components/ConfirmInline';
+import { BookingMoveModal } from './BookingMoveModal';
 import { useSlotBookings, useCancelBooking } from '@/hooks/useSlotBookings';
 import { toast } from '@/hooks/useToast';
 import { Booking } from '@/lib/types';
@@ -110,10 +111,14 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
   slotCancelled?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [reason, setReason] = useState('');
   const { mutateAsync, isPending } = useCancelBooking(date, time, route);
 
-  const canCancel = !slotCancelled && (booking.status === 'pending' || booking.status === 'confirmed');
+  // Only pending/confirmed bookings can be cancelled or moved.
+  const isMovable = booking.status === 'pending' || booking.status === 'confirmed';
+  const canCancel = !slotCancelled && isMovable;
+  const canMove = isMovable;
 
   const handleCancel = async () => {
     if (!reason.trim()) return;
@@ -148,10 +153,19 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
           </div>
         </div>
 
-        {canCancel && !confirming && (
-            <button className="btn btn-danger btn-sm mt-8" onClick={() => setConfirming(true)}>
-              Скасувати
-            </button>
+        {!confirming && (canMove || canCancel) && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              {canMove && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setMoveOpen(true)}>
+                    ⇄ Перемістити
+                  </button>
+              )}
+              {canCancel && (
+                  <button className="btn btn-danger btn-sm" onClick={() => setConfirming(true)}>
+                    Скасувати
+                  </button>
+              )}
+            </div>
         )}
 
         {confirming && (
@@ -174,6 +188,15 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
               </div>
             </ConfirmInline>
         )}
+
+        <BookingMoveModal
+            open={moveOpen}
+            onClose={() => setMoveOpen(false)}
+            booking={booking}
+            fromDate={date}
+            fromTime={time}
+            fromRoute={route}
+        />
       </div>
   );
 }

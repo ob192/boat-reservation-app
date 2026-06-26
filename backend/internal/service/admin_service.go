@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,7 @@ import (
 var (
 	ErrAlreadyBlocked   = errors.New("ALREADY_BLOCKED")
 	ErrAlreadyCancelled = errors.New("ALREADY_CANCELLED")
+	ErrSlotNotEmpty     = errors.New("SLOT_NOT_EMPTY")
 )
 
 // AdminService implements all /admin/* business logic.
@@ -68,6 +70,10 @@ type AdminService interface {
 	GetSlotBookings(ctx context.Context, date, time, route string) (*model.AdminSlotBookingsResponse, error)
 
 	ListBookings(ctx context.Context, date, status string, limit, offset int) (*model.AdminBookingHistoryResponse, error)
+
+	MoveBooking(ctx context.Context, bookingID uuid.UUID, date, slotTime, route string) (*model.AdminMoveBookingResponse, error)
+
+	DeleteSlot(ctx context.Context, date, time, route string) error
 }
 
 type adminService struct {
@@ -499,6 +505,108 @@ func (s *adminService) UncancelSlot(
 		return nil, err
 	}
 	return &model.AdminUncancelSlotResponse{Date: date, Time: slotTime, RouteName: route, Cancelled: false}, nil
+}
+
+func (s *adminService) MoveBooking(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	date, slotTime, route string,
+) (*model.AdminMoveBookingResponse, error) {
+	if !IsValidRoute(route) {
+		return nil, ErrInvalidRoute
+	}
+	if !IsValidSlotTime(slotTime) {
+		return nil, ErrInvalidInput
+	}
+	if _, err := time.Parse("2006-01-02", date); err != nil {
+		return nil, ErrInvalidInput
+	}
+
+	var resp *model.AdminMoveBookingResponse
+	err := platform.WithTx(ctx, s.db, func(ctx context.Context) error {
+		b, err := s.bookings.FindByID(ctx, bookingID)
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrBookingNotFound
+		}
+		if err != nil {
+			return err
+		}
+
+		// Only active bookings can be moved; terminal states are immutable.
+		if b.Status != model.StatusPending && b.Status != model.StatusConfirmed {
+			return ErrBookingNotPending
+		}
+
+		// Lock the destination slot and verify it can take this booking.
+		slot, err := s.slots.LockForUpdate(ctx, date, slotTime, route)
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrSlotNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if slot.Blocked {
+			return ErrSlotBlocked
+		}
+		if slot.Cancelled {
+			return ErrSlotCancelled
+		}
+
+		bookedBig, bookedMedium, bookedSmall, err := s.bookings.SumActiveQuantitiesForSlot(ctx, date, slotTime, route)
+		if err != nil {
+			return err
+		}
+		// Exclude this booking's own quantities if it already sits on the destination slot.
+		if b.DateFormatted() == date && b.Time == slotTime && b.RouteName == route {
+			bookedBig -= b.QtyBig
+			bookedMedium -= b.QtyMedium
+			bookedSmall -= b.QtySmall
+		}
+		if b.QtyBig > slot.CapacityBig-bookedBig ||
+			b.QtyMedium > slot.CapacityMedium-bookedMedium ||
+			b.QtySmall > slot.CapacitySmall-bookedSmall {
+			return ErrSlotTaken
+		}
+
+		if err := s.bookings.Move(ctx, bookingID, date, slotTime, route); err != nil {
+			return err
+		}
+
+		resp = &model.AdminMoveBookingResponse{
+			BookingID: b.ID.String(),
+			Date:      date,
+			Time:      slotTime,
+			RouteName: route,
+			Status:    string(b.Status),
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *adminService) DeleteSlot(ctx context.Context, date, slotTime, route string) error {
+	return platform.WithTx(ctx, s.db, func(ctx context.Context) error {
+		if _, err := s.slots.LockForUpdate(ctx, date, slotTime, route); err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrSlotNotFound
+			}
+			return err
+		}
+
+		// "Empty" = no confirmed bookings and no unexpired pending holds.
+		bookedBig, bookedMedium, bookedSmall, err := s.bookings.SumActiveQuantitiesForSlot(ctx, date, slotTime, route)
+		if err != nil {
+			return err
+		}
+		if bookedBig > 0 || bookedMedium > 0 || bookedSmall > 0 {
+			return ErrSlotNotEmpty
+		}
+
+		return s.slots.Delete(ctx, date, slotTime, route)
+	})
 }
 
 func (s *adminService) toAdminEntry(b model.Booking) model.AdminBookingListEntry {

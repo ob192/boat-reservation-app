@@ -1194,3 +1194,317 @@ h1, h2, h3, h4 {
   border: 1px solid rgba(224, 90, 78, 0.4);
   font-weight: 700;
 }
+/* ── Move booking modal ──────────────────────────────────────────
+   Append these rules to the END of globals.css
+   ──────────────────────────────────────────────────────────────── */
+
+/* The widened modal box for the move picker (calendar + slots side by side).
+   The shared Modal accepts an optional `wide` prop that adds `.modal-box--wide`. */
+.modal-box.modal-box--wide {
+  max-width: 620px;
+}
+
+/* From → To transfer header — the signature element of the move flow */
+.move-transfer {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.move-node {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--mist);
+  background: var(--cream);
+  min-width: 0;
+}
+
+.move-node-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+
+.move-node-route {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.move-node-when {
+  font-size: 0.78rem;
+  color: var(--subtle);
+}
+
+.move-node-time {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.1;
+}
+
+.move-node-empty {
+  font-size: 0.82rem;
+  color: var(--subtle);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.move-node-dest {
+  border-style: dashed;
+}
+
+.move-node-dest.is-set {
+  border-style: solid;
+  border-color: var(--teal);
+  background: rgba(14, 124, 123, 0.06);
+}
+
+.move-arrow {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  color: var(--teal);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Booking summary chip under the transfer header */
+.move-booking-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(201, 146, 42, 0.08);
+  border: 1px solid rgba(201, 146, 42, 0.25);
+}
+
+/* Picker grid: calendar on the left, slot pills on the right */
+.move-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.move-slots {
+  min-width: 0;
+}
+
+.move-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.move-slot-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--mist);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+}
+
+.move-slot-pill:hover:not(.disabled) {
+  border-color: var(--teal);
+  background: var(--cream);
+}
+
+.move-slot-pill.active {
+  border-color: var(--teal);
+  background: rgba(14, 124, 123, 0.10);
+  box-shadow: 0 0 0 3px rgba(14, 124, 123, 0.12);
+}
+
+.move-slot-pill.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+          -45deg,
+          white,
+          white 6px,
+          rgba(224, 90, 78, 0.05) 6px,
+          rgba(224, 90, 78, 0.05) 12px
+  );
+}
+
+.move-slot-time {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.move-slot-tag {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(14, 124, 123, 0.12);
+  color: var(--teal);
+  margin-left: auto;
+}
+
+.move-slot-tag.danger {
+  background: rgba(224, 90, 78, 0.12);
+  color: var(--coral);
+}
+
+/* Capacity fit preview */
+.move-fit {
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  border: 1px solid var(--mist);
+  background: var(--cream);
+}
+
+.move-fit.ok {
+  border-color: rgba(14, 124, 123, 0.3);
+  background: rgba(14, 124, 123, 0.06);
+}
+
+.move-fit.over {
+  border-color: rgba(224, 90, 78, 0.35);
+  background: rgba(224, 90, 78, 0.06);
+}
+
+.move-fit-head {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+
+.move-fit.over .move-fit-head {
+  color: var(--coral);
+}
+
+.move-fit.ok .move-fit-head {
+  color: var(--teal);
+}
+
+.move-fit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.move-fit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.move-fit-label {
+  width: 64px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--subtle);
+}
+
+.move-fit-need {
+  width: 64px;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.move-fit-need.bad {
+  color: var(--coral);
+}
+
+@media (max-width: 560px) {
+  /* Cap the move modal to the viewport and scroll its body internally so the
+     transfer header and footer stay put instead of the whole page scrolling.
+     Scoped to the wide (move) modal to avoid touching the other modals. */
+  .modal-box--wide {
+    max-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-box--wide .modal-header,
+  .modal-box--wide .modal-footer {
+    flex-shrink: 0;
+  }
+  .modal-box--wide .modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 14px;
+  }
+
+  .move-picker {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  /* Single scroll region on mobile: let the slot pills flow with the body
+     rather than trapping them in a nested scroll box. */
+  .move-slot-list {
+    max-height: none;
+  }
+
+  .move-transfer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .move-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+    font-size: 1.2rem;
+  }
+
+  /* Tighten the transfer cards so both fit without the header scrolling away. */
+  .move-node {
+    padding: 10px 12px;
+  }
+  .move-node-time {
+    font-size: 1.2rem;
+  }
+
+  /* Full-width route selector on mobile (mirrors globals' ≤480px rule). */
+  .move-picker + .form-group .route-selector,
+  .form-group .route-selector {
+    display: flex;
+    width: 100%;
+  }
+  .form-group .route-selector-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Very narrow phones: stack the fit rows' label/need above the bar so the
+     capacity bar keeps a usable width. */
+  .move-fit-row {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .move-fit-label { width: auto; }
+  .move-fit-need { width: auto; margin-left: auto; }
+  .move-fit-row .slots-bar { flex-basis: 100%; }
+}
