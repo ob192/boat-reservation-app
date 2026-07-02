@@ -190,7 +190,7 @@ export function BookingMoveModal({ open, onClose, booking, fromDate, fromTime, f
             </div>
 
             <div className="move-picker">
-                <Calendar selected={destDate} onSelect={onPickDate} route={destRoute} />
+                <Calendar selected={destDate} onSelect={onPickDate} route={destRoute} allowPast={false} />
 
                 <div className="move-slots">
                     <div className="form-label" style={{ marginBottom: 8 }}>

@@ -18,16 +18,18 @@ function getFirstDayOfWeek(year: number, month: number) {
 interface CalendarProps {
   selected: string;
   onSelect: (date: string) => void;
-  route: string;            // NEW
+  route: string;
+  /** Allow selecting days before today. Defaults to true (admin can review the past). */
+  allowPast?: boolean;
 }
 
-export function Calendar({ selected, onSelect, route }: CalendarProps) {
+export function Calendar({ selected, onSelect, route, allowPast = true }: CalendarProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
   const monthStr = formatMonth(new Date(viewYear, viewMonth, 1));
-  const { data: avail } = useAvailability(monthStr, route);   // route added
+  const { data: avail } = useAvailability(monthStr, route);
 
   const availMap = useMemo(() => {
     const m: Record<string, { availableSlots: number; blocked: boolean }> = {};
@@ -71,51 +73,53 @@ export function Calendar({ selected, onSelect, route }: CalendarProps) {
   ];
 
   return (
-    <div className="calendar-wrap">
-      <div className="calendar-header">
-        <button className="btn btn-ghost btn-sm" onClick={prevMonth}>‹</button>
-        <span className="calendar-month-label">
+      <div className="calendar-wrap">
+        <div className="calendar-header">
+          <button className="btn btn-ghost btn-sm" onClick={prevMonth}>‹</button>
+          <span className="calendar-month-label">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
-        <button className="btn btn-ghost btn-sm" onClick={nextMonth}>›</button>
+          <button className="btn btn-ghost btn-sm" onClick={nextMonth}>›</button>
+        </div>
+
+        <div className="calendar-grid">
+          {DOW_LABELS.map(d => (
+              <div key={d} className="calendar-dow">{d}</div>
+          ))}
+
+          {cells.map((day, i) => {
+            if (!day) return <div key={`e-${i}`} className="calendar-day day-empty" />;
+
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isToday = dateStr === todayStr;
+            const isSelected = dateStr === selected;
+            const isPast = dateStr < todayStr;
+            const disabled = isPast && !allowPast;
+            const isBlocked = availMap[dateStr]?.blocked;
+            const dot = getDotClass(dateStr);
+
+            const classes = [
+              'calendar-day',
+              isSelected ? 'day-selected' : '',
+              isToday && !isSelected ? 'day-today' : '',
+              isPast ? 'day-past' : '',
+              disabled ? 'day-disabled' : '',
+              isBlocked && !isSelected ? 'day-blocked' : '',
+            ].filter(Boolean).join(' ');
+
+            return (
+                <div
+                    key={dateStr}
+                    className={classes}
+                    onClick={() => !disabled && onSelect(dateStr)}
+                    title={isBlocked ? 'Заблоковано' : undefined}
+                >
+                  {day}
+                  {dot && !isSelected && <span className={`day-dot ${dot}`} />}
+                </div>
+            );
+          })}
+        </div>
       </div>
-
-      <div className="calendar-grid">
-        {DOW_LABELS.map(d => (
-          <div key={d} className="calendar-dow">{d}</div>
-        ))}
-
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e-${i}`} className="calendar-day day-empty" />;
-
-          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const isToday = dateStr === todayStr;
-          const isSelected = dateStr === selected;
-          const isPast = dateStr < todayStr;
-          const isBlocked = availMap[dateStr]?.blocked;
-          const dot = getDotClass(dateStr);
-
-          const classes = [
-            'calendar-day',
-            isSelected ? 'day-selected' : '',
-            isToday && !isSelected ? 'day-today' : '',
-            isPast ? 'day-past' : '',
-            isBlocked && !isSelected ? 'day-blocked' : '',
-          ].filter(Boolean).join(' ');
-
-          return (
-            <div
-              key={dateStr}
-              className={classes}
-              onClick={() => !isPast && onSelect(dateStr)}
-              title={isBlocked ? 'Заблоковано' : undefined}
-            >
-              {day}
-              {dot && !isSelected && <span className={`day-dot ${dot}`} />}
-            </div>
-          );
-        })}
-      </div>
-    </div>
   );
 }

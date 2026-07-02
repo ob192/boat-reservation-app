@@ -10,10 +10,12 @@ import { SlotCreateModal } from '@/components/slots/SlotCreateModal';
 import { useSlots } from '@/hooks/useSlots';
 import { formatDate } from '@/lib/api';
 import { RouteName } from '@/lib/routes';
+import { DayReportDrawer } from '@/components/slots/DayReportDrawer';
 
 function SlotsList({ date, route }: { date: string; route: RouteName }) {
     const { data, isLoading, isError } = useSlots(date, route);
     const [createOpen, setCreateOpen] = useState(false);
+    const [reportOpen, setReportOpen] = useState(false);
 
     if (isLoading) {
         return (
@@ -45,22 +47,27 @@ function SlotsList({ date, route }: { date: string; route: RouteName }) {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
                 <div>
                     <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', color: 'var(--navy)', textTransform: 'capitalize' }}>
                         {formattedDate}
                     </h2>
                     {data?.dateBlocked && (
                         <span className="badge badge-blocked mt-4" style={{ display: 'inline-flex' }}>
-              🗓 Дата заблокована
-            </span>
+                            🗓 Дата заблокована
+                        </span>
                     )}
                     {data && !data.bookingsEnabled && (
                         <span className="badge badge-cancelled mt-4" style={{ display: 'inline-flex', marginLeft: 8 }}>
-              ⛔ Бронювання вимкнено
-            </span>
+                            ⛔ Бронювання вимкнено
+                        </span>
                     )}
                 </div>
+
+                {/* NEW: per-day report */}
+                <button className="btn btn-secondary btn-sm" onClick={() => setReportOpen(true)}>
+                    📋 Звіт за день
+                </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -85,6 +92,12 @@ function SlotsList({ date, route }: { date: string; route: RouteName }) {
                 onClose={() => setCreateOpen(false)}
                 date={date}
                 route={route}
+            />
+
+            <DayReportDrawer
+                open={reportOpen}
+                onClose={() => setReportOpen(false)}
+                date={date}
             />
         </div>
     );

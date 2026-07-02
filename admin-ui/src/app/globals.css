@@ -640,7 +640,8 @@ h1, h2, h3, h4 {
   position: relative;
 }
 
-.calendar-day:hover:not(.day-empty):not(.day-past) {
+/* was: .calendar-day:hover:not(.day-empty):not(.day-past) */
+.calendar-day:hover:not(.day-empty):not(.day-disabled) {
   background: var(--cream);
   border-color: var(--mist);
 }
@@ -657,11 +658,15 @@ h1, h2, h3, h4 {
   font-weight: 700;
 }
 
+/* replaced the old .calendar-day.day-past block with these two */
 .calendar-day.day-past {
+  color: var(--subtle);
+}
+
+.calendar-day.day-disabled {
   color: var(--mist);
   cursor: default;
 }
-
 .calendar-day.day-blocked {
   background: rgba(224, 90, 78, 0.06);
   color: var(--coral);
