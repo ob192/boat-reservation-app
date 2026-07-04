@@ -23,16 +23,18 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const initials = user.user_metadata?.full_name
-    ? user.user_metadata.full_name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : user.email?.[0]?.toUpperCase() ?? '?';
+  const isGuest = !user.email;
 
-  const displayName = user.user_metadata?.full_name ?? user.email ?? '';
+  const initials = user.user_metadata?.full_name
+      ? user.user_metadata.full_name
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+      : user.email?.[0]?.toUpperCase() ?? 'Г';
+
+  const displayName = user.user_metadata?.full_name ?? user.email ?? 'Гість';
   const avatarUrl = user.user_metadata?.avatar_url;
 
   const handleSignOut = async () => {
@@ -67,7 +69,7 @@ export function UserMenu() {
         <div className="user-menu-dropdown" role="menu">
           <div className="user-menu-info">
             <div className="user-menu-name">{displayName}</div>
-            <div className="user-menu-email">{user.email}</div>
+            {!isGuest && <div className="user-menu-email">{user.email}</div>}
           </div>
           <button className="user-menu-btn" onClick={handleSignOut} role="menuitem" type="button">
             Вийти

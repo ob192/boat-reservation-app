@@ -68,3 +68,43 @@
   transition: border-color 0.15s, box-shadow 0.15s;
   min-height: 44px;
 }
+
+/* Guest / anonymous button */
+.btn-guest {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--mist);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 44px;
+}
+
+.btn-google:disabled,
+.btn-guest:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--subtle);
+  font-size: 0.7rem;
+  margin: 1.1rem 0;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--mist);
+}
+
+@media (hover: hover) {
+  .btn-guest:hover:not(:disabled) { border-color: #a1a1aa; background: var(--surface); }
+}

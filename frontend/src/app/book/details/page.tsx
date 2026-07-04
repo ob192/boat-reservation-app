@@ -70,6 +70,8 @@ function ShieldHeartIcon() {
 
 export default function DetailsPage() {
     const user = useUser();
+    const isGuest = !user?.email;
+
     const router = useRouter();
     const {
         selectedRoute, selectedDate, selectedTime, quantities,
@@ -255,14 +257,22 @@ export default function DetailsPage() {
                         </label>
                         <input
                             id="email"
-                            className="bk-field-input bk-field-input--readonly"
+                            className={`bk-field-input ${isGuest ? '' : 'bk-field-input--readonly'} ${
+                                isGuest && errors.email ? 'bk-field-input--error' : ''
+                            }`}
                             type="email"
-                            readOnly
+                            readOnly={!isGuest}
+                            placeholder="you@example.com"
                             {...register('email')}
                             autoComplete="email"
                         />
+                        {isGuest && errors.email && (
+                            <span className="bk-field-error">{errors.email.message}</span>
+                        )}
                         <span className="bk-field-hint">
-                            Пов'язано з вашим обліковим записом
+                            {isGuest
+                                ? 'Надішлемо підтвердження та квиток на цю адресу'
+                                : "Пов'язано з вашим обліковим записом"}
                         </span>
                     </div>
 
