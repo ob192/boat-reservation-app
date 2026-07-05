@@ -56,6 +56,31 @@ export interface Booking {
   createdAt: string;
   posterIncomingOrderId?: number | null;
   posterIncomingTransactionId?: number | null;
+  // Frozen promo snapshot taken at booking time — null/absent if no promo was used.
+  promoCode?: string | null;
+  discountPercent?: number | null;
+  discountAmount?: number | null;
+}
+
+// ── Promocodes ────────────────────────────────────────────────────
+export interface Promocode {
+  code: string;
+  discountPercent: number;
+  maxUses: number;
+  timesUsed: number;           // only increments once a booking is confirmed (paid)
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface PromocodeListResponse {
+  promocodes: Promocode[];
+}
+
+export interface CreatePromocodeRequest {
+  code: string;
+  discountPercent: number;
+  maxUses: number;
 }
 
 export interface SlotBookingsResponse {

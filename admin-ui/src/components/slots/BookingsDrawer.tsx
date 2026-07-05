@@ -11,6 +11,7 @@ import { Booking } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { routeLabel } from '@/lib/routes';
 import { PosterCopy, CopyText } from '@/components/PosterCopy';
+import { PromoBadge } from '@/components/PromoBadge';
 
 interface BookingsDrawerProps {
   open: boolean;
@@ -145,6 +146,11 @@ function BookingRow({ booking, date, time, route, slotCancelled }: {
             <PosterCopy
                 orderId={booking.posterIncomingOrderId}
                 transactionId={booking.posterIncomingTransactionId}
+            />
+            <PromoBadge
+                code={booking.promoCode}
+                discountPercent={booking.discountPercent}
+                discountAmount={booking.discountAmount}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>

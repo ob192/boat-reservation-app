@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Drawer } from '@/components/Drawer';
 import { StatusBadge } from '@/components/StatusBadge';
 import { PosterCopy, CopyText } from '@/components/PosterCopy';
+import { PromoBadge } from '@/components/PromoBadge';
 import { useDayBookings } from '@/hooks/useDayBookings';
 import { toast } from '@/hooks/useToast';
 import { Booking } from '@/lib/types';
@@ -117,12 +118,17 @@ function buildDayText(date: string, groups: SlotGroup[]): string {
 
     const tot = sumBoats(all);
     const amount = all.reduce((s, b) => s + b.effectiveAmount, 0);
+    const discount = all.reduce((s, b) => s + (b.discountAmount ?? 0), 0);
+    const promoCount = all.filter(b => b.promoCode).length;
     lines.push(
         '', '═'.repeat(40),
         `Всього бронювань: ${all.length}`,
         `Човни — В:${tot.big} · С:${tot.medium} · М:${tot.small} · Д:${tot.child}`,
         `Сума: ${amount.toFixed(2)} ₴`,
     );
+    if (discount > 0) {
+        lines.push(`Знижки (${promoCount} з промокодом): −${discount.toFixed(2)} ₴`);
+    }
     return lines.join('\n');
 }
 
@@ -166,6 +172,11 @@ function ReportRow({ b, idx }: { b: Booking; idx: number }) {
                         orderId={b.posterIncomingOrderId}
                         transactionId={b.posterIncomingTransactionId}
                     />
+                    <PromoBadge
+                        code={b.promoCode}
+                        discountPercent={b.discountPercent}
+                        discountAmount={b.discountAmount}
+                    />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <StatusBadge status={b.status} />
@@ -187,6 +198,8 @@ export function DayReportDrawer({ open, onClose, date }: DayReportDrawerProps) {
     const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
     const totals = sumBoats(active);
     const totalAmount = active.reduce((s, b) => s + b.effectiveAmount, 0);
+    const totalDiscount = active.reduce((s, b) => s + (b.discountAmount ?? 0), 0);
+    const promoCount = active.filter(b => b.promoCode).length;
 
     const subtitleParts: string[] = [];
     if (active.length) subtitleParts.push(`${active.length} активних`);
@@ -247,8 +260,20 @@ export function DayReportDrawer({ open, onClose, date }: DayReportDrawerProps) {
                                     Човни — {`В:${totals.big} · С:${totals.medium} · М:${totals.small} · Д:${totals.child}`}
                                 </div>
                             </div>
-                            <div className="booking-amount">{totalAmount.toFixed(2)} ₴</div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div className="booking-amount">{totalAmount.toFixed(2)} ₴</div>
+                                {totalDiscount > 0 && (
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--coral)', fontWeight: 600, marginTop: 2 }}>
+                                        🎟 Знижки: −{totalDiscount.toFixed(2)} ₴
+                                    </div>
+                                )}
+                            </div>
                         </div>
+                        {totalDiscount > 0 && (
+                            <div className="text-subtle" style={{ fontSize: '0.78rem', marginBottom: 10 }}>
+                                Промокоди застосовано у {promoCount} з {active.length} бронювань
+                            </div>
+                        )}
                         <CopyBtn
                             text={buildDayText(date, groups)}
                             label="Копіювати весь день"

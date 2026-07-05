@@ -8,6 +8,7 @@ import { useBookingHistory } from '@/hooks/useBookingHistory';
 import { routeLabel } from '@/lib/routes';
 import { Booking, BookingStatus } from '@/lib/types';
 import { PosterCopy, CopyText } from '@/components/PosterCopy';
+import { PromoBadge } from '@/components/PromoBadge';
 
 const STATUS_OPTIONS: { value: '' | BookingStatus; label: string }[] = [
     { value: '', label: 'Усі статуси' },
@@ -46,6 +47,7 @@ function HistoryRow({ b }: { b: Booking }) {
             <td>
                 <div className="booking-name">{b.firstName} {b.lastName}</div>
                 <div className="booking-contact">{b.userEmail}{b.phone && <><span style={{color:'var(--mist)',margin:'0 4px'}}>·</span><CopyText value={b.phone} /></>}</div>
+                <PromoBadge code={b.promoCode} discountPercent={b.discountPercent} discountAmount={b.discountAmount} />
             </td>
             <td style={{ whiteSpace: 'nowrap' }} title="Великі · Середні · Малі · Діти">{boatsLine(b.quantities)}</td>
             <td className="booking-amount" style={{ whiteSpace: 'nowrap' }}>{b.effectiveAmount.toFixed(2)} ₴</td>
@@ -83,6 +85,7 @@ function HistoryCard({ b }: { b: Booking }) {
                 orderId={b.posterIncomingOrderId}
                 transactionId={b.posterIncomingTransactionId}
             />
+            <PromoBadge code={b.promoCode} discountPercent={b.discountPercent} discountAmount={b.discountAmount} />
 
             <div className="text-subtle mt-4" style={{ fontSize: '0.78rem' }}>
                 Створено: {fmtCreated(b.createdAt)}
