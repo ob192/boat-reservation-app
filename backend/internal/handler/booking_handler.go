@@ -79,6 +79,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		FirstName:      req.Contact.FirstName,
 		LastName:       req.Contact.LastName,
 		Phone:          req.Contact.Phone,
+		PromoCode:      req.PromoCode,
 	}
 	b, err := h.bookingSvc.Create(c.Request.Context(), in)
 	if err != nil {
@@ -87,9 +88,12 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 
 	httpx.Created(c, model.CreateBookingResponse{
-		BookingID:   b.ID.String(),
-		TotalAmount: b.TotalAmount,
-		ExpiresAt:   b.ExpiresAt,
+		BookingID:       b.ID.String(),
+		TotalAmount:     b.TotalAmount,
+		ExpiresAt:       b.ExpiresAt,
+		PromoCode:       b.PromoCode,
+		DiscountPercent: b.DiscountPercent,
+		DiscountAmount:  b.DiscountAmount,
 	})
 }
 
@@ -228,6 +232,12 @@ func mapBookingError(c *gin.Context, err error, log *slog.Logger) {
 		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidRoute, err.Error())
 	case errors.Is(err, service.ErrSlotCancelled):
 		httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodeSlotCancelled, "")
+	case errors.Is(err, service.ErrPromoNotFound):
+		httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodePromoNotFound, "")
+	case errors.Is(err, service.ErrPromoInactive):
+		httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodePromoInactive, "")
+	case errors.Is(err, service.ErrPromoExhausted):
+		httpx.Err(c, http.StatusUnprocessableEntity, httpx.CodePromoExhausted, "")
 	default:
 		log.Error("booking error", "err", err)
 		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")

@@ -28,6 +28,7 @@ func InitializeServer() (*Server, error) {
 		repository.NewDateBlockRepository,
 		repository.NewSystemRepository,
 		repository.NewAdminRepository,
+		repository.NewPromocodeRepository,
 
 		// 3. Providers & Gateway
 		ProvidePaymentGateway,
@@ -36,6 +37,7 @@ func InitializeServer() (*Server, error) {
 		// 4. Services
 		service.NewAuthService,
 		service.NewPricingService,
+		service.NewPromocodeService,
 		service.NewAvailabilityService,
 		service.NewBookingService,
 		service.NewCheckoutService,
@@ -46,6 +48,7 @@ func InitializeServer() (*Server, error) {
 		// 5. Handlers
 		handler.NewAvailabilityHandler,
 		handler.NewBookingHandler,
+		handler.NewPromocodeHandler,
 		handler.NewCheckoutHandler,
 		handler.NewWebhookHandler,
 		handler.NewAdminHandler,

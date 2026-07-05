@@ -12,16 +12,29 @@ import (
 
 // PosterProduct is one line on the incoming order.
 type PosterProduct struct {
-	ProductID int `json:"product_id"`
-	Count     int `json:"count"`
+	ProductID int    `json:"product_id"`
+	Count     int    `json:"count"`
+	Price     *int64 `json:"price,omitempty"` // kopecks; omit to use Poster's catalog price
+}
+
+// PosterPayment records prepayment info (Poster expects kopecks).
+type PosterPayment struct {
+	Type     int    `json:"type"`     // 1 = prepaid
+	Sum      int64  `json:"sum"`      // kopecks
+	Currency string `json:"currency"` // must match account currency, e.g. "UAH"
 }
 
 // PosterOrder is the createIncomingOrder request body.
 type PosterOrder struct {
 	SpotID      int             `json:"spot_id"`
 	ServiceMode int             `json:"service_mode"`
+	FirstName   string          `json:"first_name,omitempty"`
+	LastName    string          `json:"last_name,omitempty"`
 	Phone       string          `json:"phone"`
+	Email       string          `json:"email,omitempty"`
+	Comment     string          `json:"comment,omitempty"`
 	Products    []PosterProduct `json:"products"`
+	Payment     *PosterPayment  `json:"payment,omitempty"`
 }
 
 // PosterOrderResult is the subset of the response we persist.

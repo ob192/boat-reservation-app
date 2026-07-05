@@ -38,6 +38,10 @@ const (
 	CodeWebhookFailed      = "WEBHOOK_PROCESSING_FAILED"
 	CodeInvalidRoute       = "INVALID_ROUTE"
 	CodeSlotNotEmpty       = "SLOT_NOT_EMPTY"
+	CodePromoNotFound      = "PROMO_NOT_FOUND"
+	CodePromoInactive      = "PROMO_INACTIVE"
+	CodePromoExhausted     = "PROMO_EXHAUSTED"
+	CodePromoAlreadyExists = "PROMO_ALREADY_EXISTS"
 )
 
 // Issue describes a single field-level validation problem.

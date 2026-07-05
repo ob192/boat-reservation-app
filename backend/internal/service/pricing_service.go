@@ -1,6 +1,10 @@
 package service
 
-import "github.com/harbour-wave/harbour-wave-backend/internal/model"
+import (
+	"math"
+
+	"github.com/harbour-wave/harbour-wave-backend/internal/model"
+)
 
 const (
 	RouteDesna    = "Desna"
@@ -43,6 +47,7 @@ type PricingService interface {
 	ComputeTotal(routeName string, q model.Quantities) float64
 	EffectiveAmount(total float64, override *float64) float64
 	RoutePrice(routeName string) (RoutePricing, bool)
+	ApplyDiscount(total float64, discountPercent int) (discounted float64, discountAmount float64)
 }
 
 type pricingService struct{}
@@ -71,4 +76,24 @@ func (pricingService) EffectiveAmount(total float64, override *float64) float64 
 
 func (pricingService) RoutePrice(routeName string) (RoutePricing, bool) {
 	return RoutePriceFor(routeName)
+}
+
+// ApplyDiscount returns the net total and the discount amount (both 2-dp rounded).
+func (pricingService) ApplyDiscount(total float64, discountPercent int) (float64, float64) {
+	if discountPercent <= 0 || total <= 0 {
+		return round2(total), 0
+	}
+	if discountPercent >= 100 {
+		return 0, round2(total)
+	}
+	discount := round2(total * float64(discountPercent) / 100)
+	discounted := round2(total - discount)
+	if discounted < 0 {
+		discounted = 0
+	}
+	return discounted, discount
+}
+
+func round2(v float64) float64 {
+	return math.Round(v*100) / 100
 }

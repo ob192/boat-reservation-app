@@ -57,6 +57,11 @@ type Booking struct {
 	OverriddenBy   *uuid.UUID `gorm:"type:uuid" json:"overriddenBy,omitempty"`
 	OverriddenAt   *time.Time `json:"overriddenAt,omitempty"`
 
+	// Promocode snapshot (nil = no promo applied).
+	PromoCode       *string  `gorm:"type:varchar(64);index" json:"promoCode,omitempty"`
+	DiscountPercent *int     `json:"discountPercent,omitempty"`
+	DiscountAmount  *float64 `gorm:"type:decimal(10,2)" json:"discountAmount,omitempty"`
+
 	Status BookingStatus `gorm:"type:varchar(20);not null;index" json:"status"`
 
 	CancelledBy  *uuid.UUID `gorm:"type:uuid" json:"cancelledBy,omitempty"`

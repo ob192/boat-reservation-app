@@ -81,6 +81,7 @@ func ProvideRouter(
 	adminRepo repository.AdminRepository,
 	availabilityH *handler.AvailabilityHandler,
 	bookingH *handler.BookingHandler,
+	promocodeH *handler.PromocodeHandler,
 	checkoutH *handler.CheckoutHandler,
 	webhookH *handler.WebhookHandler,
 	adminH *handler.AdminHandler,
@@ -111,6 +112,7 @@ func ProvideRouter(
 		protected.POST("/checkout", checkoutH.CreateCheckout)
 		protected.GET("/bookings/by-session/:sessionId", bookingH.GetBySession)
 		protected.GET("/bookings", bookingH.ListMyBookings)
+		protected.GET("/promocodes/:code", promocodeH.GetPromoCode)
 	}
 
 	admin := r.Group("/api/admin", handler.AuthMiddleware(authSvc), handler.AdminMiddleware(adminRepo))
@@ -129,6 +131,8 @@ func ProvideRouter(
 		admin.DELETE("/dates/:date/block", adminH.UnblockDate)
 		admin.PUT("/system/bookings-enabled", adminH.SetBookingsEnabled)
 		admin.POST("/bookings/:bookingId/cancel", adminH.CancelBooking)
+		admin.POST("/promocodes", adminH.CreatePromocode)
+		admin.GET("/promocodes", adminH.ListPromocodes)
 	}
 
 	return r

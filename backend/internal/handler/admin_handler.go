@@ -16,12 +16,13 @@ import (
 )
 
 type AdminHandler struct {
-	adminSvc service.AdminService
-	log      *slog.Logger
+	adminSvc     service.AdminService
+	promocodeSvc service.PromocodeService
+	log          *slog.Logger
 }
 
-func NewAdminHandler(svc service.AdminService, log *slog.Logger) *AdminHandler {
-	return &AdminHandler{adminSvc: svc, log: log}
+func NewAdminHandler(svc service.AdminService, promocodeSvc service.PromocodeService, log *slog.Logger) *AdminHandler {
+	return &AdminHandler{adminSvc: svc, promocodeSvc: promocodeSvc, log: log}
 }
 
 // OverridePrice PATCH /admin/bookings/:bookingId/price
@@ -713,6 +714,80 @@ func (h *AdminHandler) DeleteSlot(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// CreatePromocode POST /admin/promocodes
+//
+// @Summary      Create a promocode
+// @Description  Admin endpoint to create an affiliate promocode with a percentage discount and a global usage cap.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        request body model.AdminCreatePromocodeRequest true "Promocode payload"
+// @Success      201  {object}  model.AdminPromocodeResponse
+// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      409  {object}  httpx.ErrorBody "PROMO_ALREADY_EXISTS"
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/promocodes [post]
+func (h *AdminHandler) CreatePromocode(c *gin.Context) {
+	adminID, err := GetUserIDFromContext(c)
+	if err != nil {
+		httpx.Err(c, http.StatusForbidden, httpx.CodeForbidden, "")
+		return
+	}
+	var req model.AdminCreatePromocodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, err.Error())
+		return
+	}
+	resp, err := h.promocodeSvc.Create(c.Request.Context(), req.Code, *req.DiscountPercent, *req.MaxUses, adminID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrPromoAlreadyExists):
+			httpx.Err(c, http.StatusConflict, httpx.CodePromoAlreadyExists, "")
+		case errors.Is(err, service.ErrInvalidInput):
+			httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, "")
+		default:
+			h.log.Error("admin create promocode", "err", err)
+			httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		}
+		return
+	}
+	httpx.Created(c, resp)
+}
+
+// ListPromocodes GET /admin/promocodes
+//
+// @Summary      List promocodes
+// @Description  Admin endpoint returning all promocodes (newest first), optionally filtered by the admin who created them.
+// @Tags         admin
+// @Produce      json
+// @Param        createdBy query string false "Filter by creating admin (UUID)"
+// @Success      200  {object}  model.AdminPromocodeListResponse
+// @Failure      400  {object}  httpx.ErrorBody
+// @Failure      403  {object}  httpx.ErrorBody
+// @Failure      503  {object}  httpx.ErrorBody
+// @Security     BearerAuth
+// @Router       /admin/promocodes [get]
+func (h *AdminHandler) ListPromocodes(c *gin.Context) {
+	var createdBy *uuid.UUID
+	if s := c.Query("createdBy"); s != "" {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			httpx.Err(c, http.StatusBadRequest, httpx.CodeInvalidInput, "createdBy must be a UUID")
+			return
+		}
+		createdBy = &id
+	}
+	resp, err := h.promocodeSvc.List(c.Request.Context(), createdBy)
+	if err != nil {
+		h.log.Error("admin list promocodes", "err", err)
+		httpx.Err(c, http.StatusServiceUnavailable, httpx.CodeServiceUnavailable, "")
+		return
+	}
+	httpx.OK(c, resp)
 }
 
 func parseIntDefault(s string, def int) int {

@@ -16,6 +16,7 @@ type CreateBookingRequest struct {
 	RouteName  string            `json:"routeName"  binding:"required"`
 	Quantities QuantitiesRequest `json:"quantities" binding:"required"`
 	Contact    ContactRequest    `json:"contact"    binding:"required"`
+	PromoCode  string            `json:"promoCode"` // optional
 }
 
 // QuantitiesRequest mirrors `quantities` in the request body.
@@ -37,9 +38,12 @@ type ContactRequest struct {
 
 // CreateBookingResponse is returned by POST /bookings on success.
 type CreateBookingResponse struct {
-	BookingID   string    `json:"bookingId"`
-	TotalAmount float64   `json:"totalAmount"`
-	ExpiresAt   time.Time `json:"expiresAt"`
+	BookingID       string    `json:"bookingId"`
+	TotalAmount     float64   `json:"totalAmount"` // net of any promo discount
+	ExpiresAt       time.Time `json:"expiresAt"`
+	PromoCode       *string   `json:"promoCode,omitempty"`
+	DiscountPercent *int      `json:"discountPercent,omitempty"`
+	DiscountAmount  *float64  `json:"discountAmount,omitempty"`
 }
 
 // ============================================================================
@@ -261,6 +265,9 @@ type AdminBookingListEntry struct {
 	Quantities                  Quantities `json:"quantities"`
 	TotalAmount                 float64    `json:"totalAmount"`
 	EffectiveAmount             float64    `json:"effectiveAmount"`
+	PromoCode                   *string    `json:"promoCode,omitempty"` // null = no promo
+	DiscountPercent             *int       `json:"discountPercent,omitempty"`
+	DiscountAmount              *float64   `json:"discountAmount,omitempty"`
 	Status                      string     `json:"status"`
 	CreatedAt                   time.Time  `json:"createdAt"`
 	PosterIncomingOrderID       *int64     `json:"posterIncomingOrderId,omitempty"`
@@ -333,4 +340,38 @@ type AdminMoveBookingResponse struct {
 	Time      string `json:"time"`
 	RouteName string `json:"routeName"`
 	Status    string `json:"status"`
+}
+
+// ============================================================================
+// Promocode DTOs
+// ============================================================================
+
+// POST /admin/promocodes
+type AdminCreatePromocodeRequest struct {
+	Code            string `json:"code"            binding:"required,min=1,max=64"`
+	DiscountPercent *int   `json:"discountPercent" binding:"required,gte=0,lte=100"`
+	MaxUses         *int   `json:"maxUses"         binding:"required,gte=1"`
+}
+
+type AdminPromocodeResponse struct {
+	Code            string    `json:"code"`
+	DiscountPercent int       `json:"discountPercent"`
+	MaxUses         int       `json:"maxUses"`
+	TimesUsed       int       `json:"timesUsed"`
+	Active          bool      `json:"active"`
+	CreatedBy       string    `json:"createdBy"`
+	CreatedAt       time.Time `json:"createdAt"`
+}
+
+// GET /admin/promocodes
+type AdminPromocodeListResponse struct {
+	Promocodes []AdminPromocodeResponse `json:"promocodes"`
+}
+
+// GET /promocodes/:code
+//
+// User-facing preview — deliberately exposes only the discount percentage,
+// never maxUses/timesUsed/createdBy (those are admin-only).
+type PromoPreviewResponse struct {
+	DiscountPercent int `json:"discountPercent"`
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
 	"github.com/harbour-wave/harbour-wave-backend/internal/provider"
@@ -17,23 +18,29 @@ type WebhookService interface {
 }
 
 type webhookService struct {
-	bookings repository.BookingRepository
-	emails   EmailService
-	poster   provider.PosterClient
-	log      *slog.Logger
+	bookings   repository.BookingRepository
+	promocodes repository.PromocodeRepository
+	emails     EmailService
+	poster     provider.PosterClient
+	pricing    PricingService
+	log        *slog.Logger
 }
 
 func NewWebhookService(
 	bookings repository.BookingRepository,
+	promocodes repository.PromocodeRepository,
 	emails EmailService,
 	poster provider.PosterClient,
+	pricing PricingService,
 	log *slog.Logger,
 ) WebhookService {
 	return &webhookService{
-		bookings: bookings,
-		emails:   emails,
-		log:      log,
-		poster:   poster,
+		bookings:   bookings,
+		promocodes: promocodes,
+		emails:     emails,
+		poster:     poster,
+		pricing:    pricing,
+		log:        log,
 	}
 }
 
@@ -56,6 +63,17 @@ func (s *webhookService) Handle(ctx context.Context, event provider.WebhookEvent
 		}
 		if err := s.bookings.SetStatus(ctx, booking.ID, model.StatusConfirmed); err != nil {
 			return fmt.Errorf("set confirmed: %w", err)
+		}
+
+		// Count the promocode redemption now that payment is confirmed.
+		if booking.PromoCode != nil && *booking.PromoCode != "" {
+			ok, err := s.promocodes.IncrementUsage(ctx, *booking.PromoCode)
+			if err != nil {
+				s.log.Error("promo increment failed", "err", err, "code", *booking.PromoCode, "booking_id", booking.ID)
+			} else if !ok {
+				s.log.Warn("promo cap already reached at confirmation; discount was honored",
+					"code", *booking.PromoCode, "booking_id", booking.ID)
+			}
 		}
 
 		if err := s.createPosterOrder(ctx, booking); err != nil {
@@ -94,27 +112,82 @@ func (s *webhookService) createPosterOrder(ctx context.Context, booking *model.B
 		return fmt.Errorf("booking %s has no phone, skipping poster order", booking.ID)
 	}
 
-	products := []provider.PosterProduct{
-		{ProductID: 1, Count: booking.QtyBig + booking.QtyMedium + booking.QtySmall},
-	}
-	if booking.QtyChild > 0 {
-		products = append(products, provider.PosterProduct{ProductID: 6, Count: booking.QtyChild})
-	}
-
-	order := provider.PosterOrder{
-		SpotID:      1,
-		ServiceMode: 1,
-		Phone:       *booking.Phone,
-		Products:    products,
-	}
+	order := s.buildPosterOrder(booking)
 
 	res, err := s.poster.CreateIncomingOrder(ctx, order)
 	if err != nil {
 		return err
 	}
-
 	if err := s.bookings.SetPosterIDs(ctx, booking.ID, res.IncomingOrderID, res.IncomingTransactionID); err != nil {
 		return fmt.Errorf("save poster ids: %w", err)
 	}
 	return nil
+}
+
+// buildPosterOrder maps a confirmed booking to a Poster incoming order:
+//   - full client details (name, phone, email),
+//   - per-line catalog prices in kopecks,
+//   - payment.sum = the amount actually charged (post-discount / post-override).
+func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.PosterOrder {
+	effective := s.pricing.EffectiveAmount(booking.TotalAmount, booking.PriceOverride)
+	price, hasPrice := s.pricing.RoutePrice(booking.RouteName)
+
+	products := make([]provider.PosterProduct, 0, 2)
+
+	boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall
+	if boardCount > 0 {
+		p := provider.PosterProduct{ProductID: 1, Count: boardCount}
+		if hasPrice {
+			// Boards are lumped into one product line; use the weighted list unit price.
+			listBoards := float64(booking.QtyBig)*price.Big +
+				float64(booking.QtyMedium)*price.Medium +
+				float64(booking.QtySmall)*price.Small
+			unit := toKopecks(listBoards / float64(boardCount))
+			p.Price = &unit
+		}
+		products = append(products, p)
+	}
+	if booking.QtyChild > 0 {
+		p := provider.PosterProduct{ProductID: 6, Count: booking.QtyChild}
+		if hasPrice {
+			unit := toKopecks(price.Child)
+			p.Price = &unit
+		}
+		products = append(products, p)
+	}
+
+	comment := fmt.Sprintf("Бронювання %s %s (%s)", booking.DateFormatted(), booking.Time, booking.RouteName)
+	if booking.PromoCode != nil && *booking.PromoCode != "" {
+		pct := 0
+		if booking.DiscountPercent != nil {
+			pct = *booking.DiscountPercent
+		}
+		comment += fmt.Sprintf(" | Промокод %s (-%d%%)", *booking.PromoCode, pct)
+	}
+
+	phone := ""
+	if booking.Phone != nil {
+		phone = *booking.Phone
+	}
+
+	sum := toKopecks(effective)
+	return provider.PosterOrder{
+		SpotID:      1,
+		ServiceMode: 1,
+		FirstName:   booking.FirstName,
+		LastName:    booking.LastName,
+		Phone:       phone,
+		Email:       booking.UserEmail,
+		Comment:     comment,
+		Products:    products,
+		Payment: &provider.PosterPayment{
+			Type:     1,
+			Sum:      sum,
+			Currency: "UAH",
+		},
+	}
+}
+
+func toKopecks(amount float64) int64 {
+	return int64(math.Round(amount * 100))
 }

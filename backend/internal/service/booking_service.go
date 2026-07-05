@@ -51,6 +51,8 @@ type CreateBookingInput struct {
 	FirstName string
 	LastName  string
 	Phone     string
+
+	PromoCode string // optional; empty = none
 }
 
 // BookingService is the orchestrator for booking creation and lookups.
@@ -72,6 +74,7 @@ type bookingService struct {
 	dateBlocks repository.DateBlockRepository
 	system     repository.SystemRepository
 	pricing    PricingService
+	promocodes PromocodeService
 	clock      platform.Clock
 }
 
@@ -82,6 +85,7 @@ func NewBookingService(
 	dateBlocks repository.DateBlockRepository,
 	system repository.SystemRepository,
 	pricing PricingService,
+	promocodes PromocodeService,
 	clock platform.Clock,
 ) BookingService {
 	return &bookingService{
@@ -91,6 +95,7 @@ func NewBookingService(
 		dateBlocks: dateBlocks,
 		system:     system,
 		pricing:    pricing,
+		promocodes: promocodes,
 		clock:      clock,
 	}
 }
@@ -132,6 +137,25 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 
 	// (5) Capacity tx
 	total := s.pricing.ComputeTotal(in.RouteName, in.Quantities)
+
+	// (5a) Promocode — validate + freeze the discount onto the booking.
+	var (
+		promoCodePtr *string
+		discountPct  *int
+		discountAmt  *float64
+	)
+	if raw := NormalizeCode(in.PromoCode); raw != "" {
+		pc, err := s.promocodes.Validate(ctx, raw)
+		if err != nil {
+			return nil, err // ErrPromoNotFound / ErrPromoInactive / ErrPromoExhausted
+		}
+		discounted, amount := s.pricing.ApplyDiscount(total, pc.DiscountPercent)
+		total = discounted
+		code := pc.Code
+		pct := pc.DiscountPercent
+		promoCodePtr, discountPct, discountAmt = &code, &pct, &amount
+	}
+
 	now := s.clock.Now()
 	expiresAt := now.Add(HoldDuration)
 
@@ -175,25 +199,28 @@ func (s *bookingService) Create(ctx context.Context, in CreateBookingInput) (*mo
 		t, _ := time.Parse("2006-01-02", in.Date)
 
 		b := &model.Booking{
-			ID:             uuid.New(),
-			UserID:         in.UserID,
-			UserEmail:      in.UserEmail,
-			Date:           pgtype.Date{Time: t, Valid: true},
-			Time:           in.Time,
-			RouteName:      in.RouteName,
-			QtyBig:         in.Quantities.Big,
-			QtyMedium:      in.Quantities.Medium,
-			QtySmall:       in.Quantities.Small,
-			QtyChild:       in.Quantities.Child,
-			FirstName:      in.FirstName,
-			LastName:       in.LastName,
-			Phone:          phone,
-			TotalAmount:    total,
-			Status:         model.StatusPending,
-			IdempotencyKey: in.IdempotencyKey,
-			ExpiresAt:      expiresAt,
-			CreatedAt:      now,
-			UpdatedAt:      now,
+			ID:              uuid.New(),
+			UserID:          in.UserID,
+			UserEmail:       in.UserEmail,
+			Date:            pgtype.Date{Time: t, Valid: true},
+			Time:            in.Time,
+			RouteName:       in.RouteName,
+			QtyBig:          in.Quantities.Big,
+			QtyMedium:       in.Quantities.Medium,
+			QtySmall:        in.Quantities.Small,
+			QtyChild:        in.Quantities.Child,
+			FirstName:       in.FirstName,
+			LastName:        in.LastName,
+			Phone:           phone,
+			TotalAmount:     total,
+			PromoCode:       promoCodePtr,
+			DiscountPercent: discountPct,
+			DiscountAmount:  discountAmt,
+			Status:          model.StatusPending,
+			IdempotencyKey:  in.IdempotencyKey,
+			ExpiresAt:       expiresAt,
+			CreatedAt:       now,
+			UpdatedAt:       now,
 		}
 		if err := s.bookings.Create(ctx, b); err != nil {
 			return fmt.Errorf("insert booking: %w", err)
