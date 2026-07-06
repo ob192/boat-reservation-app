@@ -37,3 +37,29 @@ func NewDB(databaseURL string, debug bool) (*gorm.DB, error) {
 
 	return db, nil
 }
+
+// NewMigrationDB opens a short-lived, single-connection handle intended only for
+// schema-changing operations (AutoMigrate) — never for serving requests. Callers
+// must Close() the returned *gorm.DB (via its sql.DB) once migration finishes.
+//
+// This must point at a direct (non-pooled) database URL. Pooled endpoints
+// (e.g. Neon/PgBouncer in transaction mode) can hand a DDL statement and a later
+// query to different physical connections that share a stale server-side cached
+// plan, which Postgres then rejects with "cached plan must not change result
+// type" (SQLSTATE 0A000) as soon as AutoMigrate alters a table's columns.
+func NewMigrationDB(directDatabaseURL string) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(directDatabaseURL), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Warn),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open postgres (migration): %w", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("get sql.DB (migration): %w", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
+	return db, nil
+}

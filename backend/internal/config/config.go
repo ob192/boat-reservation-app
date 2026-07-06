@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // Config holds all runtime configuration for the application.
@@ -10,6 +11,15 @@ import (
 type Config struct {
 	// Database
 	DatabaseURL string
+
+	// DirectDatabaseURL is a non-pooled connection used only for AutoMigrate.
+	// Neon's pooled ("-pooler") endpoint can hand a schema-changing statement and a
+	// later query to different physical connections sharing a stale server-side
+	// cached plan, which Postgres rejects with "cached plan must not change result
+	// type" (SQLSTATE 0A000) once a migration adds/changes columns mid-session.
+	// Defaults to DatabaseURL with "-pooler" stripped from the host; override via
+	// DIRECT_DATABASE_URL if the DB isn't Neon or uses a different naming scheme.
+	DirectDatabaseURL string
 
 	// Supabase
 	SupabaseURL              string
@@ -43,8 +53,10 @@ type Config struct {
 // Load reads environment variables and returns a populated Config.
 // Returns an error if any required variable is missing or malformed.
 func Load() (*Config, error) {
+	databaseURL := getenv("DATABASE_URL", "")
 	cfg := &Config{
-		DatabaseURL:              getenv("DATABASE_URL", ""),
+		DatabaseURL:              databaseURL,
+		DirectDatabaseURL:        getenv("DIRECT_DATABASE_URL", deriveDirectDatabaseURL(databaseURL)),
 		SupabaseURL:              getenv("SUPABASE_URL", ""),
 		SupabaseProjectReference: getenv("SUPABASE_PROJECT_REFERENCE", ""),
 		SupabaseAnonKey:          getenv("SUPABASE_ANON_KEY", ""),
@@ -88,4 +100,11 @@ func getenv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// deriveDirectDatabaseURL strips Neon's "-pooler" suffix from the host portion of
+// dsn, giving the direct (non-PgBouncer) endpoint. If dsn isn't a Neon pooled URL,
+// it's returned unchanged.
+func deriveDirectDatabaseURL(dsn string) string {
+	return strings.Replace(dsn, "-pooler.", ".", 1)
 }

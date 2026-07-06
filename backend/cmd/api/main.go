@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
+	"github.com/harbour-wave/harbour-wave-backend/internal/platform"
 	"github.com/harbour-wave/harbour-wave-backend/internal/service"
 )
 
@@ -32,16 +33,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. Database auto-migrations
-	if err := server.DB.AutoMigrate(
+	// 3. Database auto-migrations — run on a dedicated, non-pooled connection.
+	// See platform.NewMigrationDB for why this can't share the pooled runtime connection.
+	migrationDB, err := platform.NewMigrationDB(server.Config.DirectDatabaseURL)
+	if err != nil {
+		server.Log.Error("open migration db failed", "err", err)
+		os.Exit(1)
+	}
+	migrateErr := migrationDB.AutoMigrate(
 		&model.Booking{},
 		&model.Slot{},
 		&model.DateBlock{},
 		&model.SystemSettings{},
 		&model.Admin{},
 		&model.Promocode{},
-	); err != nil {
-		server.Log.Error("auto-migrate failed", "err", err)
+	)
+	if sqlDB, dbErr := migrationDB.DB(); dbErr == nil {
+		_ = sqlDB.Close()
+	}
+	if migrateErr != nil {
+		server.Log.Error("auto-migrate failed", "err", migrateErr)
 		os.Exit(1)
 	}
 
