@@ -9,6 +9,7 @@ import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useBookingStatus } from '@/features/booking/hooks';
 import { MESSAGES } from '@/features/booking/messages';
 import { routeLabel } from '@/features/booking/routes';
+import { getPromoReceipt, markPromoUsed } from '@/features/booking/promo';
 import { formatCurrency } from '@/shared/lib/currency';
 import { fbqTrack } from '@/shared/lib/fbq';
 
@@ -214,10 +215,26 @@ interface ConfirmationDisplayProps {
 }
 
 function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
-    const { reset } = useBookingStore();
+    const { reset, setPromoCode } = useBookingStore();
     const router = useRouter();
     const isIOS = useIsIOS();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+    // Prefer the receipt snapshot saved at booking creation; fall back to any
+    // promo fields the status endpoint may echo back.
+    const receipt = booking ? getPromoReceipt(booking.id) : null;
+    const promoCode = receipt?.promoCode ?? booking?.promoCode ?? null;
+    const discountAmount = receipt?.discountAmount ?? booking?.discountAmount ?? 0;
+    const discountPercent = receipt?.discountPercent ?? booking?.discountPercent ?? 0;
+    const hasPromo = !!promoCode && discountAmount > 0;
+
+    // Once the booking is confirmed, mark the code redeemed so a `?promo=` link
+    // won't auto-apply it to a future booking, and drop it from the store.
+    useEffect(() => {
+        if (!promoCode) return;
+        markPromoUsed(promoCode);
+        setPromoCode(null);
+    }, [promoCode, setPromoCode]);
 
     useEffect(() => {
         if (!booking) return;
@@ -371,6 +388,17 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
                                 )}
                             </div>
                         </div>
+                        {hasPromo && (
+                            <div className="bk-order-row">
+                                <span className="bk-order-key">
+                                    {MESSAGES.promo.discountRow} · {promoCode}
+                                    {discountPercent > 0 ? ` (−${discountPercent}%)` : ''}
+                                </span>
+                                <span className="bk-order-val" style={{ color: 'var(--accent, #1f9d55)' }}>
+                                    −{formatCurrency(discountAmount)}
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <div className="bk-order-total-row">
                         <span className="bk-order-total-label">До сплати</span>

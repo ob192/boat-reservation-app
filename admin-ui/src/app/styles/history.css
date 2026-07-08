@@ -1,0 +1,93 @@
+/* Booking history: filters, desktop table, mobile cards, pager. */
+.history-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.history-reset {
+  margin-bottom: 2px;
+}
+
+/* ── History: desktop table ──────────────────────── */
+.history-table-wrap { overflow-x: auto; }
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--subtle);
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mist);
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--mist);
+  font-size: 0.85rem;
+  vertical-align: top;
+}
+
+.history-table tbody tr:last-child td { border-bottom: none; }
+.history-table tbody tr:hover { background: var(--cream); }
+
+/* ── History: mobile cards (hidden on desktop) ───── */
+.history-cards { display: none; }
+
+.history-card {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--mist);
+}
+
+.history-card:last-child { border-bottom: none; }
+
+.history-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.history-card-slot {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--navy);
+}
+
+.history-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* ── History pager ───────────────────────────────── */
+.history-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .history-table-wrap { display: none; }
+  .history-cards { display: flex; flex-direction: column; }
+}
+
+@media (max-width: 480px) {
+  .history-filters .form-group { flex: 1 1 100% !important; }
+  .history-reset { width: 100%; margin-top: 4px; }
+}

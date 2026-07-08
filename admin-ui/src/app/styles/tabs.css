@@ -1,0 +1,30 @@
+/* In-page tab bar. */
+.page-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--mist);
+  margin-bottom: 28px;
+}
+
+.page-tab {
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--subtle);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.page-tab:hover {
+  color: var(--navy);
+}
+
+.page-tab.active {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}

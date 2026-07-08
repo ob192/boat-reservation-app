@@ -1,0 +1,39 @@
+/* Small helper classes: dividers, text colors, flex/spacing utilities, empty state. */
+.divider {
+  height: 1px;
+  background: var(--mist);
+  margin: 16px 0;
+}
+
+.text-subtle { color: var(--subtle); font-size: 0.82rem; }
+.text-coral  { color: var(--coral); }
+.text-teal   { color: var(--teal); }
+.text-gold   { color: var(--gold); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.gap-20 { gap: 20px; }
+.mt-4  { margin-top: 4px; }
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.w-full { width: 100%; }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--subtle);
+  font-size: 0.9rem;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}

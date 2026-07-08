@@ -90,6 +90,21 @@ export const MESSAGES = {
     childrenLabel: 'Діти',
     totalLabel: 'Усього',
   },
+  promo: {
+    label: 'Промокод',
+    applied: (code: string) => `Промокод ${code} застосовано`,
+    appliedShort: 'Знижку застосовано',
+    discountRow: 'Знижка',
+    checking: 'Перевіряємо промокод…',
+    notFound: 'Промокод недійсний.',
+    inactive: 'Промокод більше не активний.',
+    exhausted: 'Ліміт використання промокоду вичерпано.',
+    haveCode: 'Маєте промокод?',
+    placeholder: 'Введіть код',
+    apply: 'Застосувати',
+    remove: 'Прибрати промокод',
+    alreadyUsed: 'Цей промокод уже використано на цьому пристрої.',
+  },
   errors: {
     slotTaken: 'Цей часовий слот щойно зайняли. Будь ласка, оберіть інший.',
     slotCancelled: 'Цей слот більше не доступний. Будь ласка, оберіть інший час.', // NEW
@@ -97,6 +112,9 @@ export const MESSAGES = {
     backendUnavailable: 'Сервіс тимчасово недоступний. Спробуйте пізніше.',
     paymentFailed: 'Оплата не пройшла.',
     bookingExpired: 'Час бронювання вийшов.',
+    promoNotFound: 'Промокод недійсний.',
+    promoInactive: 'Промокод більше не активний.',
+    promoExhausted: 'Ліміт використання промокоду вичерпано.',
   },
   header: {
     title: 'SUP Chernihiv',

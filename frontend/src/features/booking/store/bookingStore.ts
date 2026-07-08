@@ -23,6 +23,7 @@ interface BookingState {
     selectedTime: string | null;   // Step 3
     quantities: BookingQuantities; // Step 4
     contact: ContactInfo;          // Step 5
+    promoCode: string | null;      // captured from ?promo= URL, applied at booking
     bookingId: string | null;
     sessionId: string | null;
 
@@ -31,6 +32,7 @@ interface BookingState {
     setTime: (time: string) => void;
     setQuantity: (type: keyof BookingQuantities, value: number) => void;
     setContact: (contact: Partial<ContactInfo>) => void;
+    setPromoCode: (code: string | null) => void;
     setBookingId: (id: string) => void;
     setSessionId: (id: string) => void;
     reset: () => void;
@@ -42,6 +44,7 @@ const initialState = {
     selectedTime: null,
     quantities: { big: 0, medium: 0, small: 0, child: 0 },
     contact: { firstName: '', lastName: '', email: '', phone: '' },
+    promoCode: null,
     bookingId: null,
     sessionId: null,
 };
@@ -72,6 +75,10 @@ export const useBookingStore = create<BookingState>()(
             setContact: (contact) =>
                 set((state) => ({ contact: { ...state.contact, ...contact } })),
 
+            // Promo is independent of the route/date/time cascade — it must NOT
+            // be cleared when those change, only on an explicit reset.
+            setPromoCode: (code) => set({ promoCode: code }),
+
             setBookingId: (id) => set({ bookingId: id }),
             setSessionId: (id) => set({ sessionId: id }),
 
@@ -87,6 +94,7 @@ export const useBookingStore = create<BookingState>()(
                 selectedDate: state.selectedDate,
                 selectedTime: state.selectedTime,
                 quantities: state.quantities,
+                promoCode: state.promoCode,
             }),
         },
     ),

@@ -1,0 +1,36 @@
+/* Decorative/animation effects: ocean background (signin/forbidden) and skeletons. */
+.bg-ocean {
+  background: linear-gradient(160deg, var(--navy) 0%, #0d2d4a 50%, #0a3d5f 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  opacity: 0.15;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200'%3E%3Cpath fill='%230e7c7b' d='M0,100 C360,180 720,20 1080,100 C1260,140 1350,80 1440,100 L1440,200 L0,200 Z'/%3E%3C/svg%3E") no-repeat bottom / cover;
+  animation: waveShift 8s ease-in-out infinite alternate;
+}
+
+@keyframes waveShift {
+  from { transform: translateX(-20px); }
+  to   { transform: translateX(20px); }
+}
+
+/* ── Skeleton ────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--mist) 25%, rgba(221,232,232,0.4) 50%, var(--mist) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}

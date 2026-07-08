@@ -11,12 +11,14 @@ interface IdemRecord {
     fingerprint: string;
 }
 
-// Only the capacity-affecting fields define booking identity.
+// Only the price/capacity-affecting fields define booking identity.
 // Contact edits (typo fix in phone) must NOT mint a new key, or you'd
-// double-hold the slot. Slot + quantities is the correct dedupe boundary.
+// double-hold the slot. Slot + quantities + promo is the dedupe boundary —
+// promo is included so applying/changing a code re-mints the key rather than
+// reusing an earlier discount-free hold for the same slot.
 function fingerprint(body: CreateBookingBody): string {
-    const { routeName, date, time, quantities } = body;
-    return `${routeName}|${date}|${time}|${quantities.big}|${quantities.medium}|${quantities.child}`;
+    const { routeName, date, time, quantities, promoCode } = body;
+    return `${routeName}|${date}|${time}|${quantities.big}|${quantities.medium}|${quantities.child}|${promoCode ?? ''}`;
 }
 
 /**

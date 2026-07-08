@@ -3,6 +3,7 @@ import { Playfair_Display, DM_Sans, Oswald } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/shared/providers/QueryProvider';
 import { SupabaseProvider } from '@/shared/providers/SupabaseProvider';
+import { PromoCapture } from '@/features/booking/components/client/PromoCapture';
 import Script from "next/script";
 import {FB_PIXEL_ID} from "@/shared/lib/fbq";
 
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <QueryProvider>
             <SupabaseProvider>
+                <PromoCapture />
                 {children}
             </SupabaseProvider>
         </QueryProvider>

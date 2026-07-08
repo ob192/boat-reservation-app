@@ -41,10 +41,14 @@ export async function POST(req: Request) {
       if (res.status === 409) return Response.json({ message: 'SLOT_TAKEN' }, { status: 409 });
       if (res.status === 401) return Response.json({ message: 'SESSION_EXPIRED' }, { status: 401 });
       if (res.status === 422) {
-        // Distinguish cancellation from other validation failures
-        const msg = (data as { message?: string }).message;
+        // Distinguish cancellation and promo failures from other validation errors
+        const detail = data as { code?: string; message?: string };
+        const msg = detail.code ?? detail.message;
         if (msg === 'SLOT_CANCELLED') {
           return Response.json({ message: 'SLOT_CANCELLED' }, { status: 422 });
+        }
+        if (msg === 'PROMO_NOT_FOUND' || msg === 'PROMO_INACTIVE' || msg === 'PROMO_EXHAUSTED') {
+          return Response.json({ message: msg }, { status: 422 });
         }
         return Response.json({ message: 'VALIDATION_FAILED', detail: data }, { status: 422 });
       }

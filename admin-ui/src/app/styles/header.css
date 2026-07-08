@@ -1,0 +1,205 @@
+/* Top navigation bar: desktop nav, user dropdown, and mobile drawer nav. */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(10, 22, 40, 0.25);
+}
+
+.header-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--seafoam);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.header-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+
+.header-nav-link {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--subtle);
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+  cursor: pointer;
+}
+
+.header-nav-link:hover {
+  color: var(--seafoam);
+  background: rgba(168, 213, 209, 0.08);
+}
+
+.header-nav-link.active {
+  color: var(--seafoam);
+  border-bottom-color: var(--teal);
+  background: rgba(14, 124, 123, 0.12);
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  margin-left: auto;
+}
+
+.header-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: white;
+  cursor: pointer;
+  border: 2px solid rgba(168, 213, 209, 0.3);
+  transition: border-color var(--transition);
+}
+
+.header-avatar:hover {
+  border-color: var(--seafoam);
+}
+
+.header-name {
+  font-size: 0.85rem;
+  color: var(--mist);
+  font-weight: 500;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--mist);
+  overflow: hidden;
+  min-width: 180px;
+  z-index: 200;
+  animation: dropdownIn 150ms ease;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.user-dropdown-item {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--navy);
+}
+
+.user-dropdown-item:hover {
+  background: var(--cream);
+}
+
+.user-dropdown-item.danger {
+  color: var(--coral);
+}
+
+/* ── Mobile header additions ─────────────────────── */
+.header-burger {
+  display: none;
+  font-size: 1.1rem;
+  color: var(--seafoam);
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.header-nav-desktop {
+  /* default desktop: visible */
+}
+
+.header-name-desktop {
+  /* default desktop: visible */
+}
+
+.header-mobile-nav {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  background: var(--navy);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 16px;
+  box-shadow: 0 8px 24px rgba(10, 22, 40, 0.3);
+  animation: slideDown 180ms ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header-mobile-link {
+  display: block;
+  padding: 12px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--subtle);
+  text-decoration: none;
+  transition: color var(--transition), background var(--transition);
+}
+
+.header-mobile-link:hover {
+  color: var(--seafoam);
+  background: rgba(168, 213, 209, 0.06);
+}
+
+.header-mobile-link.active {
+  color: var(--seafoam);
+  background: rgba(14, 124, 123, 0.12);
+  border-left: 3px solid var(--teal);
+  padding-left: 17px;
+}
+
+@media (max-width: 640px) {
+  .header-burger {
+    display: flex;
+  }
+
+  .header-nav-desktop {
+    display: none;
+  }
+
+  .header-name-desktop {
+    display: none;
+  }
+}

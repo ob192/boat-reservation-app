@@ -1,0 +1,100 @@
+/* Month calendar grid with per-day availability dots. */
+.calendar-wrap {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--mist);
+  padding: 16px;
+  user-select: none;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.calendar-month-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-dow {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--subtle);
+  text-transform: uppercase;
+  padding: 4px 0 8px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all var(--transition);
+  border: 1.5px solid transparent;
+  gap: 2px;
+  position: relative;
+}
+
+/* was: .calendar-day:hover:not(.day-empty):not(.day-past) */
+.calendar-day:hover:not(.day-empty):not(.day-disabled) {
+  background: var(--cream);
+  border-color: var(--mist);
+}
+
+.calendar-day.day-selected {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal);
+}
+
+.calendar-day.day-today:not(.day-selected) {
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 700;
+}
+
+/* replaced the old .calendar-day.day-past block with these two */
+.calendar-day.day-past {
+  color: var(--subtle);
+}
+
+.calendar-day.day-disabled {
+  color: var(--mist);
+  cursor: default;
+}
+.calendar-day.day-blocked {
+  background: rgba(224, 90, 78, 0.06);
+  color: var(--coral);
+}
+
+.calendar-day.day-empty {
+  cursor: default;
+}
+
+.day-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green  { background: var(--teal); }
+.dot-yellow { background: var(--gold); }
+.dot-red    { background: var(--coral); }

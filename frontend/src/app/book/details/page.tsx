@@ -8,11 +8,12 @@ import { useRouter } from 'next/navigation';
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import { useUser } from '@/features/auth/hooks/useUser';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
-import { useCreateBooking, useCreateCheckout } from '@/features/booking/hooks';
+import { useCreateBooking, useCreateCheckout, usePromoPreview } from '@/features/booking/hooks';
 import { contactSchema, type ContactFormValues } from '@/features/booking/schema/booking.schema';
 import { UserMenu } from '@/features/auth/components/UserMenu';
 import { MESSAGES } from '@/features/booking/messages';
 import { calculateBookingTotal } from '@/features/booking/pricing';
+import { savePromoReceipt, normalizePromo, isPromoUsed } from '@/features/booking/promo';
 import { formatCurrency } from '@/shared/lib/currency';
 import { ConsentAgreement } from '@/features/booking/components/client/ConsentAgreement';
 import { CONSENT_AGREEMENT, buildAgreementText } from '@/features/booking/consent-text';
@@ -57,6 +58,33 @@ function ChevronLeft() {
     );
 }
 
+function TicketIcon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"
+                  stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+            <path d="M14 6v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 2.5" />
+        </svg>
+    );
+}
+
+function SpinnerIcon() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" opacity="0.3" />
+            <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+function CloseIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+    );
+}
+
 function ShieldHeartIcon() {
     return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
@@ -74,12 +102,17 @@ export default function DetailsPage() {
 
     const router = useRouter();
     const {
-        selectedRoute, selectedDate, selectedTime, quantities,
-        contact, setContact, setBookingId, setSessionId,
+        selectedRoute, selectedDate, selectedTime, quantities, promoCode,
+        contact, setContact, setPromoCode, setBookingId, setSessionId,
     } = useBookingStore();
 
     const createBooking = useCreateBooking();
     const createCheckout = useCreateCheckout();
+
+    // Preview the captured promo so we can show the discount before checkout.
+    const promoPreview = usePromoPreview(promoCode);
+    const discountPercent = promoPreview.data?.discountPercent ?? 0;
+    const promoValid = !!promoCode && promoPreview.isSuccess && discountPercent > 0;
 
     const {
         register,
@@ -98,6 +131,29 @@ export default function DetailsPage() {
 
     const [agreed, setAgreed] = useState(false);
     const [docHash, setDocHash] = useState('');
+
+    // Manual promo entry (the ?promo= link path is handled by <PromoCapture>).
+    const [promoInput, setPromoInput] = useState('');
+    const [promoUsedError, setPromoUsedError] = useState(false);
+
+    const applyPromo = () => {
+        const code = normalizePromo(promoInput);
+        if (!code) return;
+        // Enforce one-per-device locally; the backend also caps redemptions.
+        if (isPromoUsed(code)) {
+            setPromoUsedError(true);
+            return;
+        }
+        setPromoUsedError(false);
+        setPromoCode(code);
+        setPromoInput('');
+    };
+
+    const clearPromo = () => {
+        setPromoCode(null);
+        setPromoInput('');
+        setPromoUsedError(false);
+    };
 
     useEffect(() => {
         sha256Hex(buildAgreementText()).then(setDocHash);
@@ -122,6 +178,10 @@ export default function DetailsPage() {
                 },
             });
 
+            // Only forward a code that didn't already fail preview, so a stale/
+            // invalid promo can't fail an otherwise-valid booking.
+            const effectivePromo = promoCode && !promoPreview.isError ? promoCode : undefined;
+
             const booking = await createBooking.mutateAsync({
                 routeName: selectedRoute,
                 date: selectedDate,
@@ -129,8 +189,19 @@ export default function DetailsPage() {
                 quantities,
                 contact: data,
                 consent,
+                promoCode: effectivePromo,
             });
             setBookingId(booking.bookingId);
+
+            // Snapshot the applied discount so the success page can show it
+            // (the by-session status endpoint isn't guaranteed to echo it back).
+            if (booking.promoCode && (booking.discountAmount ?? 0) > 0) {
+                savePromoReceipt(booking.bookingId, {
+                    promoCode: booking.promoCode,
+                    discountPercent: booking.discountPercent ?? 0,
+                    discountAmount: booking.discountAmount ?? 0,
+                });
+            }
             const origin = window.location.origin;
             const checkout = await createCheckout.mutateAsync({
                 bookingId: booking.bookingId,
@@ -155,7 +226,18 @@ export default function DetailsPage() {
     const isLoading = createBooking.isPending || createCheckout.isPending;
     const apiError = createBooking.error ?? createCheckout.error;
 
-    const total = calculateBookingTotal(selectedRoute, quantities);
+    const rawTotal = calculateBookingTotal(selectedRoute, quantities);
+    const discountAmount = promoValid
+        ? Math.round((rawTotal * discountPercent) / 100 * 100) / 100
+        : 0;
+    const total = rawTotal - discountAmount;
+
+    const promoErrorMessage = ((): string => {
+        const msg = (promoPreview.error as { message?: string } | null)?.message;
+        if (msg === 'PROMO_INACTIVE') return MESSAGES.promo.inactive;
+        if (msg === 'PROMO_EXHAUSTED') return MESSAGES.promo.exhausted;
+        return MESSAGES.promo.notFound;
+    })();
 
     const dateLabel = selectedDate
         ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('uk-UA', {
@@ -317,9 +399,92 @@ export default function DetailsPage() {
                             </div>
                         </div>
 
+                        {promoCode ? (
+                            <div
+                                className={`bk-promo bk-promo--${
+                                    promoValid ? 'valid' : promoPreview.isLoading ? 'checking' : 'error'
+                                }`}
+                                role="status"
+                            >
+                                <span className="bk-promo-ticket">
+                                    {promoPreview.isLoading ? <SpinnerIcon /> : <TicketIcon />}
+                                </span>
+                                <div className="bk-promo-body">
+                                    <span className="bk-promo-code">{promoCode}</span>
+                                    <span className="bk-promo-note">
+                                        {promoPreview.isLoading
+                                            ? MESSAGES.promo.checking
+                                            : promoValid
+                                                ? MESSAGES.promo.appliedShort
+                                                : promoErrorMessage}
+                                    </span>
+                                </div>
+                                {promoValid && (
+                                    <>
+                                        <span className="bk-promo-perf" aria-hidden="true" />
+                                        <div className="bk-promo-figures">
+                                            <span className="bk-promo-pct">−{discountPercent}%</span>
+                                            <span className="bk-promo-save">−{formatCurrency(discountAmount)}</span>
+                                        </div>
+                                    </>
+                                )}
+                                <button
+                                    type="button"
+                                    className="bk-promo-remove"
+                                    onClick={clearPromo}
+                                    aria-label={MESSAGES.promo.remove}
+                                >
+                                    <CloseIcon />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="bk-promo-form">
+                                <label className="bk-promo-form-label" htmlFor="promo">
+                                    <TicketIcon /> {MESSAGES.promo.haveCode}
+                                </label>
+                                <div className="bk-promo-form-row">
+                                    <input
+                                        id="promo"
+                                        className="bk-promo-form-input"
+                                        value={promoInput}
+                                        onChange={(e) => {
+                                            setPromoInput(e.target.value);
+                                            if (promoUsedError) setPromoUsedError(false);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                applyPromo();
+                                            }
+                                        }}
+                                        placeholder={MESSAGES.promo.placeholder}
+                                        autoComplete="off"
+                                        autoCapitalize="characters"
+                                        spellCheck={false}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="bk-promo-form-btn"
+                                        onClick={applyPromo}
+                                        disabled={!promoInput.trim()}
+                                    >
+                                        {MESSAGES.promo.apply}
+                                    </button>
+                                </div>
+                                {promoUsedError && (
+                                    <span className="bk-promo-form-err">{MESSAGES.promo.alreadyUsed}</span>
+                                )}
+                            </div>
+                        )}
+
                         <div className="bk-order-total-row">
                             <span className="bk-order-total-label">До сплати</span>
-                            <span className="bk-order-total-amount">{formatCurrency(total)}</span>
+                            <span className="bk-order-total-figures">
+                                {promoValid && (
+                                    <span className="bk-order-total-orig">{formatCurrency(rawTotal)}</span>
+                                )}
+                                <span className="bk-order-total-amount">{formatCurrency(total)}</span>
+                            </span>
                         </div>
                     </div>
 
@@ -328,13 +493,18 @@ export default function DetailsPage() {
                     {/* ── API error ── */}
                     {apiError && (
                         <div className="bk-banner bk-banner--error" role="alert" style={{ marginTop: 16 }}>
-                            {(apiError as { message?: string }).message === 'SLOT_TAKEN'
-                                ? MESSAGES.errors.slotTaken
-                                : (apiError as { message?: string }).message === 'SLOT_CANCELLED'
-                                    ? MESSAGES.errors.slotCancelled
-                                    : (apiError as { message?: string }).message === 'BACKEND_UNAVAILABLE'
-                                        ? MESSAGES.errors.backendUnavailable
-                                        : MESSAGES.errors.bookingFailed}
+                            {(() => {
+                                const msg = (apiError as { message?: string }).message;
+                                switch (msg) {
+                                    case 'SLOT_TAKEN': return MESSAGES.errors.slotTaken;
+                                    case 'SLOT_CANCELLED': return MESSAGES.errors.slotCancelled;
+                                    case 'BACKEND_UNAVAILABLE': return MESSAGES.errors.backendUnavailable;
+                                    case 'PROMO_NOT_FOUND': return MESSAGES.errors.promoNotFound;
+                                    case 'PROMO_INACTIVE': return MESSAGES.errors.promoInactive;
+                                    case 'PROMO_EXHAUSTED': return MESSAGES.errors.promoExhausted;
+                                    default: return MESSAGES.errors.bookingFailed;
+                                }
+                            })()}
                         </div>
                     )}
 

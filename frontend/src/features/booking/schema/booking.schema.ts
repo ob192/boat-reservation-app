@@ -48,6 +48,7 @@ export const bookingSchema = z.object({
             message: 'Дитячі місця доступні лише з великим бордом',
         }),
     contact: contactSchema,
+    promoCode: z.string().max(64).optional(), // trimmed/normalized server-side
 });
 
 export type BookingFormValues = z.infer<typeof bookingSchema>;

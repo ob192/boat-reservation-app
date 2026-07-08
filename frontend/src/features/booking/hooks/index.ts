@@ -11,6 +11,7 @@ import type {
   CheckoutBody,
   CheckoutResponse,
   BookingStatusResponse,
+  PromoPreviewResponse,
 } from '@/shared/lib/api/types';
 import { getStableIdempotencyKey } from '@/shared/lib/idempotency';
 
@@ -38,6 +39,20 @@ export function useSlots(date: string | null, route: string | null) {
     queryFn: () => apiFetch<SlotsResponse>(`/slots/${date}/${route}`),
     staleTime: 15_000,
     enabled: !!date && !!route,
+  });
+}
+
+// Point-in-time discount preview for a captured promo code. Nothing is
+// reserved by calling it; the authoritative discount is applied at booking
+// creation. On an invalid code this surfaces the backend error (PROMO_NOT_FOUND
+// / PROMO_INACTIVE / PROMO_EXHAUSTED) as the query error.
+export function usePromoPreview(code: string | null) {
+  return useQuery({
+    queryKey: ['promo-preview', code],
+    queryFn: () => apiFetch<PromoPreviewResponse>(`/promocodes/${encodeURIComponent(code!)}`),
+    enabled: !!code,
+    retry: false,
+    staleTime: 60_000,
   });
 }
 

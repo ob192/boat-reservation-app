@@ -1,0 +1,39 @@
+/* Page scaffolding: main content area, containers, two-panel grid, page titles. */
+.admin-main {
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── Two-panel layout ────────────────────────────── */
+.two-panel {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .two-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: var(--subtle);
+  margin-bottom: 28px;
+}

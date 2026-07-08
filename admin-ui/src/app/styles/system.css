@@ -1,0 +1,27 @@
+/* System page kill-switch card. */
+.system-card {
+  max-width: 600px;
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.system-card.enabled {
+  background: linear-gradient(135deg, rgba(14,124,123,0.06) 0%, rgba(168,213,209,0.10) 100%);
+  border: 1.5px solid rgba(14,124,123,0.3);
+}
+
+.system-card.disabled {
+  background: linear-gradient(135deg, rgba(224,90,78,0.06) 0%, rgba(242,139,131,0.08) 100%);
+  border: 1.5px solid rgba(224,90,78,0.3);
+}
+
+.system-status-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.system-status-label.enabled  { color: var(--teal); }
+.system-status-label.disabled { color: var(--coral); }

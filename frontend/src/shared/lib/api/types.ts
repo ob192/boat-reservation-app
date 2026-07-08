@@ -61,12 +61,22 @@ export interface CreateBookingBody {
   quantities: BookingQuantities;
   contact: BookingContact;
   consent?: ConsentRecord;
+  promoCode?: string; // optional — omit for no promo
 }
 
 export interface CreateBookingResponse {
   bookingId: string;
-  totalAmount: number;
+  totalAmount: number; // already net of any discount
   expiresAt: string;
+  // Present only when a promo was applied — for display only.
+  promoCode?: string | null;
+  discountPercent?: number | null;
+  discountAmount?: number | null;
+}
+
+// GET /promocodes/:code — deliberately minimal preview
+export interface PromoPreviewResponse {
+  discountPercent: number;
 }
 
 export interface CheckoutBody {
@@ -89,8 +99,12 @@ export interface BookingDetail {
   routeName: string;
   quantities: BookingQuantities;
   contact: BookingContact;
-  totalAmount: number;
+  totalAmount: number; // already net of any discount
   status: BookingStatus;
+  // Present only when a promo was applied — for display only.
+  promoCode?: string | null;
+  discountPercent?: number | null;
+  discountAmount?: number | null;
 }
 
 export interface BookingStatusResponse {

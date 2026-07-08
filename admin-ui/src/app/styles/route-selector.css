@@ -1,0 +1,37 @@
+/* Segmented route selector control. */
+.route-selector {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: white;
+  border: 1px solid var(--mist);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.route-selector-btn {
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--subtle);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.route-selector-btn:hover { color: var(--navy); }
+
+.route-selector-btn.active {
+  background: var(--teal);
+  color: white;
+}
+
+@media (max-width: 480px) {
+  .route-selector { display: flex; width: 100%; }
+  .route-selector-btn { flex: 1; text-align: center; }
+}
