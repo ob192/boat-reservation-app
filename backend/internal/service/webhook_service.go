@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"time"
 
 	"github.com/harbour-wave/harbour-wave-backend/internal/model"
 	"github.com/harbour-wave/harbour-wave-backend/internal/provider"
@@ -65,7 +66,6 @@ func (s *webhookService) Handle(ctx context.Context, event provider.WebhookEvent
 			return fmt.Errorf("set confirmed: %w", err)
 		}
 
-		// Count the promocode redemption now that payment is confirmed.
 		if booking.PromoCode != nil && *booking.PromoCode != "" {
 			ok, err := s.promocodes.IncrementUsage(ctx, *booking.PromoCode)
 			if err != nil {
@@ -114,13 +114,40 @@ func (s *webhookService) createPosterOrder(ctx context.Context, booking *model.B
 
 	order := s.buildPosterOrder(booking)
 
-	res, err := s.poster.CreateIncomingOrder(ctx, order)
-	if err != nil {
-		return err
-	}
-	if err := s.bookings.SetPosterIDs(ctx, booking.ID, res.IncomingOrderID, res.IncomingTransactionID); err != nil {
-		return fmt.Errorf("save poster ids: %w", err)
-	}
+	go func() {
+
+		ctx := context.WithoutCancel(ctx)
+		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+
+		res, err := s.poster.CreateIncomingOrder(ctx, order)
+		if err != nil {
+			slog.Error("create poster incoming order",
+				"error", err,
+				"booking_id", booking.ID,
+				"spot_id", order.SpotID,
+				"phone", order.Phone,
+			)
+			return
+		}
+
+		slog.Info("poster incoming order created",
+			"booking_id", booking.ID,
+			"incoming_order_id", res.IncomingOrderID,
+			"incoming_transaction_id", res.IncomingTransactionID,
+		)
+
+		if err := s.bookings.SetPosterIDs(ctx, booking.ID, res.IncomingOrderID, res.IncomingTransactionID); err != nil {
+			slog.Error("save poster ids",
+				"error", err,
+				"booking_id", booking.ID,
+				"incoming_order_id", res.IncomingOrderID,
+				"incoming_transaction_id", res.IncomingTransactionID,
+			)
+			return
+		}
+	}()
+
 	return nil
 }
 
