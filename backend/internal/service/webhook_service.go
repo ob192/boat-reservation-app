@@ -151,38 +151,68 @@ func (s *webhookService) createPosterOrder(ctx context.Context, booking *model.B
 	return nil
 }
 
+// Poster createIncomingOrder constants.
+const (
+	posterSpotID          = 1 // physical location
+	posterServiceModeTake = 1 // takeaway
+	posterProductBoards   = 1 // catalog id: all board sizes lumped into one line
+	posterProductChild    = 6 // catalog id: child seat
+	posterPaymentNotPaid  = 0 // payment type: not paid default
+	posterCurrency        = "UAH"
+)
+
 // buildPosterOrder maps a confirmed booking to a Poster incoming order:
 //   - full client details (name, phone, email),
 //   - per-line catalog prices in kopecks,
-//   - payment.sum = the amount actually charged (post-discount / post-override).
+//   - payment.sum = the amount actually charged, but only when a discount was applied
+//     (otherwise Payment is nil and Poster totals the line prices itself).
 func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.PosterOrder {
-	effective := s.pricing.EffectiveAmount(booking.TotalAmount, booking.PriceOverride)
+
 	price, hasPrice := s.pricing.RoutePrice(booking.RouteName)
 
-	products := make([]provider.PosterProduct, 0, 2)
-
-	boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall
-	if boardCount > 0 {
-		p := provider.PosterProduct{ProductID: 1, Count: boardCount}
+	// productLine builds one order line, attaching a per-unit kopeck price only when
+	// the route has known pricing (otherwise Poster falls back to its catalog price).
+	productLine := func(productID, count int, unitPrice float64) provider.PosterProduct {
+		p := provider.PosterProduct{ProductID: productID, Count: count}
 		if hasPrice {
-			// Boards are lumped into one product line; use the weighted list unit price.
-			listBoards := float64(booking.QtyBig)*price.Big +
-				float64(booking.QtyMedium)*price.Medium +
-				float64(booking.QtySmall)*price.Small
-			unit := toKopecks(listBoards / float64(boardCount))
+			unit := toKopecks(unitPrice)
 			p.Price = &unit
 		}
-		products = append(products, p)
+		return p
+	}
+
+	products := make([]provider.PosterProduct, 0, 2)
+	if boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall; boardCount > 0 {
+		// Boards share one product line, so use the weighted list unit price.
+		listBoards := float64(booking.QtyBig)*price.Big +
+			float64(booking.QtyMedium)*price.Medium +
+			float64(booking.QtySmall)*price.Small
+		products = append(products, productLine(posterProductBoards, boardCount, listBoards/float64(boardCount)))
 	}
 	if booking.QtyChild > 0 {
-		p := provider.PosterProduct{ProductID: 6, Count: booking.QtyChild}
-		if hasPrice {
-			unit := toKopecks(price.Child)
-			p.Price = &unit
-		}
-		products = append(products, p)
+		products = append(products, productLine(posterProductChild, booking.QtyChild, price.Child))
 	}
 
+	order := provider.PosterOrder{
+		SpotID:      posterSpotID,
+		ServiceMode: posterServiceModeTake,
+		FirstName:   booking.FirstName,
+		LastName:    booking.LastName,
+		Phone:       derefString(booking.Phone),
+		Email:       booking.UserEmail,
+		Comment:     s.posterComment(booking),
+		Products:    products,
+		Payment: &provider.PosterPayment{
+			Type:     posterPaymentNotPaid,
+			Sum:      toKopecks(s.pricing.EffectiveAmount(booking.TotalAmount, booking.PriceOverride)),
+			Currency: posterCurrency,
+		},
+	}
+	return order
+}
+
+// posterComment is the human-readable order note, with the promocode appended when present.
+func (s *webhookService) posterComment(booking *model.Booking) string {
 	comment := fmt.Sprintf("Бронювання %s %s (%s)", booking.DateFormatted(), booking.Time, booking.RouteName)
 	if booking.PromoCode != nil && *booking.PromoCode != "" {
 		pct := 0
@@ -191,28 +221,14 @@ func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.Poste
 		}
 		comment += fmt.Sprintf(" | Промокод %s (-%d%%)", *booking.PromoCode, pct)
 	}
+	return comment
+}
 
-	phone := ""
-	if booking.Phone != nil {
-		phone = *booking.Phone
+func derefString(s *string) string {
+	if s == nil {
+		return ""
 	}
-
-	sum := toKopecks(effective)
-	return provider.PosterOrder{
-		SpotID:      1,
-		ServiceMode: 1,
-		FirstName:   booking.FirstName,
-		LastName:    booking.LastName,
-		Phone:       phone,
-		Email:       booking.UserEmail,
-		Comment:     comment,
-		Products:    products,
-		Payment: &provider.PosterPayment{
-			Type:     1,
-			Sum:      sum,
-			Currency: "UAH",
-		},
-	}
+	return *s
 }
 
 func toKopecks(amount float64) int64 {

@@ -19,7 +19,7 @@ type PosterProduct struct {
 
 // PosterPayment records prepayment info (Poster expects kopecks).
 type PosterPayment struct {
-	Type     int    `json:"type"`     // 1 = prepaid
+	Type     int    `json:"type"`     // 1 = prepaid 0 = not paid default
 	Sum      int64  `json:"sum"`      // kopecks
 	Currency string `json:"currency"` // must match account currency, e.g. "UAH"
 }
