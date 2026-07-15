@@ -84,10 +84,10 @@ func testLogger() *slog.Logger {
 // Pointer / model helpers
 // ----------------------------------------------------------------------------
 
-func sptr(s string) *string    { return &s }
-func iptr(i int) *int          { return &i }
-func fptr(f float64) *float64  { return &f }
-func bptr(b bool) *bool        { return &b }
+func sptr(s string) *string   { return &s }
+func iptr(i int) *int         { return &i }
+func fptr(f float64) *float64 { return &f }
+func bptr(b bool) *bool       { return &b }
 func pgDate(s string) pgtype.Date {
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {
