@@ -201,8 +201,16 @@ func TestGetMonth(t *testing.T) {
 				// 08-02: has a slot but the date is blocked.
 				*mkSlot("2026-08-02", "07:00", RouteDesna, 5, 5, 5),
 				// 08-03: only blocked/cancelled slots.
-				func() model.Slot { s := mkSlot("2026-08-03", "07:00", RouteDesna, 5, 5, 5); s.Blocked = true; return *s }(),
-				func() model.Slot { s := mkSlot("2026-08-03", "10:00", RouteDesna, 5, 5, 5); s.Cancelled = true; return *s }(),
+				func() model.Slot {
+					s := mkSlot("2026-08-03", "07:00", RouteDesna, 5, 5, 5)
+					s.Blocked = true
+					return *s
+				}(),
+				func() model.Slot {
+					s := mkSlot("2026-08-03", "10:00", RouteDesna, 5, 5, 5)
+					s.Cancelled = true
+					return *s
+				}(),
 				// 08-04: fully booked → 0 available → fullyBlocked.
 				*mkSlot("2026-08-04", "07:00", RouteDesna, 1, 0, 0),
 				// 08-05: over-booked numbers must clamp at zero, not go negative.
@@ -212,9 +220,9 @@ func TestGetMonth(t *testing.T) {
 		f.bookings.sumForRange = func(context.Context, string, string) (map[string]map[repository.SlotKey]repository.BookedQty, error) {
 			key := repository.SlotKey{Time: "07:00", Route: RouteDesna}
 			return map[string]map[repository.SlotKey]repository.BookedQty{
-				"2026-08-01": {key: {Big: 1}},                       // 07:00 → 1+1+0=2 avail; 10:00 → 3
-				"2026-08-04": {key: {Big: 1}},                       // full
-				"2026-08-05": {key: {Big: 5, Medium: 5, Small: 5}},  // overbooked → clamp to 0
+				"2026-08-01": {key: {Big: 1}},                      // 07:00 → 1+1+0=2 avail; 10:00 → 3
+				"2026-08-04": {key: {Big: 1}},                      // full
+				"2026-08-05": {key: {Big: 5, Medium: 5, Small: 5}}, // overbooked → clamp to 0
 			}, nil
 		}
 
