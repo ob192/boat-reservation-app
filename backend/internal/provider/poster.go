@@ -12,9 +12,8 @@ import (
 
 // PosterProduct is one line on the incoming order.
 type PosterProduct struct {
-	ProductID int    `json:"product_id"`
-	Count     int    `json:"count"`
-	Price     *int64 `json:"price,omitempty"` // kopecks; omit to use Poster's catalog price
+	ProductID int `json:"product_id"`
+	Count     int `json:"count"`
 }
 
 // PosterPayment records prepayment info (Poster expects kopecks).

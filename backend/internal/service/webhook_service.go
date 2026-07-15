@@ -163,34 +163,16 @@ const (
 
 // buildPosterOrder maps a confirmed booking to a Poster incoming order:
 //   - full client details (name, phone, email),
-//   - per-line catalog prices in kopecks,
-//   - payment.sum = the amount actually charged, but only when a discount was applied
-//     (otherwise Payment is nil and Poster totals the line prices itself).
+//   - products as catalog id + count (Poster totals them from its own catalog),
+//   - a payment block ONLY when a promocode discount was applied, whose sum is the
+//     discount amount (in kopecks), with type 0 (not paid).
 func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.PosterOrder {
-
-	price, hasPrice := s.pricing.RoutePrice(booking.RouteName)
-
-	// productLine builds one order line, attaching a per-unit kopeck price only when
-	// the route has known pricing (otherwise Poster falls back to its catalog price).
-	productLine := func(productID, count int, unitPrice float64) provider.PosterProduct {
-		p := provider.PosterProduct{ProductID: productID, Count: count}
-		if hasPrice {
-			unit := toKopecks(unitPrice)
-			p.Price = &unit
-		}
-		return p
-	}
-
 	products := make([]provider.PosterProduct, 0, 2)
 	if boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall; boardCount > 0 {
-		// Boards share one product line, so use the weighted list unit price.
-		listBoards := float64(booking.QtyBig)*price.Big +
-			float64(booking.QtyMedium)*price.Medium +
-			float64(booking.QtySmall)*price.Small
-		products = append(products, productLine(posterProductBoards, boardCount, listBoards/float64(boardCount)))
+		products = append(products, provider.PosterProduct{ProductID: posterProductBoards, Count: boardCount})
 	}
 	if booking.QtyChild > 0 {
-		products = append(products, productLine(posterProductChild, booking.QtyChild, price.Child))
+		products = append(products, provider.PosterProduct{ProductID: posterProductChild, Count: booking.QtyChild})
 	}
 
 	order := provider.PosterOrder{
@@ -202,12 +184,17 @@ func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.Poste
 		Email:       booking.UserEmail,
 		Comment:     s.posterComment(booking),
 		Products:    products,
-		Payment: &provider.PosterPayment{
-			Type:     posterPaymentNotPaid,
-			Sum:      toKopecks(s.pricing.EffectiveAmount(booking.TotalAmount, booking.PriceOverride)),
-			Currency: posterCurrency,
-		},
 	}
+
+	// Payment block carries only the discount amount, and only when a discount exists.
+	if booking.DiscountAmount != nil && *booking.DiscountAmount > 0 {
+		order.Payment = &provider.PosterPayment{
+			Type:     posterPaymentNotPaid, // 0 = not paid
+			Sum:      toKopecks(*booking.DiscountAmount),
+			Currency: posterCurrency,
+		}
+	}
+
 	return order
 }
 
