@@ -157,25 +157,34 @@ const (
 	posterServiceModeTake = 1 // takeaway
 	posterProductBoards   = 1 // catalog id: all board sizes lumped into one line
 	posterProductChild    = 6 // catalog id: child seat
-	posterPaymentNotPaid  = 0 // payment type: not paid default
-	posterCurrency        = "UAH"
 )
 
 // buildPosterOrder maps a confirmed booking to a Poster incoming order:
 //   - full client details (name, phone, email),
-//   - products as catalog id + count (Poster totals them from its own catalog),
-//   - a payment block ONLY when a promocode discount was applied, whose sum is the
-//     discount amount (in kopecks), with type 0 (not paid).
+//   - per-line catalog prices in kopecks, with any promocode discount applied to each
+//     line so the line totals already net out to the amount charged (no payment block).
 func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.PosterOrder {
-	products := make([]provider.PosterProduct, 0, 2)
-	if boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall; boardCount > 0 {
-		products = append(products, provider.PosterProduct{ProductID: posterProductBoards, Count: boardCount})
-	}
-	if booking.QtyChild > 0 {
-		products = append(products, provider.PosterProduct{ProductID: posterProductChild, Count: booking.QtyChild})
+
+	price, hasPrice := s.pricing.RoutePrice(booking.RouteName)
+
+	discountPct := 0
+	if booking.DiscountPercent != nil {
+		discountPct = *booking.DiscountPercent
 	}
 
-	order := provider.PosterOrder{
+	products := make([]provider.PosterProduct, 0, 2)
+	if boardCount := booking.QtyBig + booking.QtyMedium + booking.QtySmall; boardCount > 0 {
+		// Boards share one product line, so use the weighted list unit price.
+		listBoards := float64(booking.QtyBig)*price.Big +
+			float64(booking.QtyMedium)*price.Medium +
+			float64(booking.QtySmall)*price.Small
+		products = append(products, posterProductLine(posterProductBoards, boardCount, listBoards/float64(boardCount), hasPrice, discountPct))
+	}
+	if booking.QtyChild > 0 {
+		products = append(products, posterProductLine(posterProductChild, booking.QtyChild, price.Child, hasPrice, discountPct))
+	}
+
+	return provider.PosterOrder{
 		SpotID:      posterSpotID,
 		ServiceMode: posterServiceModeTake,
 		FirstName:   booking.FirstName,
@@ -185,17 +194,20 @@ func (s *webhookService) buildPosterOrder(booking *model.Booking) provider.Poste
 		Comment:     s.posterComment(booking),
 		Products:    products,
 	}
+}
 
-	// Payment block carries only the discount amount, and only when a discount exists.
-	if booking.DiscountAmount != nil && *booking.DiscountAmount > 0 {
-		order.Payment = &provider.PosterPayment{
-			Type:     posterPaymentNotPaid, // 0 = not paid
-			Sum:      toKopecks(*booking.DiscountAmount),
-			Currency: posterCurrency,
-		}
+// posterProductLine builds one order line. It attaches a per-unit kopeck price only when
+// the route has known pricing (hasPrice); otherwise Poster falls back to its own catalog
+// price. Any promocode discount (discountPct) is applied to the unit price so the line is
+// net of the discount.
+func posterProductLine(productID, count int, unitPrice float64, hasPrice bool, discountPct int) provider.PosterProduct {
+	p := provider.PosterProduct{ProductID: productID, Count: count}
+	if hasPrice {
+		net := unitPrice * float64(100-discountPct) / 100
+		unit := toKopecks(net)
+		p.Price = &unit
 	}
-
-	return order
+	return p
 }
 
 // posterComment is the human-readable order note, with the promocode appended when present.
