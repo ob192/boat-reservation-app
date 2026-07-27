@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {Instrument_Serif, Inter_Tight, JetBrains_Mono} from 'next/font/google';
 import Script from 'next/script';
+import {COMPANY, CONTACTS, POLICY} from '@/features/legal/company';
 
 // ─── Fonts (scoped to this page via the .ed-root variable classes) ──────────
 const instrument = Instrument_Serif({
@@ -25,9 +26,9 @@ const jetbrains = JetBrains_Mono({
     display: 'swap',
 });
 
-// ─── Contact constants ──────────────────────────────────────────────────────
-const PHONE_DISPLAY = '+38 (073) 169-69-09';
-const PHONE_HREF = 'tel:+380731696909';
+// ─── Contact constants (single source: features/legal/company) ──────────────
+const PHONE_DISPLAY = CONTACTS.phoneDisplay;
+const PHONE_HREF = CONTACTS.phoneHref;
 
 // ─── Departure point (Google Maps) ──────────────────────────────────────────
 // ─── Desna route — start (base) and finish ──────────────────────────────────
@@ -42,7 +43,7 @@ const SNOV_END_URL =
     'https://www.google.com/maps/search/?api=1&query=Snovyanka%2C+Chernihiv+Oblast';
 
 // ─── Instagram ───────────────────────────────────────────────────────────────
-const IG_URL = 'https://www.instagram.com/supboard_che/';
+const IG_URL = CONTACTS.instagramUrl;
 
 // ─── FAQ items 2–9 (the first, "Де старт і фініш?", embeds a map) ────────────
 const FAQ_REST: { q: string; a: string }[] = [
@@ -52,11 +53,11 @@ const FAQ_REST: { q: string; a: string }[] = [
     },
     {
         q: 'Який мінімум для групи на сплав та чи робите корпоративи?',
-        a: 'Щоб сплав відбувся, має зібратися група не менше 6 осіб — саме стільки потрібно для виходу на воду. Для корпоративних заходів мінімум — 8 учасників. Готуємо окремі умови й маршрут — просто зателефонуйте нам.',
+        a: `Щоб сплав відбувся, має зібратися група не менше ${POLICY.minGroupSize} осіб — саме стільки потрібно для виходу на воду. Для корпоративних заходів мінімум — ${POLICY.minCorporateGroupSize} учасників. Готуємо окремі умови й маршрут — просто зателефонуйте нам.`,
     },
     {
         q: 'Що буде, якщо я запізнюся?',
-        a: 'Просимо приходити на місце за 15 хвилин до початку — для інструктажу та підготовки спорядження. Група відправляється строго у призначений час: якщо сплав о 10:00, старт о 10:15 незалежно від кількості присутніх. Тих, хто запізнився більш ніж на 15 хвилин, група не чекає, а вартість сесії не повертається.',
+        a: `Просимо приходити на місце за ${POLICY.arrivalLeadMinutes} хвилин до початку — для інструктажу та підготовки спорядження. Група відправляється строго у призначений час: якщо сплав о 10:00, старт о 10:15 незалежно від кількості присутніх. Тих, хто запізнився більш ніж на ${POLICY.latenessGraceMinutes} хвилин, група не чекає, а вартість сесії не повертається.`,
     },
     {
         q: 'Що взяти з собою?',
@@ -196,7 +197,7 @@ export default function HomePage() {
                                 <div className="ed-faq-route">
                                     <h4 className="ed-faq-route-title">Сплав по Десні</h4>
                                     <p className="ed-faq-route-label">
-                                        Старт — наша база, вул. Кирила Розумовського, 5
+                                        Старт — наша база, {COMPANY.baseAddress.replace('м. Чернігів, ', '')}
                                     </p>
                                     <div className="ed-faq-map">
                                         <iframe
@@ -291,7 +292,7 @@ export default function HomePage() {
                 <footer className="ed-footer">
                     <Link href="/privacy" className="ed-foot-link">Політика конфіденційності</Link>
                     <span className="ed-foot-dot">·</span>
-                    <Link href="/terms" className="ed-foot-link">Умови використання</Link>
+                    <Link href="/terms" className="ed-foot-link">Публічна оферта</Link>
                     <span className="ed-foot-dot">·</span>
                     <span className="ed-foot-link">© 2026 SUP Chernihiv</span>
                 </footer>

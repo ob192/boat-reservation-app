@@ -1,67 +1,179 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from 'next/font/google';
+import { COMPANY, CONTACTS } from '@/features/legal/company';
+import { PUBLIC_OFFER, OFFER_REQUISITES } from '@/features/legal/offer-text';
+
+// ─── Fonts (scoped to this page via the .lg-root variable classes) ──────────
+// Deliberately NOT the Oswald ramp used by .ed-root / .bk-root: a condensed
+// display face is unreadable across a document this long.
+const instrument = Instrument_Serif({
+    subsets: ['latin'],
+    weight: ['400'],
+    style: ['normal', 'italic'],
+    variable: '--lg-serif',
+    display: 'swap',
+});
+
+const interTight = Inter_Tight({
+    subsets: ['latin', 'cyrillic'],
+    weight: ['400', '500', '600'],
+    variable: '--lg-sans',
+    display: 'swap',
+});
+
+const jetbrains = JetBrains_Mono({
+    subsets: ['latin'],
+    weight: ['400', '500'],
+    variable: '--lg-mono',
+    display: 'swap',
+});
 
 export const metadata: Metadata = {
-    title: 'Умови використання — SUP Chernihiv',
+    title: 'Публічна оферта — SUP Chernihiv',
+    description:
+        'Договір про надання послуг оренди SUP-бордів та проведення водних прогулянок. ' +
+        'Умови бронювання, оплати, скасування та повернення коштів.',
+    alternates: { canonical: '/terms' },
+    openGraph: {
+        title: 'Публічна оферта — SUP Chernihiv',
+        description:
+            'Договір про надання послуг оренди SUP-бордів та проведення водних прогулянок.',
+        url: '/terms',
+        type: 'article',
+    },
 };
 
 export default function TermsPage() {
+    const offer = PUBLIC_OFFER;
+
     return (
-        <>
-            <header className="header">
-                <Link href="/" className="logo" style={{ textDecoration: 'none' }}>
-                    <div className="logo-icon">🏄</div>
-                    <div className="logo-text">
-                        <h1>SUP Chernihiv</h1>
-                        <span>Оренда SUP-бордів</span>
+        <div className={`${instrument.variable} ${interTight.variable} ${jetbrains.variable} lg-root`}>
+            <div className="lg-shell">
+                {/* ── Top bar ── */}
+                <header className="lg-topbar">
+                    <Link href="/" className="lg-brand">
+                        <span className="lg-monogram">S</span>
+                        <span className="lg-wordmark">
+                            <span className="lg-wordmark-name">{COMPANY.brand}</span>
+                            <span className="lg-wordmark-sub">оренда SUP-бордів</span>
+                        </span>
+                    </Link>
+                    <Link href="/" className="lg-back">← На головну</Link>
+                </header>
+
+                <div className="lg-rule" style={{ margin: '0 0 4px' }} />
+
+                {/* ── Document head ── */}
+                <div className="lg-doc-head">
+                    <p className="lg-eyebrow">Юридичний документ</p>
+                    <h1 className="lg-title">{offer.title}</h1>
+                    <p className="lg-subtitle">{offer.subtitle}</p>
+
+                    <div className="lg-stamp">
+                        <span>
+                            Редакція <span className="lg-stamp-val">{offer.version}</span>
+                        </span>
+                        <span>
+                            Чинна з <span className="lg-stamp-val">{offer.effectiveDateLabel}</span>
+                        </span>
+                        <span>
+                            Виконавець <span className="lg-stamp-val">{COMPANY.shortLegalName}</span>
+                        </span>
                     </div>
-                </Link>
-            </header>
 
-            <div
-                style={{
-                    maxWidth: 680,
-                    margin: '0 auto',
-                    padding: '3rem 1.25rem 4rem',
-                    position: 'relative',
-                    zIndex: 10,
-                }}
-            >
-                <h2
-                    style={{
-                        fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                        fontSize: 'clamp(1.6rem, 4vw, 2.2rem)',
-                        color: 'var(--text)',
-                        marginBottom: '0.5rem',
-                        fontWeight: 700,
-                    }}
-                >
-                    Умови використання
-                </h2>
-                <p style={{ fontSize: '0.78rem', color: 'var(--subtle)', marginBottom: '2.5rem' }}>
-                    Останнє оновлення: 1 травня 2026 р.
-                </p>
+                    <p className="lg-preamble">{offer.preamble}</p>
+                </div>
 
-                <p style={{ color: 'var(--subtle)', fontSize: '0.85rem', lineHeight: 1.7 }}>
-                    Повний текст умов використання буде опубліковано найближчим часом.
-                </p>
+                {/* ── Table of contents (pure anchors, no client JS) ── */}
+                <nav className="lg-toc" aria-label="Зміст документа">
+                    <p className="lg-toc-title">Зміст</p>
+                    <ol className="lg-toc-list">
+                        {offer.sections.map((section) => (
+                            <li key={section.id}>
+                                <a href={`#${section.id}`} className="lg-toc-link">
+                                    <span className="lg-toc-num">{section.n}.</span>
+                                    <span>{section.title}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ol>
+                </nav>
 
-                <Link
-                    href="/"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        marginTop: '2.5rem',
-                        fontSize: '0.82rem',
-                        color: 'var(--amber-ink)',
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                    }}
-                >
-                    ← На головну
-                </Link>
+                <div className="lg-rule" />
+
+                {/* ── Sections ── */}
+                {offer.sections.map((section) => (
+                    <section key={section.id} id={section.id} className="lg-section">
+                        <div className="lg-section-head">
+                            <span className="lg-section-num">{section.n}</span>
+                            <h2 className="lg-section-title">{section.title}</h2>
+                        </div>
+
+                        {section.lead && <p className="lg-section-lead">{section.lead}</p>}
+
+                        <div className="lg-clauses">
+                            {section.clauses.map((clause, i) => (
+                                <div className="lg-clause" key={`${section.id}-${i}`}>
+                                    {/* Clause numbering is derived, never authored in the text. */}
+                                    <span className="lg-clause-num">{`${section.n}.${i + 1}.`}</span>
+                                    <div className="lg-clause-body">
+                                        <p>{clause.text}</p>
+                                        {clause.items && (
+                                            <ul className="lg-list">
+                                                {clause.items.map((item) => (
+                                                    <li key={item}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        {clause.tail && <p className="lg-clause-tail">{clause.tail}</p>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {section.requisites && (
+                            <div className="lg-req">
+                                {OFFER_REQUISITES.map((row) => (
+                                    <div className="lg-req-row" key={row.label}>
+                                        <span className="lg-req-key">{row.label}</span>
+                                        <span className="lg-req-val">
+                                            {row.href ? (
+                                                <a
+                                                    href={row.href}
+                                                    {...(row.href.startsWith('http')
+                                                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                                                        : {})}
+                                                >
+                                                    {row.value}
+                                                </a>
+                                            ) : (
+                                                row.value
+                                            )}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                ))}
+
+                {/* ── Closing ── */}
+                <p className="lg-closing">{offer.closing}</p>
+
+                <div className="lg-rule" />
+
+                {/* ── Footer ── */}
+                <footer className="lg-footer">
+                    <Link href="/privacy" className="lg-foot-link">Політика конфіденційності</Link>
+                    <span className="lg-foot-dot">·</span>
+                    <a href={CONTACTS.phoneHref} className="lg-foot-link">{CONTACTS.phoneDisplay}</a>
+                    <span className="lg-foot-dot">·</span>
+                    <span>
+                        {offer.id} · {offer.version} · © 2026 {COMPANY.brand}
+                    </span>
+                </footer>
             </div>
-        </>
+        </div>
     );
 }

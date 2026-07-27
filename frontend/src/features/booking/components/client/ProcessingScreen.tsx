@@ -12,6 +12,7 @@ import { routeLabel } from '@/features/booking/routes';
 import { getPromoReceipt, markPromoUsed } from '@/features/booking/promo';
 import { formatCurrency } from '@/shared/lib/currency';
 import { fbqTrack } from '@/shared/lib/fbq';
+import { CONTACTS, POLICY } from '@/features/legal/company';
 
 const instrument = Instrument_Serif({
     subsets: ['latin'],
@@ -43,7 +44,7 @@ const MARINA = {
     mapsEmbedSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1976.2723499952258!2d31.35687775986449!3d51.51005849458658!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46d5490079167cf9%3A0x9c86ca7f773c93ad!2ssup_che!5e0!3m2!1sen!2sua!4v1780059190547!5m2!1sen!2sua',
 } as const;
 
-const SESSION_DURATION_MINUTES = 120;
+const SESSION_DURATION_MINUTES = POLICY.sessionMinutes;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function buildCalendarUrl({ title, description, location, startISO, endISO }: {
@@ -191,8 +192,14 @@ const FAQ = [
         a: 'Так. Діти від 45 кг — на власному борді. Менших беремо разом із дорослим на великий борд.',
     },
     {
+        // Must stay in step with the offer, section «Скасування та повернення
+        // коштів»: customer-side cancellation is never refunded.
         q: 'Як скасувати або змінити бронювання?',
-        a: 'Напишіть нам не пізніше ніж за 24 години до сесії. Пізніше скасування — без повернення коштів.',
+        a:
+            `Повідомте нас за телефоном ${CONTACTS.phoneDisplay} або в Telegram ${CONTACTS.telegramHandle}. ` +
+            'Зверніть увагу: скасування з вашої ініціативи, як і неявка, не передбачає повернення коштів — ' +
+            'незалежно від того, за скільки часу до сесії ви попередили. Повне повернення або безкоштовне ' +
+            'перенесення можливі лише тоді, коли сесію скасовуємо ми. Умови — у публічній оферті.',
     },
 ];
 

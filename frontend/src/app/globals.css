@@ -47,3 +47,6 @@
 @import "./styles/booking.css";
 
 @import "./styles/consent.css";
+
+/* ─── Legal documents (offer, privacy) ───────────── */
+@import "./styles/legal.css";

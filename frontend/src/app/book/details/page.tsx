@@ -512,10 +512,15 @@ export default function DetailsPage() {
                     <div className="bk-legal">
                         <ShieldHeartIcon />
                         <p className="bk-legal-text">
-                            Натискаючи «Перейти до оплати», ви погоджуєтеся з{' '}
-                            <span className="bk-legal-underline">умовами використання</span>{' '}
-                            та{' '}
-                            <span className="bk-legal-underline">політикою конфіденційності</span>.
+                            Натискаючи «Перейти до оплати», ви укладаєте договір на умовах{' '}
+                            <Link href="/terms" target="_blank" className="bk-legal-underline">
+                                публічної оферти
+                            </Link>{' '}
+                            та погоджуєтеся з{' '}
+                            <Link href="/privacy" target="_blank" className="bk-legal-underline">
+                                політикою конфіденційності
+                            </Link>
+                            . Скасування бронювання з вашої ініціативи не передбачає повернення коштів.
                         </p>
                     </div>
 

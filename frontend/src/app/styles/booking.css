@@ -1305,6 +1305,17 @@
     border-bottom: 1px solid var(--hairline);
     padding-bottom: 1px;
 }
+/* The legal hints are real links now — keep them inline-styled like the copy. */
+a.bk-legal-underline {
+    color: var(--ink);
+    text-decoration: none;
+}
+a.bk-legal-underline:hover { border-bottom-color: var(--ink); }
+a.bk-legal-underline:focus-visible {
+    outline: 2px solid var(--lake);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
 
 /* ── Confirmation hero ── */
 .bk-confirm-hero {
