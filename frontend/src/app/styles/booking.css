@@ -1278,14 +1278,6 @@
 }
 .bk-promo-form-btn:disabled { opacity: 0.4; cursor: default; }
 
-.bk-promo-form-err {
-    display: block;
-    margin-top: 8px;
-    font-family: var(--sans);
-    font-size: 11px;
-    color: color-mix(in oklch, var(--danger) 85%, var(--ink));
-}
-
 /* ── Legal hint ── */
 .bk-legal {
     display: flex;

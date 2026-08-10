@@ -13,7 +13,7 @@ import { contactSchema, type ContactFormValues } from '@/features/booking/schema
 import { UserMenu } from '@/features/auth/components/UserMenu';
 import { MESSAGES } from '@/features/booking/messages';
 import { calculateBookingTotal } from '@/features/booking/pricing';
-import { savePromoReceipt, normalizePromo, isPromoUsed } from '@/features/booking/promo';
+import { savePromoReceipt, normalizePromo } from '@/features/booking/promo';
 import { formatCurrency } from '@/shared/lib/currency';
 import { ConsentAgreement } from '@/features/booking/components/client/ConsentAgreement';
 import { CONSENT_AGREEMENT, buildAgreementText } from '@/features/booking/consent-text';
@@ -134,17 +134,12 @@ export default function DetailsPage() {
 
     // Manual promo entry (the ?promo= link path is handled by <PromoCapture>).
     const [promoInput, setPromoInput] = useState('');
-    const [promoUsedError, setPromoUsedError] = useState(false);
 
+    // No local reuse check — a code may be redeemed as often as the backend
+    // allows, and the preview call is what reports an exhausted/invalid code.
     const applyPromo = () => {
         const code = normalizePromo(promoInput);
         if (!code) return;
-        // Enforce one-per-device locally; the backend also caps redemptions.
-        if (isPromoUsed(code)) {
-            setPromoUsedError(true);
-            return;
-        }
-        setPromoUsedError(false);
         setPromoCode(code);
         setPromoInput('');
     };
@@ -152,7 +147,6 @@ export default function DetailsPage() {
     const clearPromo = () => {
         setPromoCode(null);
         setPromoInput('');
-        setPromoUsedError(false);
     };
 
     useEffect(() => {
@@ -447,10 +441,7 @@ export default function DetailsPage() {
                                         id="promo"
                                         className="bk-promo-form-input"
                                         value={promoInput}
-                                        onChange={(e) => {
-                                            setPromoInput(e.target.value);
-                                            if (promoUsedError) setPromoUsedError(false);
-                                        }}
+                                        onChange={(e) => setPromoInput(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 e.preventDefault();
@@ -471,9 +462,6 @@ export default function DetailsPage() {
                                         {MESSAGES.promo.apply}
                                     </button>
                                 </div>
-                                {promoUsedError && (
-                                    <span className="bk-promo-form-err">{MESSAGES.promo.alreadyUsed}</span>
-                                )}
                             </div>
                         )}
 

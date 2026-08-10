@@ -3,12 +3,13 @@
 import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBookingStore } from '@/features/booking/store/bookingStore';
-import { isPromoUsed, normalizePromo } from '@/features/booking/promo';
+import { normalizePromo } from '@/features/booking/promo';
 
 /**
  * Captures a `?promo=CODE` query param anywhere in the app and stashes it in the
- * booking store so it can be applied at checkout. Codes this browser has already
- * redeemed are ignored, so re-visiting a promo link after booking won't re-apply.
+ * booking store so it can be applied at checkout. A previously redeemed code is
+ * captured again — re-visiting a promo link re-applies it, and the backend
+ * decides whether the code still has redemptions left.
  */
 function PromoCaptureInner() {
     const params = useSearchParams();
@@ -18,7 +19,7 @@ function PromoCaptureInner() {
         const raw = params.get('promo');
         if (!raw) return;
         const code = normalizePromo(raw);
-        if (!code || isPromoUsed(code)) return;
+        if (!code) return;
         setPromoCode(code);
     }, [params, setPromoCode]);
 

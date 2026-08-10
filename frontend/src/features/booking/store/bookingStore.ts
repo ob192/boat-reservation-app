@@ -76,15 +76,19 @@ export const useBookingStore = create<BookingState>()(
                 set((state) => ({ contact: { ...state.contact, ...contact } })),
 
             // Promo is independent of the route/date/time cascade — it must NOT
-            // be cleared when those change, only on an explicit reset.
+            // be cleared when those change. Only the customer removing it (or
+            // signing out) drops it.
             setPromoCode: (code) => set({ promoCode: code }),
 
             setBookingId: (id) => set({ bookingId: id }),
             setSessionId: (id) => set({ sessionId: id }),
 
+            // Starting a fresh booking keeps the promo code: a code may be
+            // redeemed as many times as the backend allows, so the customer
+            // shouldn't have to re-open their `?promo=` link to book again.
             reset: () => {
                 clearIdempotencyKey();
-                set(initialState);
+                set((state) => ({ ...initialState, promoCode: state.promoCode }));
             },
         }),
         {

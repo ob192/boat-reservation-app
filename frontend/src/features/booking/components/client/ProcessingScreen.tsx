@@ -9,7 +9,7 @@ import { useBookingStore } from '@/features/booking/store/bookingStore';
 import { useBookingStatus } from '@/features/booking/hooks';
 import { MESSAGES } from '@/features/booking/messages';
 import { routeLabel } from '@/features/booking/routes';
-import { getPromoReceipt, markPromoUsed } from '@/features/booking/promo';
+import { getPromoReceipt } from '@/features/booking/promo';
 import { formatCurrency } from '@/shared/lib/currency';
 import { fbqTrack } from '@/shared/lib/fbq';
 import { CONTACTS, POLICY } from '@/features/legal/company';
@@ -222,7 +222,7 @@ interface ConfirmationDisplayProps {
 }
 
 function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
-    const { reset, setPromoCode } = useBookingStore();
+    const { reset } = useBookingStore();
     const router = useRouter();
     const isIOS = useIsIOS();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -235,13 +235,9 @@ function ConfirmationDisplay({ booking }: ConfirmationDisplayProps) {
     const discountPercent = receipt?.discountPercent ?? booking?.discountPercent ?? 0;
     const hasPromo = !!promoCode && discountAmount > 0;
 
-    // Once the booking is confirmed, mark the code redeemed so a `?promo=` link
-    // won't auto-apply it to a future booking, and drop it from the store.
-    useEffect(() => {
-        if (!promoCode) return;
-        markPromoUsed(promoCode);
-        setPromoCode(null);
-    }, [promoCode, setPromoCode]);
+    // The code is deliberately left in the store after confirmation: it can be
+    // redeemed again, so a follow-up booking keeps the discount (the customer
+    // can still drop it with the × on the details step).
 
     useEffect(() => {
         if (!booking) return;
